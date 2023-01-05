@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="imio.transmogrifier.iadocs">
+
+  <!-- Set up z3c.autoinlcude to scan dependencies and plugins of this package -->
+  <includePlugins package="." />
+  <include package=".blueprints" />
+
+  <!--five:registerPackage package="." initialize=".initialize" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="imio.transmogrifier.iadocs (default)"
+      directory="profiles/default"
+      description="Installation profile for imio.transmogrifier.iadocs"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      /-->
+
+</configure>

@@ -1,0 +1,10 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope">
+
+  <utility
+    component=".main.Initialization"
+    name="imio.transmogrifier.iadocs.init"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+</configure>

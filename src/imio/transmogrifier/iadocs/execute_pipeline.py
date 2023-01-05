@@ -4,11 +4,13 @@ from collective.transmogrifier.transmogrifier import configuration_registry
 from collective.transmogrifier.transmogrifier import Transmogrifier
 from imio.helpers.security import setup_logger
 from imio.pyutils.system import stop
+from imio.transmogrifier.iadocs import logger
 from Testing import makerequest
 from zope.component.hooks import setSite
 from zope.globalrequest import setRequest
 
 import argparse
+import json
 import os
 import sys
 import transaction
@@ -43,7 +45,7 @@ if 'app' not in locals() or 'obj' not in locals():
 args = sys.argv
 if len(args) < 3 or args[1] != '-c' or not args[2].endswith('execute_pipeline.py'):
     stop("Arguments are not formatted as needed. Has the script been run via 'instance run'? "
-         "Args are '{}'".format(args))
+         "Args are '{}'".format(args), logger=logger)
 args.pop(1)  # remove -c
 args.pop(1)  # remove script name
 parser = argparse.ArgumentParser(description='Run ia.docs data transfer.')
@@ -51,8 +53,10 @@ parser.add_argument('pipeline', help='Pipeline file')
 parser.add_argument('-c', '--commit', action='store_true', dest='commit', help='To apply changes')
 ns = parser.parse_args()
 if not os.path.exists(ns.pipeline):
-    stop("Given pipeline file '{}' doesn't exist".format(ns.pipeline))
+    stop("Given pipeline file '{}' doesn't exist".format(ns.pipeline), logger=logger)
 portal = obj  # noqa
+options = {'commit': ns.commit}
+portal.REQUEST.set('_transmo_options_', json.dumps(options))
 execute_pipeline(portal, ns.pipeline)
 if ns.commit:
     transaction.commit()
