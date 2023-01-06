@@ -2,8 +2,26 @@
     xmlns="http://namespaces.zope.org/zope">
 
   <utility
-    component=".main.Initialization"
+    name="imio.transmogrifier.iadocs.breakpoint"
+    component=".various.BreakpointSection"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.init"
+    component=".main.Initialization"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
+    name="imio.transmogrifier.iadocs.short_log"
+    component=".various.ShortLog"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
+    name="imio.transmogrifier.iadocs.stop"
+    component=".various.StopSection"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
