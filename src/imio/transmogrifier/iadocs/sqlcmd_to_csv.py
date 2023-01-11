@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Script to convert sqlcmd output files to double-quoted csv"""
 from collections import OrderedDict
+from datetime import datetime
 from imio.pyutils.system import read_dir
 from imio.pyutils.system import stop
 from imio.pyutils.utils import safe_encode
@@ -21,6 +22,8 @@ sqlcmd_sep = u'|'
 
 
 def main(input_dir, output_dir, input_filter=''):
+    start = datetime.now()
+    logger.info("Start: {}".format(start.strftime('%Y%m%d-%H%M')))
     files = read_dir(input_dir, with_path=False, only_folders=False, only_files=True)
     for filename in files:
         if not filename.endswith(sqlcmd_ext) or (input_filter and not re.match(input_filter, filename)):
@@ -42,6 +45,7 @@ def main(input_dir, output_dir, input_filter=''):
                 ctn, values = get_values(cols, ifh, counters)
             if writed != rec_nb:
                 logger.error("We don't have the correct records number: writed {}, must have {}".format(writed, rec_nb))
+    logger.info("Script duration: %s" % (datetime.now() - start))
 
 
 def get_values(cols, fh, count_dic):
