@@ -21,7 +21,7 @@ sqlcmd_ext = '.fwf'
 sqlcmd_sep = u'|'
 
 
-def main(input_dir, output_dir, input_filter=''):
+def main(input_dir, output_dir, counter_col, input_filter=''):
     start = datetime.now()
     logger.info("Start: {}".format(start.strftime('%Y%m%d-%H%M')))
     files = read_dir(input_dir, with_path=False, only_folders=False, only_files=True)
@@ -35,11 +35,16 @@ def main(input_dir, output_dir, input_filter=''):
             csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
             rec_nb, last_rec_pos = get_records_info(ifh)
             cols = get_cols(ifh)
-            csvh.writerow(cols.keys())
+            if counter_col:
+                csvh.writerow([u'Line'] + cols.keys())
+            else:
+                csvh.writerow(cols.keys())
             counters = {'read': 0, 'max': rec_nb}
             ctn, values = get_values(cols, ifh, counters)
             writed = 0
             while ctn:
+                if counter_col:
+                    values.insert(0, counters['read'])
                 csvh.writerow(values)
                 writed += 1
                 ctn, values = get_values(cols, ifh, counters)
@@ -128,9 +133,11 @@ if __name__ == '__main__':
     parser.add_argument('-if', '--input_filter', dest='input_filter', help='Input filter.')
     parser.add_argument('-is', '--input_sep', dest='input_sep', help='Input delimiter.')
     parser.add_argument('-od', '--output_dir', dest='output_dir', help='Output directory.')
+    parser.add_argument('-oc', '--output_count', action='store_true', dest='output_counter',
+                        help='Add in output a counter column.')
     ns = parser.parse_args()
     if not ns.output_dir:
         ns.output_dir = ns.input_dir
     if ns.input_sep:
         sqlcmd_sep = ns.input_sep.decode()
-    main(ns.input_dir, ns.output_dir, ns.input_filter)
+    main(ns.input_dir, ns.output_dir, ns.output_counter, ns.input_filter)
