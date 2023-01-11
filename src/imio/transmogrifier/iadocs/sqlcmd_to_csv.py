@@ -126,8 +126,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert sqlcmd files to csv.')
     parser.add_argument('input_dir', help='Input directory.')
     parser.add_argument('-if', '--input_filter', dest='input_filter', help='Input filter.')
+    parser.add_argument('-is', '--input_sep', dest='input_sep', help='Input delimiter.')
     parser.add_argument('-od', '--output_dir', dest='output_dir', help='Output directory.')
     ns = parser.parse_args()
     if not ns.output_dir:
         ns.output_dir = ns.input_dir
+    if ns.input_sep:
+        sqlcmd_sep = ns.input_sep.decode()
     main(ns.input_dir, ns.output_dir, ns.input_filter)
