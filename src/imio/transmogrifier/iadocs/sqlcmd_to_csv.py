@@ -29,34 +29,36 @@ def main(input_dir, output_dir, input_filter=''):
         output_name = os.path.join(output_dir, filename.replace(sqlcmd_ext, '.csv'))
         logger.info("Reading '{}'".format(input_name))
         # with open(input_name) as ifh, open(output_name, 'wb') as ofh:
-        with codecs.open(input_name, 'r+', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
+        with codecs.open(input_name, 'r', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
             csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
             rec_nb, last_rec_pos = get_records_info(ifh)
-            cols = get_cols(ifh, last_rec_pos)
+            cols = get_cols(ifh)
             csvh.writerow(cols.keys())
-            ctn, values = get_values(cols, ifh, last_rec_pos)
+            counters = {'read': 0, 'max': rec_nb}
+            ctn, values = get_values(cols, ifh, counters)
             writed = 0
             while ctn:
                 csvh.writerow(values)
                 writed += 1
-                ctn, values = get_values(cols, ifh, last_rec_pos)
+                ctn, values = get_values(cols, ifh, counters)
             if writed != rec_nb:
                 logger.error("We don't have the correct records number: writed {}, must have {}".format(writed, rec_nb))
 
 
-def get_values(cols, fh, max_pos):
+def get_values(cols, fh, count_dic):
     """Reads row fields and return values and finished flag.
 
     :param cols: ordered dict containing column: width
     :param fh: input file handler
-    :param max_pos: end of last record position in fh
+    :param count_dic: counters dict like {'read': 0, 'max': 10}
     :return: continue flag, columns values
     """
-    logger.warn('start get_values {}'.format(fh.tell()))
     values = []
+    if count_dic['read'] >= count_dic['max']:
+        return False, values
     for col, clen in cols.items():
-        if fh.tell() >= max_pos:
-            break  # end of last record
+        # if fh.tell() >= max_pos:  # tell is not correct after utf8 read
+        #     break  # end of last record
         value = fh.read(clen)
         if not value:
             break  # end of file
@@ -71,16 +73,14 @@ def get_values(cols, fh, max_pos):
         values.append(safe_encode(value))
         next_char = fh.read(1)
         if next_char and next_char not in (sqlcmd_sep, u'\n'):
-            logger.error(u"Found char '{}' after col {}".format(next_char, col))
             break
     else:
-        logger.warn('continue at end get_values {}'.format(fh.tell()))
+        count_dic['read'] += 1
         return True, values
-    logger.warn('abort at end get_values {}'.format(fh.tell()))
     return False, values
 
 
-def get_cols(fh, max_pos):
+def get_cols(fh):
     """Gets columns and lengths"""
     header = fh.readline()
     fh.seek(len(header))  # after readline, pointer is at the end of the file. We pos it correctly
@@ -92,7 +92,7 @@ def get_cols(fh, max_pos):
     for part in parts:
         cols[part.strip()] = len(part)
     # check second row (does'nt yet contain \n)
-    cont, values = get_values(cols, fh, max_pos)
+    cont, values = get_values(cols, fh, {'read': 0, 'max': 1})
     for i, col in enumerate(cols):
         clen = cols[col]
         if values[i] != u'-' * clen:
