@@ -31,6 +31,7 @@ def main(input_dir, output_dir, input_filter=''):
         # with open(input_name) as ifh, open(output_name, 'wb') as ofh:
         with codecs.open(input_name, 'r', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
             csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
+            rec_nb, last_rec_pos = get_records_info(ifh)
             cols = get_cols(ifh)
             csvh.writerow(cols.keys())
             ctn, values = get_values(cols, ifh, )
@@ -88,6 +89,25 @@ def get_cols(fh):
         if values[i] != u'-' * clen:
             stop(u"Wrong length in second line for col '{}'".format(col), logger)
     return cols
+
+
+def get_records_info(fh):
+    """Get records number and last record position."""
+    fh.seek(0, 2)
+    file_len = fh.tell()
+    offset = -16
+    fh.seek(offset, 2)  # just before ' rows'
+    buf = fh.read()
+    if buf != u' rows affected)\n':
+        stop(u"End of file not as expected '{}'".format(buf))
+    offset -= 1
+    while not re.match(r'\n\(\d+ rows ', buf) and abs(offset) <= file_len:
+        fh.seek(offset, 2)
+        buf = fh.read()
+        offset -= 1
+    match = re.match(r'\n\((\d+) rows ', buf)
+    fh.seek(0)  # start of file
+    return match.group(1), file_len + offset  # offset is neg
 
 
 if __name__ == '__main__':
