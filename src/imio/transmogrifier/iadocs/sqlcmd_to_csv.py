@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Script to clean sqlcmd output files to double-quoted csv"""
+"""Script to convert sqlcmd output files to double-quoted csv"""
 from collections import OrderedDict
 from imio.pyutils.system import read_dir
 from imio.pyutils.system import stop
@@ -28,7 +28,6 @@ def main(input_dir, output_dir, input_filter=''):
         input_name = os.path.join(input_dir, filename)
         output_name = os.path.join(output_dir, filename.replace(sqlcmd_ext, '.csv'))
         logger.info("Reading '{}'".format(input_name))
-        # with open(input_name) as ifh, open(output_name, 'wb') as ofh:
         with codecs.open(input_name, 'r', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
             csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
             rec_nb, last_rec_pos = get_records_info(ifh)
