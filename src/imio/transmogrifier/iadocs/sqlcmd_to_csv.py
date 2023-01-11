@@ -29,28 +29,34 @@ def main(input_dir, output_dir, input_filter=''):
         output_name = os.path.join(output_dir, filename.replace(sqlcmd_ext, '.csv'))
         logger.info("Reading '{}'".format(input_name))
         # with open(input_name) as ifh, open(output_name, 'wb') as ofh:
-        with codecs.open(input_name, 'r', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
+        with codecs.open(input_name, 'r+', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
             csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
             rec_nb, last_rec_pos = get_records_info(ifh)
-            cols = get_cols(ifh)
+            cols = get_cols(ifh, last_rec_pos)
             csvh.writerow(cols.keys())
-            ctn, values = get_values(cols, ifh, )
+            ctn, values = get_values(cols, ifh, last_rec_pos)
             writed = 0
             while ctn:
                 csvh.writerow(values)
                 writed += 1
-                ctn, values = get_values(cols, ifh)
+                ctn, values = get_values(cols, ifh, last_rec_pos)
+            if writed != rec_nb:
+                logger.error("We don't have the correct records number: writed {}, must have {}".format(writed, rec_nb))
 
 
-def get_values(cols, fh):
+def get_values(cols, fh, max_pos):
     """Reads row fields and return values and finished flag.
 
     :param cols: ordered dict containing column: width
     :param fh: input file handler
+    :param max_pos: end of last record position in fh
     :return: continue flag, columns values
     """
+    logger.warn('start get_values {}'.format(fh.tell()))
     values = []
     for col, clen in cols.items():
+        if fh.tell() >= max_pos:
+            break  # end of last record
         value = fh.read(clen)
         if not value:
             break  # end of file
@@ -68,13 +74,16 @@ def get_values(cols, fh):
             logger.error(u"Found char '{}' after col {}".format(next_char, col))
             break
     else:
+        logger.warn('continue at end get_values {}'.format(fh.tell()))
         return True, values
+    logger.warn('abort at end get_values {}'.format(fh.tell()))
     return False, values
 
 
-def get_cols(fh):
+def get_cols(fh, max_pos):
     """Gets columns and lengths"""
     header = fh.readline()
+    fh.seek(len(header))  # after readline, pointer is at the end of the file. We pos it correctly
     if not header:
         stop('File is empty !', logger)
     header = header.rstrip(u'\n')
@@ -83,7 +92,7 @@ def get_cols(fh):
     for part in parts:
         cols[part.strip()] = len(part)
     # check second row (does'nt yet contain \n)
-    cont, values = get_values(cols, fh)
+    cont, values = get_values(cols, fh, max_pos)
     for i, col in enumerate(cols):
         clen = cols[col]
         if values[i] != u'-' * clen:
@@ -107,7 +116,7 @@ def get_records_info(fh):
         offset -= 1
     match = re.match(r'\n\((\d+) rows ', buf)
     fh.seek(0)  # start of file
-    return match.group(1), file_len + offset  # offset is neg
+    return int(match.group(1)), file_len + offset  # offset is neg
 
 
 if __name__ == '__main__':
