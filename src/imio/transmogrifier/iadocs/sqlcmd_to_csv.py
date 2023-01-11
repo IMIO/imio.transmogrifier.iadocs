@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Script to clean sqlcmd output files to double-quoted csv"""
+import codecs
 from collections import OrderedDict
 from imio.pyutils.system import read_dir
 from imio.pyutils.system import stop
+from pandas import read_fwf
 
 import argparse
 import csv
@@ -14,7 +16,7 @@ import re
 logging.basicConfig()
 logger = logging.getLogger('csv')
 logger.setLevel(logging.INFO)
-sqlcmd_ext = '.fcsv'
+sqlcmd_ext = '.fwf'
 sqlcmd_sep = '|'
 
 
@@ -26,18 +28,34 @@ def main(input_dir, output_dir, input_filter=''):
         input_name = os.path.join(input_dir, filename)
         output_name = os.path.join(output_dir, filename.replace(sqlcmd_ext, '.csv'))
         logger.info("Reading '{}'".format(input_name))
-        with open(input_name) as ifh, open(output_name, 'wb') as ofh:
-            csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
+        # with open(input_name) as ifh, open(output_name, 'wb') as ofh:
+        with codecs.open(input_name, 'r', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
+            # csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
             # read first line to analyse cols
             cols = get_cols(ifh)
-            csvh.writerow(cols.keys())
+            frames = cols_to_frames(cols)
+            ifh.seek(0)  # Start of file
+            # csvh.writerow(cols.keys())
+            df = read_fwf(ifh, colspecs=frames, encoding='utf8')
+            df.to_csv(ofh, index=False, quoting=csv.QUOTE_NONNUMERIC, encoding='utf-8')
             # while get_values(cols, ifh):
             #     csvh.writerow(values)
             #     values = []
 
 
+def cols_to_frames(cols):
+    frames = []
+    current = -1
+    for col, clen in cols.items():
+        frames.append((current + 1, current + 1 + clen))
+        current = current + 1 + clen
+    return frames
+
+
 def get_values(cols, fh):
-    """Reads row fields and return values and finished flag"""
+    """Reads row fields and return values and finished flag.
+
+    Do not work with utf8 content where a char can be double bytes"""
     values = []
     for col, clen in cols.items():
         value = fh.read(clen)
