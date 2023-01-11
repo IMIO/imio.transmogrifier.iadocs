@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """Script to clean sqlcmd output files to double-quoted csv"""
-import codecs
 from collections import OrderedDict
 from imio.pyutils.system import read_dir
 from imio.pyutils.system import stop
-from pandas import read_fwf
+from imio.pyutils.utils import safe_encode
 
 import argparse
+import codecs
 import csv
 import logging
 import os
@@ -17,7 +17,7 @@ logging.basicConfig()
 logger = logging.getLogger('csv')
 logger.setLevel(logging.INFO)
 sqlcmd_ext = '.fwf'
-sqlcmd_sep = '|'
+sqlcmd_sep = u'|'
 
 
 def main(input_dir, output_dir, input_filter=''):
@@ -30,49 +30,41 @@ def main(input_dir, output_dir, input_filter=''):
         logger.info("Reading '{}'".format(input_name))
         # with open(input_name) as ifh, open(output_name, 'wb') as ofh:
         with codecs.open(input_name, 'r', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
-            # csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
-            # read first line to analyse cols
+            csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
             cols = get_cols(ifh)
-            frames = cols_to_frames(cols)
-            ifh.seek(0)  # Start of file
-            # csvh.writerow(cols.keys())
-            df = read_fwf(ifh, colspecs=frames, encoding='utf8')
-            df.to_csv(ofh, index=False, quoting=csv.QUOTE_NONNUMERIC, encoding='utf-8')
-            # while get_values(cols, ifh):
-            #     csvh.writerow(values)
-            #     values = []
-
-
-def cols_to_frames(cols):
-    frames = []
-    current = -1
-    for col, clen in cols.items():
-        frames.append((current + 1, current + 1 + clen))
-        current = current + 1 + clen
-    return frames
+            csvh.writerow(cols.keys())
+            ctn, values = get_values(cols, ifh, )
+            writed = 0
+            while ctn:
+                csvh.writerow(values)
+                writed += 1
+                ctn, values = get_values(cols, ifh)
 
 
 def get_values(cols, fh):
     """Reads row fields and return values and finished flag.
 
-    Do not work with utf8 content where a char can be double bytes"""
+    :param cols: ordered dict containing column: width
+    :param fh: input file handler
+    :return: continue flag, columns values
+    """
     values = []
     for col, clen in cols.items():
         value = fh.read(clen)
         if not value:
             break  # end of file
-        elif value.startswith(' ') and not value.endswith(' '):
-            value = value.lstrip(' ')
+        elif value.startswith(u' ') and not value.endswith(u' '):
+            value = value.lstrip(u' ')
             try:
                 value = int(value)
             except Exception:
                 pass
         else:
-            value = value.strip()
-        values.append(value)
+            value = value.strip(u' ')
+        values.append(safe_encode(value))
         next_char = fh.read(1)
-        if next_char and next_char not in (sqlcmd_sep, '\n'):
-            logger.error("Found char '{}' after col {}".format(next_char, col))
+        if next_char and next_char not in (sqlcmd_sep, u'\n'):
+            logger.error(u"Found char '{}' after col {}".format(next_char, col))
             break
     else:
         return True, values
@@ -84,7 +76,7 @@ def get_cols(fh):
     header = fh.readline()
     if not header:
         stop('File is empty !', logger)
-    header = header.rstrip('\n')
+    header = header.rstrip(u'\n')
     parts = header.split(sqlcmd_sep)
     cols = OrderedDict()
     for part in parts:
@@ -93,8 +85,8 @@ def get_cols(fh):
     cont, values = get_values(cols, fh)
     for i, col in enumerate(cols):
         clen = cols[col]
-        if values[i] != '-' * clen:
-            stop("Wrong length in second line for col '{}'".format(col), logger)
+        if values[i] != u'-' * clen:
+            stop(u"Wrong length in second line for col '{}'".format(col), logger)
     return cols
 
 
