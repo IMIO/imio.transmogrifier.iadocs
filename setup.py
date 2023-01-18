@@ -39,7 +39,7 @@ setup(
     zip_safe=False,
     install_requires=[
         # -*- Extra requirements: -*-
-        'imio.helpers>=0.66',
+        #'imio.helpers>=0.66',
         'imio.pyutils',
         'plone.api>=1.8.4',
         'Products.GenericSetup>=1.8.2',
