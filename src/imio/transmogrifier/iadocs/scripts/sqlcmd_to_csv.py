@@ -18,10 +18,9 @@ logging.basicConfig()
 logger = logging.getLogger('csv')
 logger.setLevel(logging.INFO)
 sqlcmd_ext = '.fwf'
-sqlcmd_sep = u'|'
 
 
-def main(input_dir, output_dir, counter_col, input_filter=''):
+def main(input_dir, output_dir, counter_col, input_filter, input_sep):
     start = datetime.now()
     logger.info("Start: {}".format(start.strftime('%Y%m%d-%H%M')))
     files = read_dir(input_dir, with_path=False, only_folders=False, only_files=True)
@@ -34,26 +33,26 @@ def main(input_dir, output_dir, counter_col, input_filter=''):
         with codecs.open(input_name, 'r', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
             csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
             rec_nb, last_rec_pos = get_records_info(ifh)
-            cols = get_cols(ifh)
+            cols = get_cols(ifh, input_sep)
             if counter_col:
-                csvh.writerow([u'Line'] + cols.keys())
+                csvh.writerow([u'Line'] + list(cols.keys()))
             else:
-                csvh.writerow(cols.keys())
+                csvh.writerow(list(cols.keys()))
             counters = {'read': 0, 'max': rec_nb}
-            ctn, values = get_values(cols, ifh, counters)
+            ctn, values = get_values(cols, ifh, counters, input_sep)
             writed = 0
             while ctn:
                 if counter_col:
                     values.insert(0, counters['read'])
                 csvh.writerow(values)
                 writed += 1
-                ctn, values = get_values(cols, ifh, counters)
+                ctn, values = get_values(cols, ifh, counters, input_sep)
             if writed != rec_nb:
                 logger.error("We don't have the correct records number: writed {}, must have {}".format(writed, rec_nb))
     logger.info("Script duration: %s" % (datetime.now() - start))
 
 
-def get_values(cols, fh, count_dic):
+def get_values(cols, fh, count_dic, input_sep):
     """Reads row fields and return values and finished flag.
 
     :param cols: ordered dict containing column: width
@@ -80,7 +79,7 @@ def get_values(cols, fh, count_dic):
             value = value.strip(u' ')
         values.append(safe_encode(value))
         next_char = fh.read(1)
-        if next_char and next_char not in (sqlcmd_sep, u'\n'):
+        if next_char and next_char not in (input_sep, u'\n'):
             break
     else:
         count_dic['read'] += 1
@@ -88,19 +87,19 @@ def get_values(cols, fh, count_dic):
     return False, values
 
 
-def get_cols(fh):
+def get_cols(fh, input_sep):
     """Gets columns and lengths"""
     header = fh.readline()
     fh.seek(len(header))  # after readline, pointer is at the end of the file. We pos it correctly
     if not header:
         stop('File is empty !', logger)
     header = header.rstrip(u'\n')
-    parts = header.split(sqlcmd_sep)
+    parts = header.split(input_sep)
     cols = OrderedDict()
     for part in parts:
         cols[part.strip()] = len(part)
     # check second row (does'nt yet contain \n)
-    cont, values = get_values(cols, fh, {'read': 0, 'max': 1})
+    cont, values = get_values(cols, fh, {'read': 0, 'max': 1}, input_sep)
     for i, col in enumerate(cols):
         clen = cols[col]
         if values[i] != u'-' * clen:
@@ -131,13 +130,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert sqlcmd files to csv.')
     parser.add_argument('input_dir', help='Input directory.')
     parser.add_argument('-if', '--input_filter', dest='input_filter', help='Input filter.')
-    parser.add_argument('-is', '--input_sep', dest='input_sep', help='Input delimiter.')
+    parser.add_argument('-is', '--input_sep', dest='input_sep', help='Input delimiter. Default "|"', default='|')
     parser.add_argument('-od', '--output_dir', dest='output_dir', help='Output directory.')
-    parser.add_argument('-oc', '--output_count', action='store_true', dest='output_counter',
+    parser.add_argument('-oc', '--count_col', action='store_true', dest='count_col',
                         help='Add in output a counter column.')
     ns = parser.parse_args()
     if not ns.output_dir:
         ns.output_dir = ns.input_dir
-    if ns.input_sep:
-        sqlcmd_sep = ns.input_sep.decode()
-    main(ns.input_dir, ns.output_dir, ns.output_counter, ns.input_filter)
+    main(ns.input_dir, ns.output_dir, ns.count_col, ns.input_filter, ns.input_sep.decode())
