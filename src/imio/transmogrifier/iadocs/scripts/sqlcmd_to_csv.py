@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 sqlcmd_ext = '.fwf'
 
 
-def main(input_dir, output_dir, counter_col, input_filter, input_sep):
+def main(input_dir, output_dir, counter_col, input_filter, input_sep, only_new):
     start = datetime.now()
     logger.info("Start: {}".format(start.strftime('%Y%m%d-%H%M')))
     files = read_dir(input_dir, with_path=False, only_folders=False, only_files=True)
@@ -29,6 +29,8 @@ def main(input_dir, output_dir, counter_col, input_filter, input_sep):
             continue
         input_name = os.path.join(input_dir, filename)
         output_name = os.path.join(output_dir, filename.replace(sqlcmd_ext, '.csv'))
+        if only_new and os.path.exists(output_name):
+            continue
         logger.info("Reading '{}'".format(input_name))
         with codecs.open(input_name, 'r', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
             csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
@@ -134,7 +136,9 @@ if __name__ == '__main__':
     parser.add_argument('-od', '--output_dir', dest='output_dir', help='Output directory.')
     parser.add_argument('-oc', '--count_col', action='store_true', dest='count_col',
                         help='Add in output a counter column.')
+    parser.add_argument('-on', '--only_new', dest='only_new', action='store_true',
+                        help='Export only not existing csv files.')
     ns = parser.parse_args()
     if not ns.output_dir:
         ns.output_dir = ns.input_dir
-    main(ns.input_dir, ns.output_dir, ns.count_col, ns.input_filter, ns.input_sep.decode())
+    main(ns.input_dir, ns.output_dir, ns.count_col, ns.input_filter, ns.input_sep.decode(), ns.only_new)
