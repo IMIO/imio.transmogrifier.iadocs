@@ -13,7 +13,7 @@ logging.basicConfig()
 logger = logging.getLogger('sqlcmd')
 logger.setLevel(logging.INFO)
 sqlcmd_ext = '.fwf'
-tables = ['eCourriers', 'eCourriersDestinataires', 'eCourriersFichiers', 'eNatures', 'eServices']
+tables = ['eCourriers', 'eClassement', 'eClassementDossiers', 'eContacts', 'eCourriersDestinataires', 'eCourriersFichiers', 'eCourriersDossiers', 'eCourriersLiens', 'eCourriersServices', 'eNatures', 'eRues', 'eServices', 'eUsers']
 fwf_cmd = 'docker exec -u root -it {dock} /opt/mssql-tools/bin/sqlcmd -S localhost -d {db} -U SA -P "{pwd}" ' \
           '-Q "select * from {table}" -o "/srv/sqlcmd.fwf" -s"{sep}"'
 cp_cmd = 'docker cp {dock}:/srv/sqlcmd.fwf "{of}"'

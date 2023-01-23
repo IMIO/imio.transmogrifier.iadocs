@@ -133,7 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('input_dir', help='Input directory.')
     parser.add_argument('-if', '--input_filter', dest='input_filter', help='Input filter.')
     parser.add_argument('-is', '--input_sep', dest='input_sep', help='Input delimiter. Default "|"', default='|')
-    parser.add_argument('-od', '--output_dir', dest='output_dir', help='Output directory.')
+    parser.add_argument('-od', '--output_dir', dest='output_dir', help='Output directory. Default: same as input')
     parser.add_argument('-oc', '--count_col', action='store_true', dest='count_col',
                         help='Add in output a counter column.')
     parser.add_argument('-on', '--only_new', dest='only_new', action='store_true',
