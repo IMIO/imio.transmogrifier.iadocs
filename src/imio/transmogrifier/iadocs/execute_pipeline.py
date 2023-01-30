@@ -5,9 +5,6 @@ from collective.transmogrifier.transmogrifier import Transmogrifier
 from imio.helpers.security import setup_logger
 from imio.pyutils.system import stop
 from imio.transmogrifier.iadocs import logger
-from Testing import makerequest
-from zope.component.hooks import setSite
-from zope.globalrequest import setRequest
 
 import argparse
 import json
@@ -18,10 +15,12 @@ import transaction
 
 PIPELINE_ID = 'imio.transmogrifier.iadocs.pipeline'
 USAGE = """
-Usage : bin/instance run \
+Usage : bin/instance run -O{plonepath} \
 src/imio.transmogrifier.iadocs/src/imio/transmogrifier/iadocs/execute_pipeline.py \
-PILELINE_FILE PLONE_ID COMMIT_0_1
+{PILELINE_FILE} -h
 """
+
+# setup_logger(20)
 
 
 def execute_pipeline(portal, filepath):
@@ -54,36 +53,20 @@ parser.add_argument('-c', '--commit', action='store_true', dest='commit', help='
 ns = parser.parse_args()
 if not os.path.exists(ns.pipeline):
     stop("Given pipeline file '{}' doesn't exist".format(ns.pipeline), logger=logger)
-portal = obj  # noqa
+
 options = {'commit': ns.commit}
+portal = obj  # noqa
 portal.REQUEST.set('_transmo_options_', json.dumps(options))
+# get admin user
+acl_users = app.acl_users  # noqa
+user = acl_users.getUser('admin')
+if user:
+    user = user.__of__(acl_users)
+    newSecurityManager(None, user)
+else:
+    logger.error("Cannot find admin user ")
+
 execute_pipeline(portal, ns.pipeline)
+
 if ns.commit:
     transaction.commit()
-# TODO must check if portal is correct
-# TODO must pass options to transmogrifier
-
-# plone_id = sys.argv[4]
-# app = locals().get('app')
-# # plone_id can be 'folder/plone'
-# root = app
-# for pid in plone_id.split('/'):
-#     portal = root.get(pid)
-#     root = portal
-# setSite(portal)
-# acl_users = app.acl_users
-# user = acl_users.getUser('admin')
-# if user:
-#     user = user.__of__(acl_users)
-#     newSecurityManager(None, user)
-# else:
-#     logger.error("Cannot find admin user ")
-# app = makerequest.makerequest(app)
-# # support plone.subrequest
-# app.REQUEST['PARENTS'] = [app]
-# setRequest(app.REQUEST)
-# # can be used to increase temporary run verbosity
-# # setup_logger(20)
-#
-# portal.REQUEST.set('_pipeline_commit_', commit)
-# execute_pipeline(portal, pipeline_filepath)
