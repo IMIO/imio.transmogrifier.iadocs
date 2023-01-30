@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
-
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from imio.helpers.transmogrifier import get_main_path
@@ -8,11 +7,15 @@ from imio.helpers.transmogrifier import relative_path
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
 from plone import api
+from plone.dexterity.fti import DexterityFTIModificationDescription
+from plone.dexterity.fti import ftiModified
 from Products.CMFPlone.utils import safe_unicode
 from zope.annotation import IAnnotations
 from zope.interface import classProvides
 from zope.interface import implements
+from zope.lifecycleevent import ObjectModifiedEvent
 
 import json
 import logging
@@ -34,6 +37,7 @@ class Initialization(object):
         self.workingpath = get_main_path(safe_unicode(options.get('basepath', '')),
                                          safe_unicode(options.get('subpath', '')))
         self.portal = transmogrifier.context
+        # setting logs
         efh = logging.FileHandler(os.path.join(self.workingpath, 'dt_input_errors.log'), mode='w')
         efh.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
         efh.setLevel(logging.INFO)
@@ -52,6 +56,26 @@ class Initialization(object):
             ocfh.setFormatter(logging.Formatter('%(message)s'))
             ocfh.setLevel(logging.INFO)
             o_logger.addHandler(ocfh)
+
+        # check package installation and configuration
+        if not self.portal.portal_quickinstaller.isProductInstalled('collective.behavior.internalnumber'):
+            self.portal.portal_setup.runAllImportStepsFromProfile('profile-collective.behavior.internalnumber:default',
+                                                                  dependency_strategy='new')
+            o_logger.info('Installed collective.behavior.internalnumber')
+        reg_key = 'collective.behavior.internalnumber.browser.settings.IInternalNumberConfig.portal_type_config'
+        inptc = list(api.portal.get_registry_record(reg_key))
+        if not [dic for dic in inptc if dic['portal_type'] == 'organization']:
+            inptc.append({'portal_type': 'organization', 'uniqueness': True, 'default_expression': None,
+                          'default_number': 1})
+            api.portal.set_registry_record(reg_key, inptc)
+            o_logger.info('Added internalnumber config for type organization')
+        fti = getattr(self.portal.portal_types, 'organization')
+        if 'collective.behavior.internalnumber.behavior.IInternalNumberBehavior' not in fti.behaviors:
+            old_bav = tuple(fti.behaviors)
+            fti.behaviors = tuple(list(fti.behaviors) +
+                                  ['collective.behavior.internalnumber.behavior.IInternalNumberBehavior'])
+            ftiModified(fti, ObjectModifiedEvent(fti, DexterityFTIModificationDescription('behaviors', old_bav)))
+            o_logger.info('Added internalnumber behavior on type organization')
 
         # set working path in portal annotation to retrieve log files
         annot = IAnnotations(self.portal).setdefault(ANNOTATION_KEY, {})
@@ -77,6 +101,8 @@ class Initialization(object):
             dir_org_config_len[typ] = len(dir_org_config[typ])
         self.storage['dir_org_config'] = dir_org_config
         self.storage['dir_org_config_len'] = dir_org_config_len
+        # store services
+        self.storage['pg_orgs_all'], self.storage['pg_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
 
     def __iter__(self):
         for item in self.previous:
