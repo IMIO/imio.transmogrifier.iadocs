@@ -49,11 +49,14 @@ args.pop(1)  # remove -c
 args.pop(1)  # remove script name
 parser = argparse.ArgumentParser(description='Run ia.docs data transfer.')
 parser.add_argument('pipeline', help='Pipeline file')
-parser.add_argument('-c', '--commit', action='store_true', dest='commit', help='To apply changes')
+parser.add_argument('-c', '--commit', dest='commit', choices=('0', '1'), help='To commit changes (0, 1)')
 ns = parser.parse_args()
 if not os.path.exists(ns.pipeline):
     stop("Given pipeline file '{}' doesn't exist".format(ns.pipeline), logger=logger)
-
+if ns.commit is None or ns.commit == '0':
+    ns.commit = False
+else:
+    ns.commit = True
 options = {'commit': ns.commit}
 portal = obj  # noqa
 portal.REQUEST.set('_transmo_options_', json.dumps(options))

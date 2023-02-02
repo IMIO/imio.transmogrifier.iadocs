@@ -58,7 +58,6 @@ class Initialization(object):
             o_logger.addHandler(ocfh)
 
         # check package installation and configuration
-        import ipdb; ipdb.set_trace()
         if in_types:
             if not self.portal.portal_quickinstaller.isProductInstalled('collective.behavior.internalnumber'):
                 self.portal.portal_setup.runAllImportStepsFromProfile(
