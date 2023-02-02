@@ -51,9 +51,7 @@ class ShortLog(object):
 
     def __iter__(self):
         for item in self.previous:
-            # to_print = u"{}:{},{},{}, {}".format(item['_set'], shortcut(item['_type']), item.get('_id', ''),
-            #                                      shortcut(item['_act']), item.get('_path', item.get('_del_path', '')))
-            to_print = u""
+            to_print = u"{}:{}".format(item['_etyp'], item.get('_eid', ''))
             # print(to_print, file=sys.stderr)
             o_logger.info(to_print)
             yield item

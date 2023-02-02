@@ -3,6 +3,7 @@ from collective.contact.plonegroup.browser.settings import BaseOrganizationServi
 from collective.contact.plonegroup.config import get_registry_organizations
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import relative_path
+from imio.transmogrifier.iadocs import e_logger
 from plone import api
 
 
@@ -23,3 +24,13 @@ def get_plonegroup_orgs(portal, eid_fld='internal_number'):
         if eid:
             eid_to_orgs[eid] = term.value
     return all_orgs, eid_to_orgs
+
+
+def is_in_part(section, part):
+    """Check if part is one of given."""
+    return part in section.storage.get('parts', '')
+
+
+def log_error(item, msg, level='error', fld='_eid'):
+    getattr(e_logger, level)(u'{}: {} {}, {}'.format(item['_etyp'], fld, item[fld], msg))
+    item['_error'] = True

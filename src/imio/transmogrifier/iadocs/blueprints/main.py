@@ -36,6 +36,9 @@ class Initialization(object):
         self.previous = previous
         self.portal = transmogrifier.context
         workingpath = get_main_path(safe_unicode(options.get('basepath', '')), safe_unicode(options.get('subpath', '')))
+        csvpath = safe_unicode(options.get('csvpath', ''))
+        if not csvpath:
+            csvpath = workingpath
         in_types = safe_unicode(transmogrifier['config'].get('internal_number_types', '')).split()
         # setting logs
         efh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors.log'), mode='w')
@@ -86,6 +89,8 @@ class Initialization(object):
         # set global variables in annotation
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
         self.storage['wp'] = workingpath
+        self.storage['csvp'] = csvpath
+        self.storage['parts'] = run_options['parts']
         # find directory
         brains = api.content.find(portal_type='directory')
         if brains:

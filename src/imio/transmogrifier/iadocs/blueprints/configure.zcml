@@ -14,6 +14,12 @@
     />
 
   <utility
+    component=".csv_input.CSVReader"
+    name="imio.transmogrifier.iadocs.csv_reader"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.short_log"
     component=".various.ShortLog"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
