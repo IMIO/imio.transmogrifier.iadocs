@@ -28,14 +28,14 @@ def execute_pipeline(portal, filepath):
         configuration_registry.getConfiguration(PIPELINE_ID)
     except KeyError:
         configuration_registry.registerConfiguration(PIPELINE_ID, u'', u'', filepath)
-    try:
-        transmogrifier = Transmogrifier(portal)
-        transmogrifier(PIPELINE_ID)
-    except Exception as error:
-        error_msg = u"type: '{}', msg: '{}'".format(type(error), error)
-        to_send = [u'Critical error during pipeline: {}'.format(error_msg)]
-#        send_report(portal, to_send)
-        raise error
+#     try:
+    transmogrifier = Transmogrifier(portal)
+    transmogrifier(PIPELINE_ID)
+#     except Exception as error:
+#         error_msg = u"type: '{}', msg: '{}'".format(type(error), error)
+#         to_send = [u'Critical error during pipeline: {}'.format(error_msg)]
+# #        send_report(portal, to_send)
+#         raise error
 
 
 if 'app' not in locals() or 'obj' not in locals():
@@ -50,6 +50,7 @@ args.pop(1)  # remove script name
 parser = argparse.ArgumentParser(description='Run ia.docs data transfer.')
 parser.add_argument('pipeline', help='Pipeline file')
 parser.add_argument('-c', '--commit', dest='commit', choices=('0', '1'), help='To commit changes (0, 1)')
+parser.add_argument('-p', '--parts', dest='parts', help='Parts to run (abc...)')
 ns = parser.parse_args()
 if not os.path.exists(ns.pipeline):
     stop("Given pipeline file '{}' doesn't exist".format(ns.pipeline), logger=logger)
@@ -57,7 +58,7 @@ if ns.commit is None or ns.commit == '0':
     ns.commit = False
 else:
     ns.commit = True
-options = {'commit': ns.commit}
+options = {'commit': ns.commit, 'parts': ns.parts or ''}
 portal = obj  # noqa
 portal.REQUEST.set('_transmo_options_', json.dumps(options))
 # get admin user
