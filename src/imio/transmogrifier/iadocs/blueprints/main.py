@@ -34,55 +34,59 @@ class Initialization(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
-        self.workingpath = get_main_path(safe_unicode(options.get('basepath', '')),
-                                         safe_unicode(options.get('subpath', '')))
         self.portal = transmogrifier.context
+        workingpath = get_main_path(safe_unicode(options.get('basepath', '')), safe_unicode(options.get('subpath', '')))
+        in_types = safe_unicode(transmogrifier['config'].get('internal_number_types', '')).split()
         # setting logs
-        efh = logging.FileHandler(os.path.join(self.workingpath, 'dt_input_errors.log'), mode='w')
+        efh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors.log'), mode='w')
         efh.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
         efh.setLevel(logging.INFO)
         e_logger.addHandler(efh)
-        ofh = logging.FileHandler(os.path.join(self.workingpath, 'dt_shortlog.log'), mode='w')
+        ofh = logging.FileHandler(os.path.join(workingpath, 'dt_shortlog.log'), mode='w')
         ofh.setFormatter(logging.Formatter('%(message)s'))
         ofh.setLevel(logging.INFO)
         o_logger.addHandler(ofh)
         run_options = json.loads(transmogrifier.context.REQUEST.get('_transmo_options_', '{}'))
         if run_options.get('commit'):
-            ecfh = logging.FileHandler(os.path.join(self.workingpath, 'dt_input_errors_commit.log'), mode='a')
+            ecfh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors_commit.log'), mode='a')
             ecfh.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
             ecfh.setLevel(logging.INFO)
             e_logger.addHandler(ecfh)
-            ocfh = logging.FileHandler(os.path.join(self.workingpath, 'dt_shortlog_commit.log'), mode='a')
+            ocfh = logging.FileHandler(os.path.join(workingpath, 'dt_shortlog_commit.log'), mode='a')
             ocfh.setFormatter(logging.Formatter('%(message)s'))
             ocfh.setLevel(logging.INFO)
             o_logger.addHandler(ocfh)
 
         # check package installation and configuration
-        if not self.portal.portal_quickinstaller.isProductInstalled('collective.behavior.internalnumber'):
-            self.portal.portal_setup.runAllImportStepsFromProfile('profile-collective.behavior.internalnumber:default',
-                                                                  dependency_strategy='new')
-            o_logger.info('Installed collective.behavior.internalnumber')
-        reg_key = 'collective.behavior.internalnumber.browser.settings.IInternalNumberConfig.portal_type_config'
-        inptc = list(api.portal.get_registry_record(reg_key))
-        if not [dic for dic in inptc if dic['portal_type'] == 'organization']:
-            inptc.append({'portal_type': 'organization', 'uniqueness': True, 'default_expression': None,
-                          'default_number': 1})
-            api.portal.set_registry_record(reg_key, inptc)
-            o_logger.info('Added internalnumber config for type organization')
-        fti = getattr(self.portal.portal_types, 'organization')
-        if 'collective.behavior.internalnumber.behavior.IInternalNumberBehavior' not in fti.behaviors:
-            old_bav = tuple(fti.behaviors)
-            fti.behaviors = tuple(list(fti.behaviors) +
-                                  ['collective.behavior.internalnumber.behavior.IInternalNumberBehavior'])
-            ftiModified(fti, ObjectModifiedEvent(fti, DexterityFTIModificationDescription('behaviors', old_bav)))
-            o_logger.info('Added internalnumber behavior on type organization')
+        import ipdb; ipdb.set_trace()
+        if in_types:
+            if not self.portal.portal_quickinstaller.isProductInstalled('collective.behavior.internalnumber'):
+                self.portal.portal_setup.runAllImportStepsFromProfile(
+                    'profile-collective.behavior.internalnumber:default', dependency_strategy='new')
+                o_logger.info('Installed collective.behavior.internalnumber')
+            reg_key = 'collective.behavior.internalnumber.browser.settings.IInternalNumberConfig.portal_type_config'
+            inptc = list(api.portal.get_registry_record(reg_key))
+            for typ in in_types:
+                if not [dic for dic in inptc if dic['portal_type'] == typ]:
+                    inptc.append({'portal_type': typ, 'uniqueness': True, 'default_expression': None,
+                                  'default_number': 1})
+                    api.portal.set_registry_record(reg_key, inptc)
+                    o_logger.info('Added internalnumber config for type {}'.format(typ))
+                fti = getattr(self.portal.portal_types, typ)
+                if 'collective.behavior.internalnumber.behavior.IInternalNumberBehavior' not in fti.behaviors:
+                    old_bav = tuple(fti.behaviors)
+                    fti.behaviors = tuple(list(fti.behaviors) +
+                                          ['collective.behavior.internalnumber.behavior.IInternalNumberBehavior'])
+                    ftiModified(fti, ObjectModifiedEvent(fti,
+                                                         DexterityFTIModificationDescription('behaviors', old_bav)))
+                    o_logger.info('Added internalnumber behavior on type {}'.format(typ))
 
         # set working path in portal annotation to retrieve log files
         annot = IAnnotations(self.portal).setdefault(ANNOTATION_KEY, {})
-        annot['wp'] = self.workingpath
+        annot['wp'] = workingpath
         # set global variables in annotation
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
-        self.storage['wp'] = self.workingpath
+        self.storage['wp'] = workingpath
         # find directory
         brains = api.content.find(portal_type='directory')
         if brains:
