@@ -90,6 +90,8 @@ class Initialization(object):
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
         self.storage['wp'] = workingpath
         self.storage['csvp'] = csvpath
+        self.storage['csv'] = {}
+        self.storage['data'] = {}
         self.storage['parts'] = run_options['parts']
         # find directory
         brains = api.content.find(portal_type='directory')
@@ -107,10 +109,10 @@ class Initialization(object):
             if not len(dir_org_config[typ]):
                 dir_org_config[typ] = OrderedDict([(u'Non défini', u'non-defini')])
             dir_org_config_len[typ] = len(dir_org_config[typ])
-        self.storage['dir_org_config'] = dir_org_config
-        self.storage['dir_org_config_len'] = dir_org_config_len
+        # self.storage['data']['dir_org_config'] = dir_org_config
+        # self.storage['data']['dir_org_config_len'] = dir_org_config_len
         # store services
-        self.storage['pg_orgs_all'], self.storage['pg_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
+        self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
 
     def __iter__(self):
         for item in self.previous:
