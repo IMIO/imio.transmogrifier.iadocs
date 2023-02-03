@@ -122,7 +122,8 @@ class Initialization(object):
 
 
 class CommonInputChecks(object):
-    """Checks input values.
+    """Checks input values of the corresponding external type.
+
     Parameters:
         * ext_type = O, external type string corresponding to csv
         * booleans = O, list of fields to transform in booleans
@@ -136,7 +137,7 @@ class CommonInputChecks(object):
         self.previous = previous
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.ext_type = safe_unicode(options.get('ext_type', ''))
-        fieldnames = self.storage['csv'][self.ext_type]['fd']
+        fieldnames = self.storage['csv'].get(self.ext_type, {}).get('fd', [])
         self.hyphens = [key for key in safe_unicode(options.get('hyphen_newline', '')).split() if key in fieldnames]
         self.booleans = [key for key in safe_unicode(options.get('booleans', '')).split() if key in fieldnames]
 
