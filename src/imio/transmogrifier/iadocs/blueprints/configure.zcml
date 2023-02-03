@@ -14,7 +14,7 @@
     />
 
   <utility
-    component=".csv_input.CSVReader"
+    component=".csv_files.CSVReader"
     name="imio.transmogrifier.iadocs.csv_reader"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />

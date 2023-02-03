@@ -28,6 +28,7 @@ class CSVReader(object):
         * ext_type = O, external type string representing csv
         * store_key = O, storing key for item. If defined, the item is not yielded but stored in storage[{ext_type}]
         * csv_headers = O, csv header line bool. Default: True
+        * csv_encoding = O, csv encoding. Default: utf8
         * dialect = O, csv dialect. Default: excel
         * fmtparam-strict = O, raises exception on row error. Default False.
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
@@ -43,6 +44,7 @@ class CSVReader(object):
             return
         self.csv_headers = Condition(options.get('csv_headers', 'python:True'), transmogrifier, name, options)
         self.dialect = safe_unicode(options.get('dialect', 'excel'))
+        self.csv_encoding = safe_unicode(options.get('csv_encoding', 'utf8'))
         self.roe = bool(int(options.get('raise_on_error', '1')))
         self.fmtparam = dict(
             (key[len('fmtparam-'):],
@@ -105,6 +107,9 @@ class CSVReader(object):
             for key in fieldnames:
                 if re.match(r'_[A-Z]{1,2}$', key):
                     del item[key]
+                else:
+                    item[key] = safe_unicode(item[key].strip(' '), encoding=self.csv_encoding)
+
             if store_key:
                 self.storage[item.pop('_etyp')][item.pop(store_key)] = item
             else:
