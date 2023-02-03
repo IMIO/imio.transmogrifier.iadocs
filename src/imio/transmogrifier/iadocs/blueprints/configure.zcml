@@ -8,14 +8,20 @@
     />
 
   <utility
-    name="imio.transmogrifier.iadocs.init"
-    component=".main.Initialization"
+    name="imio.transmogrifier.iadocs.common_input_checks"
+    component=".main.CommonInputChecks"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
   <utility
-    component=".csv_files.CSVReader"
     name="imio.transmogrifier.iadocs.csv_reader"
+    component=".csv_files.CSVReader"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
+    name="imio.transmogrifier.iadocs.init"
+    component=".main.Initialization"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
