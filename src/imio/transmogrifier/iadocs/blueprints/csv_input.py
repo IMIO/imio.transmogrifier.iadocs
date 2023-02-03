@@ -25,6 +25,8 @@ class CSVReader(object):
     Parameters:
         * filename = M, relative filename considering csvpath.
         * fieldnames = O, fieldnames.
+        * ext_type = O, external type string representing csv
+        * store_key = O, storing key for item. If defined, the item is not yielded but stored in storage[{ext_type}]
         * csv_headers = O, csv header line bool. Default: True
         * dialect = O, csv dialect. Default: excel
         * fmtparam-strict = O, raises exception on row error. Default False.
@@ -48,26 +50,32 @@ class CSVReader(object):
                  options, key=key[len('fmtparam-'):])) for key, value
             in six.iteritems(options) if key.startswith('fmtparam-'))
         fieldnames = safe_unicode(options.get('fieldnames', '')).split()
-        filename = safe_unicode(options.get('filename', ''))
-        if not filename:
-            raise Exception("filename option not defined")
-        if not os.path.isabs(filename):
-            filename = os.path.join(self.storage['csvp'], filename)
-        file_ = openFileReference(transmogrifier, filename)
+        self.filename = safe_unicode(options.get('filename', ''))
+        if not self.filename:
+            return
+        if not os.path.isabs(self.filename):
+            self.filename = os.path.join(self.storage['csvp'], self.filename)
+        file_ = openFileReference(transmogrifier, self.filename)
         if file_ is None:
-            raise Exception("Cannot open file '{}'".format(filename))
-        self.storage['csv'] = {'fp': filename, 'fh': file_, 'fn': os.path.basename(filename), 'fd': fieldnames,
-                               'et': u'services'}
+            raise Exception("Cannot open file '{}'".format(self.filename))
+        store_key = safe_unicode(options.get('store_key'))
+        ext_type = safe_unicode(options.get('ext_type', os.path.basename(self.filename)))
+        if store_key:
+            self.storage[ext_type] = {}
+        self.csv = {'fp': self.filename, 'fh': file_, 'fn': os.path.basename(self.filename),
+                    'fd': fieldnames, 'et': ext_type, 'sk': store_key}
 
     def __iter__(self):
         for item in self.previous:
             yield item
-        if not is_in_part(self, 'a'):
+        if not is_in_part(self, 'a') or not self.filename:
             return
-        fieldnames = self.storage['csv']['fd']
-        etyp = self.storage['csv']['et']
-        o_logger.info(u"Reading '{}'".format(self.storage['csv']['fp']))
-        reader = csv.DictReader(self.storage['csv']['fh'], dialect=self.dialect, fieldnames=fieldnames, restkey='_rest',
+        # storage = self.storage['{}_csv'.format(self.name)]
+        fieldnames = self.csv['fd']
+        etyp = self.csv['et']
+        store_key = self.csv['sk']
+        o_logger.info(u"Reading '{}'".format(self.csv['fp']))
+        reader = csv.DictReader(self.csv['fh'], dialect=self.dialect, fieldnames=fieldnames, restkey='_rest',
                                 restval='__NO_CO_LU_MN__', **self.fmtparam)
         for item in reader:
             item['_etyp'] = etyp
@@ -80,7 +88,7 @@ class CSVReader(object):
                               level='critical')
                     if self.roe:
                         raise Exception(u'Some columns for {} are not defined in fieldnames: {}'.format(
-                            self.storage['csv']['fn'], item['_rest']))
+                            self.csv['fn'], item['_rest']))
                     break
                 extra_cols = [key for (key, val) in item.items() if val == '__NO_CO_LU_MN__']
                 if extra_cols:
@@ -88,14 +96,17 @@ class CSVReader(object):
                               level='critical')
                     if self.roe:
                         raise Exception(u'To much columns for {} defined in fieldnames: {}'.format(
-                            self.storage['csv']['fn'], extra_cols))
+                            self.csv['fn'], extra_cols))
                     break
                 # pass headers if any
                 if self.csv_headers:
                     continue
-            # removing useless keys
+            # removing useless keys as _A or _AB
             for key in fieldnames:
                 if re.match(r'_[A-Z]{1,2}$', key):
                     del item[key]
-            yield item
-        self.storage['csv']['fh'].close()
+            if store_key:
+                self.storage[item.pop('_etyp')][item.pop(store_key)] = item
+            else:
+                yield item
+        self.csv['fh'].close()
