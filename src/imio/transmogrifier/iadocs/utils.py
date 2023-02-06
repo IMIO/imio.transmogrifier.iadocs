@@ -22,6 +22,10 @@ def encode_list(lst, encoding):
     return new_list
 
 
+def get_part(name):
+    return name[0:1]
+
+
 def get_plonegroup_orgs(portal, eid_fld='internal_number'):
     """get plonegroups organisations"""
     all_orgs = {}

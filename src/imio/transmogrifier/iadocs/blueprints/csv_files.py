@@ -7,6 +7,7 @@ from collective.transmogrifier.utils import openFileReference
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import encode_list
+from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from Products.CMFPlone.utils import safe_unicode
@@ -41,7 +42,8 @@ class CSVReader(object):
         self.previous = previous
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        if not is_in_part(self, 'a'):
+        self.part = get_part(name)
+        if not is_in_part(self, self.part):
             return
         self.csv_headers = Condition(options.get('csv_headers', 'python:True'), transmogrifier, name, options)
         self.dialect = safe_unicode(options.get('dialect', 'excel'))
@@ -71,7 +73,7 @@ class CSVReader(object):
     def __iter__(self):
         for item in self.previous:
             yield item
-        if not is_in_part(self, 'a') or not self.filename:
+        if not is_in_part(self, self.part) or not self.filename:
             return
         csv_d = self.storage['csv'][self.ext_type]
         fieldnames = csv_d['fd']
@@ -158,7 +160,8 @@ class CSVWriter(object):
         self.previous = previous
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        if not is_in_part(self, 'a'):
+        self.part = get_part(name)
+        if not is_in_part(self, self.part):
             return
         self.doit = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
         self.filename = safe_unicode(options.get('filename', ''))
@@ -183,7 +186,7 @@ class CSVWriter(object):
     def __iter__(self):
         csv_d = self.storage['csv'].get(self.ext_type)
         for item in self.previous:
-            if self.doit(item, storage=self.storage):
+            if is_in_part(self, self.part) and self.doit(item, storage=self.storage):
                 if self.store_key:
                     if csv_d['fh'] is None:  # only doing one time
                         for (key, dv) in sorted(self.storage['data'][self.ext_type].items(),
