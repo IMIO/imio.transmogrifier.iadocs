@@ -20,6 +20,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.csv_writer"
+    component=".csv_files.CSVWriter"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.init"
     component=".main.Initialization"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

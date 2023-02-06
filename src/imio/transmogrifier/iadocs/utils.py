@@ -7,6 +7,21 @@ from imio.transmogrifier.iadocs import e_logger
 from plone import api
 
 
+def encode_list(lst, encoding):
+    """Encode a list following encoding.
+
+    :param lst: lst to transform
+    :param encoding: encoding
+    :return: new list
+    """
+    new_list = []
+    for content in lst:
+        if isinstance(content, unicode):  #
+            content = content.encode(encoding)
+        new_list.append(content)
+    return new_list
+
+
 def get_plonegroup_orgs(portal, eid_fld='internal_number'):
     """get plonegroups organisations"""
     all_orgs = {}

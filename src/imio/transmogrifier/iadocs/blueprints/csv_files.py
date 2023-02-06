@@ -6,6 +6,7 @@ from collective.transmogrifier.utils import Expression
 from collective.transmogrifier.utils import openFileReference
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import encode_list
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from Products.CMFPlone.utils import safe_unicode
@@ -116,4 +117,81 @@ class CSVReader(object):
                 self.storage['data'][item.pop('_etyp')][item.pop(store_key)] = item
             else:
                 yield item
-        csv_d['fh'].close()
+        if csv_d['fh'] is not None:
+            csv_d['fh'].close()
+            csv_d['fh'] = None
+
+
+def writerow(csv_d, item):
+    """Write item in csv"""
+    if csv_d['fh'] is None:
+        try:
+            csv_d['fh'] = open(csv_d['fp'], mode='wb')
+        except IOError as m:
+            raise Exception("Cannot create file '{}': {}".format(csv_d['fp'], m))
+        o_logger.info(u"Writing '{}'".format(csv_d['fp']))
+        csv_d['wh'] = csv.writer(csv_d['fh'], **csv_d['wp'])
+        if csv_d['hd']:
+            csv_d['wh'].writerow(encode_list(csv_d['hd'], csv_d['we']))
+    csv_d['wh'].writerow(encode_list([item[fd] for fd in csv_d['fd']], csv_d['we']))
+
+
+class CSVWriter(object):
+    """Writes a csv file.
+
+    Parameters:
+        * filename = M, relative filename considering csvpath.
+        * fieldnames = M, fieldnames.
+        * headers = O, headers.
+        * ext_type = O, type string representing csv.
+        * store_key = O, storing key for item. If defined, the item is not yielded but stored in storage[{ext_type}].
+        * store_key_sort = 0, field to sort on. Otherwise, the store key.
+        * csv_encoding = O, csv encoding. Default: utf8.
+        * dialect = O, csv dialect. Default: excel.
+        * fmtparam-strict = O, raises exception on row error. Default False.
+        * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.transmogrifier = transmogrifier
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        if not is_in_part(self, 'a'):
+            return
+        self.filename = safe_unicode(options.get('filename', ''))
+        if not os.path.isabs(self.filename):
+            self.filename = os.path.join(self.storage['csvp'], self.filename)
+        fieldnames = safe_unicode(options.get('fieldnames', '')).split()
+        headers = safe_unicode(options.get('headers', '')).split()
+        csv_encoding = safe_unicode(options.get('csv_encoding', 'utf8'))
+        fmtparam = dict(
+            (key[len('fmtparam-'):],
+             Expression(value, transmogrifier, name, options)(
+                 options, key=key[len('fmtparam-'):])) for key, value
+            in six.iteritems(options) if key.startswith('fmtparam-'))
+        fmtparam['dialect'] = safe_unicode(options.get('dialect', 'excel'))
+        self.store_key = safe_unicode(options.get('store_key'))
+        self.ext_type = safe_unicode(options.get('ext_type'))
+        self.sort_key = safe_unicode(options.get('store_key_sort') or '_no_special_sort_key_')
+        self.storage['csv'][self.ext_type] = {'fp': self.filename, 'fh': None, 'fn': os.path.basename(self.filename),
+                                              'wh': None, 'wp': fmtparam, 'we': csv_encoding,
+                                              'fd': fieldnames, 'hd': headers}
+
+    def __iter__(self):
+        csv_d = self.storage['csv'][self.ext_type]
+        for item in self.previous:
+            if self.store_key:
+                if csv_d['fh'] is None:  # only doing one time
+                    for (key, dv) in sorted(self.storage['data'][self.ext_type].items(),
+                                            key=lambda tup: tup[1].get(self.sort_key, tup[0])):
+                        extra_dic = dict(dv)
+                        extra_dic.update({self.store_key: key})
+                        writerow(self.storage['csv'][self.ext_type], extra_dic)
+            else:
+                writerow(csv_d, item)
+            yield item
+        if csv_d['fh'] is not None:
+            csv_d['fh'].close()
+            csv_d['fh'] = None
