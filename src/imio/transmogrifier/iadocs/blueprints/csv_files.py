@@ -25,6 +25,7 @@ class CSVReader(object):
     """Reads a csv file.
 
     Parameters:
+        * condition = O, condition expression (available: filename, os)
         * filename = M, relative filename considering csvpath.
         * fieldnames = O, fieldnames.
         * ext_type = O, external type string representing csv
@@ -60,6 +61,10 @@ class CSVReader(object):
             return
         if not os.path.isabs(self.filename):
             self.filename = os.path.join(self.storage['csvp'], self.filename)
+        condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
+        if not condition(None, filename=self.filename, os=os):
+            self.filename = None
+            return
         file_ = openFileReference(transmogrifier, self.filename)
         if file_ is None:
             raise Exception("Cannot open file '{}'".format(self.filename))
@@ -142,6 +147,7 @@ class CSVWriter(object):
     """Writes a csv file.
 
     Parameters:
+        * condition = O, condition expression (available: storage)
         * filename = M, relative filename considering csvpath.
         * fieldnames = M, fieldnames.
         * headers = O, headers.
