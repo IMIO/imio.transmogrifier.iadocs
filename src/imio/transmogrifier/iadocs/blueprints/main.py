@@ -85,9 +85,6 @@ class Initialization(object):
                                                          DexterityFTIModificationDescription('behaviors', old_bav)))
                     o_logger.info('Added internalnumber behavior on type {}'.format(typ))
 
-        # set working path in portal annotation to retrieve log files
-        annot = IAnnotations(self.portal).setdefault(ANNOTATION_KEY, {})
-        annot['wp'] = workingpath
         # set global variables in annotation
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
         self.storage['wp'] = workingpath

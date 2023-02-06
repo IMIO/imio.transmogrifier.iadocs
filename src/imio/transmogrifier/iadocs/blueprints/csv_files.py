@@ -101,7 +101,7 @@ class CSVReader(object):
                             csv_d['fn'], extra_cols))
                     break
                 # pass headers if any
-                if self.csv_headers:
+                if self.csv_headers(None):
                     continue
             # removing useless keys as _A or _AB
             good_fieldnames = []
@@ -160,6 +160,7 @@ class CSVWriter(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         if not is_in_part(self, 'a'):
             return
+        self.doit = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
         self.filename = safe_unicode(options.get('filename', ''))
         if not os.path.isabs(self.filename):
             self.filename = os.path.join(self.storage['csvp'], self.filename)
@@ -180,18 +181,19 @@ class CSVWriter(object):
                                               'fd': fieldnames, 'hd': headers}
 
     def __iter__(self):
-        csv_d = self.storage['csv'][self.ext_type]
+        csv_d = self.storage['csv'].get(self.ext_type)
         for item in self.previous:
-            if self.store_key:
-                if csv_d['fh'] is None:  # only doing one time
-                    for (key, dv) in sorted(self.storage['data'][self.ext_type].items(),
-                                            key=lambda tup: tup[1].get(self.sort_key, tup[0])):
-                        extra_dic = dict(dv)
-                        extra_dic.update({self.store_key: key})
-                        writerow(self.storage['csv'][self.ext_type], extra_dic)
-            else:
-                writerow(csv_d, item)
+            if self.doit(item, storage=self.storage):
+                if self.store_key:
+                    if csv_d['fh'] is None:  # only doing one time
+                        for (key, dv) in sorted(self.storage['data'][self.ext_type].items(),
+                                                key=lambda tup: tup[1].get(self.sort_key, tup[0])):
+                            extra_dic = dict(dv)
+                            extra_dic.update({self.store_key: key})
+                            writerow(self.storage['csv'][self.ext_type], extra_dic)
+                else:
+                    writerow(csv_d, item)
             yield item
-        if csv_d['fh'] is not None:
+        if csv_d.get('fh') is not None:
             csv_d['fh'].close()
             csv_d['fh'] = None
