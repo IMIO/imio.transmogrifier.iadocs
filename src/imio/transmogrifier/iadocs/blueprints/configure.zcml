@@ -2,6 +2,12 @@
     xmlns="http://namespaces.zope.org/zope">
 
   <utility
+    name="imio.transmogrifier.iadocs.a_service_creation"
+    component=".handlers.ServiceCreation"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.breakpoint"
     component=".various.BreakpointSection"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
