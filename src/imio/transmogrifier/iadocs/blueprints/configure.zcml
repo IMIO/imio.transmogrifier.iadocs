@@ -2,8 +2,8 @@
     xmlns="http://namespaces.zope.org/zope">
 
   <utility
-    name="imio.transmogrifier.iadocs.a_service_creation"
-    component=".handlers.ServiceCreation"
+    name="imio.transmogrifier.iadocs.a_service_update"
+    component=".handlers.ServiceUpdate"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
