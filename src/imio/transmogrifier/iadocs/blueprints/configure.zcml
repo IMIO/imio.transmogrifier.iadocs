@@ -9,13 +9,19 @@
 
   <utility
     name="imio.transmogrifier.iadocs.breakpoint"
-    component=".various.BreakpointSection"
+    component=".various.Breakpoint"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
   <utility
     name="imio.transmogrifier.iadocs.common_input_checks"
     component=".main.CommonInputChecks"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
+    name="imio.transmogrifier.iadocs.count"
+    component=".various.Count"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
@@ -45,7 +51,7 @@
 
   <utility
     name="imio.transmogrifier.iadocs.stop"
-    component=".various.StopSection"
+    component=".various.Stop"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
