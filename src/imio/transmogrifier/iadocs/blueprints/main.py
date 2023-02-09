@@ -92,11 +92,12 @@ class Initialization(object):
         self.storage['csv'] = {}
         self.storage['data'] = {}
         self.storage['parts'] = run_options['parts']
+        self.storage['plone'] = {}
         # find directory
         brains = api.content.find(portal_type='directory')
         if brains:
-            self.storage['directory'] = brains[0].getObject()
-            self.storage['directory_path'] = relative_path(self.portal, brains[0].getPath())
+            self.storage['plone']['directory'] = brains[0].getObject()
+            self.storage['plone']['directory_path'] = relative_path(self.portal, brains[0].getPath())
         else:
             raise Exception("{}: Directory not found !".format(name))
         # store directory configuration
@@ -104,7 +105,7 @@ class Initialization(object):
         dir_org_config_len = {}
         for typ in ['types', 'levels']:
             dir_org_config[typ] = OrderedDict([(safe_unicode(t['name']), safe_unicode(t['token'])) for t in
-                                               getattr(self.storage['directory'], 'organization_%s' % typ)])
+                                               getattr(self.storage['plone']['directory'], 'organization_%s' % typ)])
             if not len(dir_org_config[typ]):
                 dir_org_config[typ] = OrderedDict([(u'Non défini', u'non-defini')])
             dir_org_config_len[typ] = len(dir_org_config[typ])
