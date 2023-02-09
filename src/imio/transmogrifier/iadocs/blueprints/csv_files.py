@@ -166,6 +166,7 @@ class CSVWriter(object):
         self.previous = previous
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.ext_type = safe_unicode(options.get('ext_type'))
         self.part = get_part(name)
         if not is_in_part(self, self.part):
             return
@@ -183,7 +184,6 @@ class CSVWriter(object):
             in six.iteritems(options) if key.startswith('fmtparam-'))
         fmtparam['dialect'] = safe_unicode(options.get('dialect', 'excel'))
         self.store_key = safe_unicode(options.get('store_key'))
-        self.ext_type = safe_unicode(options.get('ext_type'))
         self.sort_key = safe_unicode(options.get('store_key_sort') or '_no_special_sort_key_')
         self.storage['csv'][self.ext_type] = {'fp': self.filename, 'fh': None, 'fn': os.path.basename(self.filename),
                                               'wh': None, 'wp': fmtparam, 'we': csv_encoding,
@@ -203,6 +203,6 @@ class CSVWriter(object):
                 else:
                     writerow(csv_d, item)
             yield item
-        if csv_d.get('fh') is not None:
+        if csv_d is not None and csv_d.get('fh') is not None:
             csv_d['fh'].close()
             csv_d['fh'] = None
