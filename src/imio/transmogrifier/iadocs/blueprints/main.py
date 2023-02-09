@@ -93,6 +93,8 @@ class Initialization(object):
         self.storage['data'] = {}
         self.storage['parts'] = run_options['parts']
         self.storage['plone'] = {}
+        # store parts on transmogrifier, so it can be used with standard condition
+        transmogrifier.parts = self.storage['parts']
         # find directory
         brains = api.content.find(portal_type='directory')
         if brains:
