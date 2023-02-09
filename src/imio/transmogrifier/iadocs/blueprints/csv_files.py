@@ -29,7 +29,6 @@ class CSVReader(object):
         * filename = M, relative filename considering csvpath.
         * fieldnames = O, fieldnames.
         * ext_type = O, external type string representing csv
-        * store_key = O, storing key for item. If defined, the item is not yielded but stored in storage[{ext_type}]
         * csv_headers = O, csv header line bool. Default: True
         * csv_encoding = O, csv encoding. Default: utf8
         * dialect = O, csv dialect. Default: excel
@@ -68,12 +67,9 @@ class CSVReader(object):
         file_ = openFileReference(transmogrifier, self.filename)
         if file_ is None:
             raise Exception("Cannot open file '{}'".format(self.filename))
-        store_key = safe_unicode(options.get('store_key'))
         self.ext_type = safe_unicode(options.get('ext_type', os.path.basename(self.filename)))
-        if store_key:
-            self.storage['data'][self.ext_type] = {}
         self.storage['csv'][self.ext_type] = {'fp': self.filename, 'fh': file_, 'fn': os.path.basename(self.filename),
-                                              'fd': fieldnames, 'sk': store_key}
+                                              'fd': fieldnames}
 
     def __iter__(self):
         for item in self.previous:
@@ -82,7 +78,6 @@ class CSVReader(object):
             return
         csv_d = self.storage['csv'][self.ext_type]
         fieldnames = csv_d['fd']
-        store_key = csv_d['sk']
         o_logger.info(u"Reading '{}'".format(csv_d['fp']))
         reader = csv.DictReader(csv_d['fh'], dialect=self.dialect, fieldnames=fieldnames, restkey='_rest',
                                 restval='__NO_CO_LU_MN__', **self.fmtparam)
@@ -120,10 +115,8 @@ class CSVReader(object):
                     good_fieldnames.append(key)
             csv_d['fd'] = good_fieldnames
 
-            if store_key:
-                self.storage['data'][item.pop('_etyp')][item.pop(store_key)] = item
-            else:
-                yield item
+            yield item
+
         if csv_d['fh'] is not None:
             csv_d['fh'].close()
             csv_d['fh'] = None

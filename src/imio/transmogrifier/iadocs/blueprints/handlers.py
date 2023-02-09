@@ -6,13 +6,14 @@ from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
+from Products.CMFPlone.utils import safe_unicode
 from zope.annotation import IAnnotations
 from zope.interface import classProvides
 from zope.interface import implements
 
 
 class ServiceUpdate(object):
-    """Initializes global variables to be used in next sections.
+    """Update plonegroup services with external id value.
 
     Parameters:
     """
@@ -32,7 +33,7 @@ class ServiceUpdate(object):
 
     def __iter__(self):
         for item in self.previous:
-            if is_in_part(self, 'a'):
+            if is_in_part(self, self.part):
                 if item['_eid'] not in self.eid_to_orgs:  # eid not yet in Plone
                     if item['_eid'] in self.match:
                         uid = self.match[item['_eid']]['uid']
@@ -48,3 +49,37 @@ class ServiceUpdate(object):
             yield item
         # store services after plonegroup changes
         self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
+
+
+class StoreInData(object):
+    """Store items in a dictionary.
+
+    Parameters:
+        * ext_type = M, external type string representing csv
+        * store_key = M, storing key for item. If defined, the item is not yielded but stored in storage[{ext_type}]
+        * yield = O, flag to know if a yield must be done (0 or 1: default 0)
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.part = get_part(name)
+        if not is_in_part(self, self.part):
+            return
+        self.store_key = safe_unicode(options['store_key'])
+        self.ext_type = safe_unicode(options['ext_type'])
+        self.yld = bool(int(options.get('yield', '0')))
+        self.storage['data'][self.ext_type] = {}
+
+    def __iter__(self):
+        for item in self.previous:
+            if is_in_part(self, self.part):
+                main_key = item.pop('_etyp')
+                sec_key = item.pop(self.store_key)
+                self.storage['data'][main_key][sec_key] = item
+                if not self.yld:
+                    continue
+            yield item

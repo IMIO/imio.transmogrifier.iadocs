@@ -8,6 +8,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.store_in_data"
+    component=".handlers.StoreInData"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.breakpoint"
     component=".various.Breakpoint"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
