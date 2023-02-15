@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
+from collective.transmogrifier.utils import Condition
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
+from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
 from imio.transmogrifier.iadocs.utils import is_in_part
@@ -69,6 +71,7 @@ class StoreInData(object):
         self.part = get_part(name)
         if not is_in_part(self, self.part):
             return
+        self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
         self.store_key = safe_unicode(options['store_key'])
         self.ext_type = safe_unicode(options['ext_type'])
         self.yld = bool(int(options.get('yield', '0')))
@@ -76,7 +79,8 @@ class StoreInData(object):
 
     def __iter__(self):
         for item in self.previous:
-            if is_in_part(self, self.part):
+            # o_logger.info('In store')
+            if is_in_part(self, self.part) and self.condition(item):
                 main_key = item.pop('_etyp')
                 sec_key = item.pop(self.store_key)
                 self.storage['data'][main_key][sec_key] = item
