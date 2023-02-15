@@ -22,6 +22,19 @@ def encode_list(lst, encoding):
     return new_list
 
 
+def get_mailtypes(portal):
+    """Get mail types and send_mode"""
+    itf = 'imio.dms.mail.browser.settings.IImioDmsMailConfig'
+    mailtypes = {}
+    for key, rec in (('te', '{}.mail_types'.format(itf)), ('ts', '{}.omail_types'.format(itf)),
+                     ('fe', '{}.omail_send_modes'.format(itf))):
+        mailtypes[key] = {}
+        for dic in api.portal.get_registry_record(rec):
+            dico = dict(dic)
+            mailtypes[key][dico.pop('value')] = dico
+    return mailtypes
+
+
 def get_part(name):
     return name[0:1]
 
@@ -43,6 +56,18 @@ def get_plonegroup_orgs(portal, eid_fld='internal_number'):
         if eid:
             eid_to_orgs[eid] = term.value
     return all_orgs, eid_to_orgs
+
+
+def get_values_string(item, keys, sep=u':'):
+    """Return a string value corresponding to multiple keys
+
+    :param item: yielded item (dict)
+    :param keys: item keys
+    :param sep: separator
+    :return: string
+    """
+    ret = [item.get(key, u'') for key in keys]  # noqa
+    return sep.join(ret)
 
 
 def is_in_part(section, part):

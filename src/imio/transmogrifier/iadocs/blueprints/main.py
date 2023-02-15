@@ -8,6 +8,7 @@ from imio.helpers.transmogrifier import text_int_to_bool
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
 from imio.transmogrifier.iadocs.utils import log_error
 from plone import api
@@ -115,6 +116,8 @@ class Initialization(object):
         # self.storage['data']['dir_org_config_len'] = dir_org_config_len
         # store services
         self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
+        # store mailtypes
+        self.storage['data']['p_mailtype'] = get_mailtypes(self.portal)
 
     def __iter__(self):
         for item in self.previous:
