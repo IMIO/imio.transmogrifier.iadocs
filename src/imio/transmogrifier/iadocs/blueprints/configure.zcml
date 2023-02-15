@@ -8,12 +8,6 @@
     />
 
   <utility
-    name="imio.transmogrifier.iadocs.store_in_data"
-    component=".handlers.StoreInData"
-    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
-    />
-
-  <utility
     name="imio.transmogrifier.iadocs.breakpoint"
     component=".various.Breakpoint"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
@@ -22,6 +16,12 @@
   <utility
     name="imio.transmogrifier.iadocs.common_input_checks"
     component=".main.CommonInputChecks"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
+    name="imio.transmogrifier.iadocs.condition"
+    component=".various.EnhancedCondition"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
@@ -58,6 +58,12 @@
   <utility
     name="imio.transmogrifier.iadocs.stop"
     component=".various.Stop"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
+    name="imio.transmogrifier.iadocs.store_in_data"
+    component=".handlers.StoreInData"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 

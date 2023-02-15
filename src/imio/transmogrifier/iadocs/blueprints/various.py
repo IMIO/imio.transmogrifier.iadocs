@@ -72,6 +72,22 @@ class Count(object):
         #     o_logger.info("{} '{}' = {}".format(self.name, group, self.storage['count'][self.name][group]['c']))
 
 
+class EnhancedCondition(object):
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        condition = options['condition']
+        self.condition = Condition(condition, transmogrifier, name, options)
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.previous = previous
+
+    def __iter__(self):
+        for item in self.previous:
+            if self.condition(item, storage=self.storage):
+                yield item
+
+
 class ShortLog(object):
     """Logs shortly item."""
     classProvides(ISectionBlueprint)
