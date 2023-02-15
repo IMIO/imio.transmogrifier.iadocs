@@ -6,6 +6,7 @@ from imio.helpers.transmogrifier import filter_keys
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
+from imio.transmogrifier.iadocs.utils import get_values_string
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from Products.CMFPlone.utils import safe_unicode
@@ -58,7 +59,7 @@ class StoreInData(object):
 
     Parameters:
         * ext_type = M, external type string representing csv
-        * store_key = M, storing key for item. If defined, the item is not yielded but stored in storage[{ext_type}]
+        * store_key = M, storing keys for item. If defined, the item is stored in storage[{ext_type}]
         * yield = O, flag to know if a yield must be done (0 or 1: default 0)
     """
     classProvides(ISectionBlueprint)
@@ -73,7 +74,8 @@ class StoreInData(object):
         if not is_in_part(self, self.part):
             return
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
-        self.store_key = safe_unicode(options['store_key'])
+        self.store_key = safe_unicode(options['store_key']).split()
+        self.store_subkey = safe_unicode(options.get('store_subkey'))
         self.ext_type = safe_unicode(options['ext_type'])
         self.fieldnames = safe_unicode(options.get('fieldnames', '')).split()
         self.yld = bool(int(options.get('yield', '0')))
@@ -85,8 +87,13 @@ class StoreInData(object):
             if is_in_part(self, self.part) and self.condition(item):
                 # if not self.fieldnames and item['_etyp'] == self.ext_type:
                 #     del item['_etyp']
-                sec_key = item.pop(self.store_key)
-                self.storage['data'][self.ext_type][sec_key] = filter_keys(item, self.fieldnames)
+                # key = get_values_string(item, self.store_key)
+                key = item.pop(self.store_key)
+                if self.store_subkey:
+                    subkey = item.get(self.store_subkey)
+                    self.storage['data'][self.ext_type].setdefault(key, {})[subkey] = filter_keys(item, self.fieldnames)
+                else:
+                    self.storage['data'][self.ext_type][key] = filter_keys(item, self.fieldnames)
                 if not self.yld:
                     continue
             yield item

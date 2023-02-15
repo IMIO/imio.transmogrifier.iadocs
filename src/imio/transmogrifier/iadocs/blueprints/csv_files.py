@@ -177,10 +177,16 @@ class CSVWriter(object):
             in six.iteritems(options) if key.startswith('fmtparam-'))
         fmtparam['dialect'] = safe_unicode(options.get('dialect', 'excel'))
         self.store_key = safe_unicode(options.get('store_key'))
+        self.store_subkey = safe_unicode(options.get('store_subkey'))
         self.sort_key = safe_unicode(options.get('store_key_sort') or '_no_special_sort_key_')
         self.storage['csv'][self.ext_type] = {'fp': self.filename, 'fh': None, 'fn': os.path.basename(self.filename),
                                               'wh': None, 'wp': fmtparam, 'we': csv_encoding,
                                               'fd': fieldnames, 'hd': headers}
+
+    def _row(self, dicv, extend):
+        extra_dic = dict(dicv)
+        extra_dic.update(extend)
+        writerow(self.storage['csv'][self.ext_type], extra_dic)
 
     def __iter__(self):
         csv_d = self.storage['csv'].get(self.ext_type)
@@ -190,9 +196,12 @@ class CSVWriter(object):
                     if csv_d['fh'] is None:  # only doing one time
                         for (key, dv) in sorted(self.storage['data'][self.ext_type].items(),
                                                 key=lambda tup: tup[1].get(self.sort_key, tup[0])):
-                            extra_dic = dict(dv)
-                            extra_dic.update({self.store_key: key})
-                            writerow(self.storage['csv'][self.ext_type], extra_dic)
+                            if self.store_subkey:
+                                for (subkey, sdv) in sorted(dv.items(),
+                                                            key=lambda tup: tup[1].get(self.sort_key, tup[0])):
+                                    self._row(sdv, {self.store_key: key, self.store_subkey: subkey})
+                            else:
+                                self._row(dv, {self.store_key: key})
                 else:
                     writerow(csv_d, item)
             yield item
