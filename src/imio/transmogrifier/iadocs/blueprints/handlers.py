@@ -2,8 +2,8 @@
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
+from imio.helpers.transmogrifier import filter_keys
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
-from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
 from imio.transmogrifier.iadocs.utils import is_in_part
@@ -66,6 +66,7 @@ class StoreInData(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.part = get_part(name)
@@ -74,16 +75,18 @@ class StoreInData(object):
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
         self.store_key = safe_unicode(options['store_key'])
         self.ext_type = safe_unicode(options['ext_type'])
+        self.fieldnames = safe_unicode(options.get('fieldnames', '')).split()
         self.yld = bool(int(options.get('yield', '0')))
-        self.storage['data'][self.ext_type] = {}
+        if self.ext_type not in self.storage['data']:
+            self.storage['data'][self.ext_type] = {}
 
     def __iter__(self):
         for item in self.previous:
-            # o_logger.info('In store')
             if is_in_part(self, self.part) and self.condition(item):
-                main_key = item.pop('_etyp')
+                # if not self.fieldnames and item['_etyp'] == self.ext_type:
+                #     del item['_etyp']
                 sec_key = item.pop(self.store_key)
-                self.storage['data'][main_key][sec_key] = item
+                self.storage['data'][self.ext_type][sec_key] = filter_keys(item, self.fieldnames)
                 if not self.yld:
                     continue
             yield item
