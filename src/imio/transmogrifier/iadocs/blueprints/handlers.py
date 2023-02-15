@@ -15,7 +15,7 @@ from zope.interface import classProvides
 from zope.interface import implements
 
 
-class ServiceUpdate(object):
+class AServiceUpdate(object):
     """Update plonegroup services with external id value.
 
     Parameters:
@@ -54,6 +54,33 @@ class ServiceUpdate(object):
         self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
 
 
+class BMailtypesByType(object):
+    """Modify mailtypes items following use.
+
+    Parameters:
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.part = get_part(name)
+        if not is_in_part(self, self.part):
+            return
+        self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
+
+    def __iter__(self):
+        for item in self.previous:
+            if is_in_part(self, self.part) and self.condition(item, storage=self.storage):
+                for _etype in self.storage['data']['e_used_mailtype'][item['_eid']]:
+                    item['_etype'] = _etype
+                    yield item
+                continue
+            yield item
+
+
 class StoreInData(object):
     """Store items in a dictionary.
 
@@ -74,7 +101,8 @@ class StoreInData(object):
         if not is_in_part(self, self.part):
             return
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
-        self.store_key = safe_unicode(options['store_key']).split()
+        # self.store_key = safe_unicode(options['store_key']).split()
+        self.store_key = safe_unicode(options['store_key'])
         self.store_subkey = safe_unicode(options.get('store_subkey'))
         self.ext_type = safe_unicode(options['ext_type'])
         self.fieldnames = safe_unicode(options.get('fieldnames', '')).split()

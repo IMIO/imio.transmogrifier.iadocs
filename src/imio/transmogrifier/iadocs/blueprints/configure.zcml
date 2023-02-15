@@ -3,7 +3,13 @@
 
   <utility
     name="imio.transmogrifier.iadocs.a_service_update"
-    component=".handlers.ServiceUpdate"
+    component=".handlers.AServiceUpdate"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
+    name="imio.transmogrifier.iadocs.b_1_mailtype_by_type"
+    component=".handlers.BMailtypesByType"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
