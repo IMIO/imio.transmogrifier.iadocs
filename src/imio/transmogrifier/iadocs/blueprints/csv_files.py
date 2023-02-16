@@ -27,12 +27,13 @@ class CSVReader(object):
     Parameters:
         * condition = O, condition expression (available: filename)
         * filename = M, relative filename considering csvpath.
-        * fieldnames = O, fieldnames.
-        * ext_type = O, external type string representing csv
+        * fieldnames = M, fieldnames.
+        * ext_type = M, external type string representing csv
         * csv_headers = O, csv header line bool. Default: True
         * csv_encoding = O, csv encoding. Default: utf8
         * dialect = O, csv dialect. Default: excel
         * fmtparam-strict = O, raises exception on row error. Default False.
+        * none_value = O, value to replace by None.
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
     """
     classProvides(ISectionBlueprint)
@@ -45,29 +46,30 @@ class CSVReader(object):
         self.part = get_part(name)
         if not is_in_part(self, self.part):
             return
-        self.csv_headers = Condition(options.get('csv_headers', 'python:True'), transmogrifier, name, options)
-        self.dialect = safe_unicode(options.get('dialect', 'excel'))
-        self.csv_encoding = safe_unicode(options.get('csv_encoding', 'utf8'))
-        self.roe = bool(int(options.get('raise_on_error', '1')))
+        self.csv_headers = Condition(options.get('csv_headers') or 'python:True', transmogrifier, name, options)
+        self.dialect = safe_unicode(options.get('dialect') or 'excel')
+        self.csv_encoding = safe_unicode(options.get('csv_encoding') or 'utf8')
+        self.none_value = safe_unicode(options.get('none_value') or transmogrifier['config'].get('none_value'))
+        self.roe = bool(int(options.get('raise_on_error') or '1'))
         self.fmtparam = dict(
             (key[len('fmtparam-'):],
              Expression(value, transmogrifier, name, options)(
                  options, key=key[len('fmtparam-'):])) for key, value
             in six.iteritems(options) if key.startswith('fmtparam-'))
-        fieldnames = safe_unicode(options.get('fieldnames', '')).split()
-        self.filename = safe_unicode(options.get('filename', ''))
+        fieldnames = safe_unicode(options['fieldnames']).split()
+        self.filename = safe_unicode(options['filename'])
         if not self.filename:
             return
         if not os.path.isabs(self.filename):
             self.filename = os.path.join(self.storage['csvp'], self.filename)
-        condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
+        condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         if not condition(None, filename=self.filename):
             self.filename = None
             return
         file_ = openFileReference(transmogrifier, self.filename)
         if file_ is None:
             raise Exception("Cannot open file '{}'".format(self.filename))
-        self.ext_type = safe_unicode(options.get('ext_type', os.path.basename(self.filename)))
+        self.ext_type = safe_unicode(options['ext_type'])
         self.storage['csv'][self.ext_type] = {'fp': self.filename, 'fh': file_, 'fn': os.path.basename(self.filename),
                                               'fd': fieldnames}
 
@@ -112,6 +114,8 @@ class CSVReader(object):
                     del item[key]
                 else:
                     item[key] = safe_unicode(item[key].strip(' '), encoding=self.csv_encoding)
+                    if self.none_value and item[key] == self.none_value:
+                        item[key] = None
                     good_fieldnames.append(key)
             csv_d['fd'] = good_fieldnames
 
@@ -144,7 +148,7 @@ class CSVWriter(object):
         * filename = M, relative filename considering csvpath.
         * fieldnames = M, fieldnames.
         * headers = O, headers.
-        * ext_type = O, type string representing csv.
+        * ext_type = M, type string representing csv.
         * store_key = O, storing key for item. If defined, the item is not yielded but stored in storage[{ext_type}].
         * store_key_sort = 0, field to sort on. Otherwise, the store key.
         * csv_encoding = O, csv encoding. Default: utf8.
@@ -159,23 +163,23 @@ class CSVWriter(object):
         self.previous = previous
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.ext_type = safe_unicode(options.get('ext_type'))
+        self.ext_type = safe_unicode(options['ext_type'])
         self.part = get_part(name)
         if not is_in_part(self, self.part):
             return
-        self.doit = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
-        self.filename = safe_unicode(options.get('filename', ''))
+        self.doit = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.filename = safe_unicode(options['filename'])
         if not os.path.isabs(self.filename):
             self.filename = os.path.join(self.storage['csvp'], self.filename)
-        fieldnames = safe_unicode(options.get('fieldnames', '')).split()
-        headers = safe_unicode(options.get('headers', '')).split()
-        csv_encoding = safe_unicode(options.get('csv_encoding', 'utf8'))
+        fieldnames = safe_unicode(options['fieldnames']).split()
+        headers = safe_unicode(options.get('headers') or '').split()
+        csv_encoding = safe_unicode(options.get('csv_encoding') or 'utf8')
         fmtparam = dict(
             (key[len('fmtparam-'):],
              Expression(value, transmogrifier, name, options)(
                  options, key=key[len('fmtparam-'):])) for key, value
             in six.iteritems(options) if key.startswith('fmtparam-'))
-        fmtparam['dialect'] = safe_unicode(options.get('dialect', 'excel'))
+        fmtparam['dialect'] = safe_unicode(options.get('dialect') or 'excel')
         self.store_key = safe_unicode(options.get('store_key'))
         self.store_subkey = safe_unicode(options.get('store_subkey'))
         self.sort_key = safe_unicode(options.get('store_key_sort') or '_no_special_sort_key_')
