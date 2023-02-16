@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import os
+
 from collective.contact.plonegroup.browser.settings import BaseOrganizationServicesVocabulary
 from collective.contact.plonegroup.config import get_registry_organizations
 from imio.helpers.content import uuidToObject
@@ -68,6 +70,12 @@ def get_values_string(item, keys, sep=u':'):
     """
     ret = [item.get(key, u'') for key in keys]  # noqa
     return sep.join(ret)
+
+
+def full_path(path, filename):
+    if not os.path.isabs(filename):
+        return os.path.join(path, filename)
+    return filename
 
 
 def is_in_part(section, part):

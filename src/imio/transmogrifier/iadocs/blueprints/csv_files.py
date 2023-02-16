@@ -7,6 +7,7 @@ from collective.transmogrifier.utils import openFileReference
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import encode_list
+from imio.transmogrifier.iadocs.utils import full_path
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
@@ -25,7 +26,7 @@ class CSVReader(object):
     """Reads a csv file.
 
     Parameters:
-        * condition = O, condition expression (available: filename)
+        * b_condition = O, blueprint condition expression (available: filename)
         * filename = M, relative filename considering csvpath.
         * fieldnames = M, fieldnames.
         * ext_type = M, external type string representing csv
@@ -60,10 +61,9 @@ class CSVReader(object):
         self.filename = safe_unicode(options['filename'])
         if not self.filename:
             return
-        if not os.path.isabs(self.filename):
-            self.filename = os.path.join(self.storage['csvp'], self.filename)
-        condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
-        if not condition(None, filename=self.filename):
+        self.filename = full_path(self.storage['csvp'], self.filename)
+        b_condition = Condition(options.get('b_condition') or 'python:True', transmogrifier, name, options)
+        if not b_condition(None, filename=self.filename, storage=self.storage):
             self.filename = None
             return
         file_ = openFileReference(transmogrifier, self.filename)
@@ -144,7 +144,8 @@ class CSVWriter(object):
     """Writes a csv file.
 
     Parameters:
-        * condition = O, condition expression (available: storage)
+        * b_condition = O, blueprint condition expression (available: storage)
+        * condition = O, item condition expression (available: item, storage)
         * filename = M, relative filename considering csvpath.
         * fieldnames = M, fieldnames.
         * headers = O, headers.
@@ -167,10 +168,15 @@ class CSVWriter(object):
         self.part = get_part(name)
         if not is_in_part(self, self.part):
             return
-        self.doit = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        doit = Condition(options.get('b_condition') or 'python:True', transmogrifier, name, options)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.filename = safe_unicode(options['filename'])
         if not os.path.isabs(self.filename):
             self.filename = os.path.join(self.storage['csvp'], self.filename)
+        self.doit = True
+        if not doit(None, filename=self.filename, storage=self.storage):
+            self.doit = False
+            return
         fieldnames = safe_unicode(options['fieldnames']).split()
         headers = safe_unicode(options.get('headers') or '').split()
         csv_encoding = safe_unicode(options.get('csv_encoding') or 'utf8')
@@ -195,7 +201,7 @@ class CSVWriter(object):
     def __iter__(self):
         csv_d = self.storage['csv'].get(self.ext_type)
         for item in self.previous:
-            if is_in_part(self, self.part) and self.doit(item, storage=self.storage):
+            if is_in_part(self, self.part) and self.doit and self.condition(item, storage=self.storage):
                 if self.store_key:
                     if csv_d['fh'] is None:  # only doing one time
                         for (key, dv) in sorted(self.storage['data'][self.ext_type].items(),
