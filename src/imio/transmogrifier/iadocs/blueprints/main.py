@@ -2,6 +2,7 @@
 from collections import OrderedDict
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
+from collective.transmogrifier.utils import Condition
 from imio.helpers.transmogrifier import get_main_path
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.transmogrifier import text_int_to_bool
@@ -9,7 +10,9 @@ from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import get_mailtypes
+from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
+from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from plone import api
 from plone.dexterity.fti import DexterityFTIModificationDescription
@@ -38,11 +41,12 @@ class Initialization(object):
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.portal = transmogrifier.context
-        workingpath = get_main_path(safe_unicode(options.get('basepath', '')), safe_unicode(options.get('subpath', '')))
-        csvpath = safe_unicode(options.get('csvpath', ''))
+        workingpath = get_main_path(safe_unicode(options.get('basepath') or ''),
+                                    safe_unicode(options.get('subpath') or ''))
+        csvpath = safe_unicode(options.get('csvpath') or '')
         if not csvpath:
             csvpath = workingpath
-        in_types = safe_unicode(transmogrifier['config'].get('internal_number_types', '')).split()
+        in_types = safe_unicode(transmogrifier['config'].get('internal_number_types') or '').split()
         # setting logs
         efh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors.log'), mode='w')
         efh.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
@@ -52,7 +56,7 @@ class Initialization(object):
         ofh.setFormatter(logging.Formatter('%(message)s'))
         ofh.setLevel(logging.INFO)
         o_logger.addHandler(ofh)
-        run_options = json.loads(transmogrifier.context.REQUEST.get('_transmo_options_', '{}'))
+        run_options = json.loads(transmogrifier.context.REQUEST.get('_transmo_options_') or '{}')
         if run_options.get('commit'):
             ecfh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors_commit.log'), mode='a')
             ecfh.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
@@ -128,7 +132,8 @@ class CommonInputChecks(object):
     """Checks input values of the corresponding external type.
 
     Parameters:
-        * ext_type = O, external type string corresponding to csv
+        * ext_type = M, external type string corresponding to csv
+        * condition = O, condition expression
         * booleans = O, list of fields to transform in booleans
         * hyphen_newline = O, list of fields where newline will be replaced by hyphen
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
@@ -139,18 +144,23 @@ class CommonInputChecks(object):
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.ext_type = safe_unicode(options.get('ext_type', ''))
+        self.ext_type = safe_unicode(options['ext_type'])
+        self.part = get_part(name)
+        if not is_in_part(self, self.part):
+            return
         fieldnames = self.storage['csv'].get(self.ext_type, {}).get('fd', [])
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.hyphens = [key for key in safe_unicode(options.get('hyphen_newline', '')).split() if key in fieldnames]
         self.booleans = [key for key in safe_unicode(options.get('booleans', '')).split() if key in fieldnames]
 
     def __iter__(self):
         for item in self.previous:
-            # replace newline by hyphen on specified fields
-            for fld in self.hyphens:
-                if '\n' in item[fld]:
-                    item[fld] = ' - '.join([part.strip() for part in item[fld].split('\n') if part.strip()])
-            # to bool from int
-            for fld in self.booleans:
-                item[fld] = text_int_to_bool(item, fld, log_error)
+            if is_in_part(self, self.part) and self.condition(item):
+                # replace newline by hyphen on specified fields
+                for fld in self.hyphens:
+                    if '\n' in item[fld]:
+                        item[fld] = ' - '.join([part.strip() for part in item[fld].split('\n') if part.strip()])
+                # to bool from int
+                for fld in self.booleans:
+                    item[fld] = text_int_to_bool(item, fld, log_error)
             yield item

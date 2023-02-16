@@ -19,6 +19,7 @@ class AServiceUpdate(object):
     """Update plonegroup services with external id value.
 
     Parameters:
+        * condition = O, condition expression
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -30,13 +31,15 @@ class AServiceUpdate(object):
         self.part = get_part(name)
         if not is_in_part(self, self.part):
             return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.all_orgs = self.storage['data']['p_orgs_all']
         self.eid_to_orgs = self.storage['data']['p_eid_to_orgs']
         self.match = self.storage['data']['e_service_match']
 
     def __iter__(self):
+        change = False
         for item in self.previous:
-            if is_in_part(self, self.part):
+            if is_in_part(self, self.part) and self.condition(item):
                 if item['_eid'] not in self.eid_to_orgs:  # eid not yet in Plone
                     if item['_eid'] in self.match:
                         uid = self.match[item['_eid']]['uid']
@@ -46,18 +49,22 @@ class AServiceUpdate(object):
                         item['_type'] = 'organization'
                         item['_path'] = self.all_orgs[uid]['p']
                         item['internal_number'] = item['_eid']
+                        change = True
                     else:
                         log_error(item, u"Not in matching file")
                         continue
             yield item
         # store services after plonegroup changes
-        self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
+        if change:
+            self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
+            print(self.storage['data']['p_eid_to_orgs'])
 
 
 class BMailtypesByType(object):
     """Modify mailtypes items following use.
 
     Parameters:
+        * condition = O, condition expression
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -69,7 +76,7 @@ class BMailtypesByType(object):
         self.part = get_part(name)
         if not is_in_part(self, self.part):
             return
-        self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
 
     def __iter__(self):
         for item in self.previous:
@@ -86,7 +93,11 @@ class StoreInData(object):
 
     Parameters:
         * ext_type = M, external type string representing csv
-        * store_key = M, storing keys for item. If defined, the item is stored in storage[{ext_type}]
+        * store_key = M, storing keys for item. If defined, the item is stored in storage[{ext_type}][{store_key}]
+        * store_subkey = O, storing sub keys for item. If defined, the item is stored in
+          storage[{ext_type}][{store_key}][{store_subkey}]
+        * fieldnames = O, fieldnames to store. All if nothing.
+        * condition = O, condition expression
         * yield = O, flag to know if a yield must be done (0 or 1: default 0)
     """
     classProvides(ISectionBlueprint)
@@ -100,13 +111,13 @@ class StoreInData(object):
         self.part = get_part(name)
         if not is_in_part(self, self.part):
             return
-        self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         # self.store_key = safe_unicode(options['store_key']).split()
         self.store_key = safe_unicode(options['store_key'])
         self.store_subkey = safe_unicode(options.get('store_subkey'))
         self.ext_type = safe_unicode(options['ext_type'])
-        self.fieldnames = safe_unicode(options.get('fieldnames', '')).split()
-        self.yld = bool(int(options.get('yield', '0')))
+        self.fieldnames = safe_unicode(options.get('fieldnames') or '').split()
+        self.yld = bool(int(options.get('yield') or '0'))
         if self.ext_type not in self.storage['data']:
             self.storage['data'][self.ext_type] = {}
 
