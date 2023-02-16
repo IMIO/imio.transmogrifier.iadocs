@@ -102,10 +102,10 @@ class BMailtypeUpdate(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.part = get_part(name)
+        self.to_add = {}
         if not is_in_part(self, self.part):
             return
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
-        self.to_add = {}
 
     def __iter__(self):
         p_types = self.storage['data']['p_mailtype']
