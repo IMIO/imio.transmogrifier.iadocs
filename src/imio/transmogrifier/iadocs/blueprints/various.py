@@ -41,7 +41,11 @@ class Breakpoint(object):
 
 
 class Count(object):
-    """Count items."""
+    """Count items.
+
+    Parameters:
+        * group_key = M, item key to group counting.
+    """
     classProvides(ISectionBlueprint)
     implements(ISection)
 
@@ -53,7 +57,7 @@ class Count(object):
         if 'count' not in self.storage:
             self.storage['count'] = {}
         self.storage['count'][name] = {}
-        self.group_key = safe_unicode(options.get('group_key', ''))
+        self.group_key = safe_unicode(options['group_key'])
 
     def __iter__(self):
         counter = self.storage['count'][self.name]
@@ -73,18 +77,27 @@ class Count(object):
 
 
 class EnhancedCondition(object):
+    """Yield item if condition2 is matched, only applied if condition1 is matched.
+    Pass storage and item in condition.
+
+    Parameters:
+        * condition = M, matching condition.
+    """
     classProvides(ISectionBlueprint)
     implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
-        condition = options['condition']
-        self.condition = Condition(condition, transmogrifier, name, options)
+        self.condition1 = Condition(options['condition1'], transmogrifier, name, options)
+        self.condition2 = Condition(options['condition2'], transmogrifier, name, options)
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.previous = previous
 
     def __iter__(self):
         for item in self.previous:
-            if self.condition(item, storage=self.storage):
+            if self.condition1(item, storage=self.storage):
+                if self.condition2(item, storage=self.storage):
+                    yield item
+            else:
                 yield item
 
 
@@ -116,8 +129,7 @@ class Stop(object):
     implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
-        condition = options['condition']
-        self.condition = Condition(condition, transmogrifier, name, options)
+        self.condition = Condition(options['condition'], transmogrifier, name, options)
         self.previous = previous
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
