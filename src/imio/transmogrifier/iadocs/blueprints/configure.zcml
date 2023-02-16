@@ -14,6 +14,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.b_mailtype_update"
+    component=".handlers.BMailtypeUpdate"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.breakpoint"
     component=".various.Breakpoint"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

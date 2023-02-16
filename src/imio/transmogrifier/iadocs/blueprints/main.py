@@ -5,7 +5,7 @@ from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from imio.helpers.transmogrifier import get_main_path
 from imio.helpers.transmogrifier import relative_path
-from imio.helpers.transmogrifier import text_int_to_bool
+from imio.helpers.transmogrifier import text_to_bool
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
@@ -162,5 +162,5 @@ class CommonInputChecks(object):
                         item[fld] = ' - '.join([part.strip() for part in item[fld].split('\n') if part.strip()])
                 # to bool from int
                 for fld in self.booleans:
-                    item[fld] = text_int_to_bool(item, fld, log_error)
+                    item[fld] = text_to_bool(item, fld, log_error)
             yield item

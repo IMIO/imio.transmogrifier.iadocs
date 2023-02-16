@@ -88,6 +88,45 @@ class BMailtypesByType(object):
             yield item
 
 
+class BMailtypeUpdate(object):
+    """Store mailtype if necessary.
+
+    Parameters:
+        * condition = O, condition expression
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.part = get_part(name)
+        if not is_in_part(self, self.part):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.to_add = {}
+
+    def __iter__(self):
+        p_types = self.storage['data']['p_mailtype']
+        for item in self.previous:
+            if is_in_part(self, self.part) and self.condition(item, storage=self.storage):
+                #  _eid _etype _etitle _enature _esource _type _key _title _active
+                if not item['_type'] and not item['_key']:
+                    log_error(item, u'Empty match: we pass _eid {}'.format(item['_eid']), 'warning')
+                    continue
+                if item['_type'] not in p_types or item['_key'] not in p_types[item['_type']]:
+                    to_add = self.to_add.setdefault(item['_type'], {})
+                    if item['_key'] not in to_add:
+                        to_add[item['_key']] = {'value': item['_key'], 'dtitle': item['_title'],
+                                                'active': item['_active']}
+                continue
+            yield item
+        if self.to_add:
+            # TODO
+            pass
+
+
 class StoreInData(object):
     """Store items in a dictionary.
 
@@ -127,7 +166,7 @@ class StoreInData(object):
                 # if not self.fieldnames and item['_etyp'] == self.ext_type:
                 #     del item['_etyp']
                 # key = get_values_string(item, self.store_key)
-                key = item.pop(self.store_key)
+                key = item[self.store_key]
                 if self.store_subkey:
                     subkey = item.get(self.store_subkey)
                     self.storage['data'][self.ext_type].setdefault(key, {})[subkey] = filter_keys(item, self.fieldnames)
