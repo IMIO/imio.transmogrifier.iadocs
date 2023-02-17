@@ -5,6 +5,7 @@ from collective.contact.plonegroup.browser.settings import BaseOrganizationServi
 from collective.contact.plonegroup.config import get_registry_organizations
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import relative_path
+from imio.helpers.vocabularies import get_users_voc
 from imio.transmogrifier.iadocs import e_logger
 from plone import api
 
@@ -60,6 +61,14 @@ def get_plonegroup_orgs(portal, eid_fld='internal_number'):
         if eid:
             eid_to_orgs[eid] = term.value
     return all_orgs, eid_to_orgs
+
+
+def get_users(portal):
+    """Get users"""
+    res = {}
+    for term in get_users_voc(False):
+        res[term.value] = {'fullname': term.title}
+    return res
 
 
 def get_values_string(item, keys, sep=u':'):
