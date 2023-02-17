@@ -44,6 +44,37 @@ def get_part(name):
     return name[0:1]
 
 
+def get_personnel(portal, eid_fld='internal_number'):
+    """Get the personnel persons and held positions"""
+    p_userid_to_person = {}  # store plone userid linking person
+    e_userid_to_person = {}  # store external userid linking person
+    hps = {}  # store person uid with
+    brains = portal.portal_catalog.unrestrictedSearchResults(
+        portal_type=['held_position'],
+        object_provides='imio.dms.mail.interfaces.IPersonnelContact')
+    for brain in brains:
+        # the userid is stored in mail_type index !!
+        hp = brain._unrestrictedGetObject()
+        person = hp.get_person()
+        org = hp.get_organization()
+        if org is None:
+            continue
+        puid = person.UID()
+        ouid = org.UID()
+        if person.userid and person.userid not in p_userid_to_person:
+            p_userid_to_person[person.userid] = puid
+        euid = getattr(person, eid_fld)
+        if euid and euid not in e_userid_to_person:
+            e_userid_to_person[euid] = puid
+        if puid not in hps:
+            hps[puid] = {'path': relative_path(portal, '/'.join(person.getPhysicalPath())), 'eid': euid, 'hps': {},
+                         'state': api.content.get_state(person)}
+        if ouid not in hps[puid]['hps']:
+            hps[puid]['hps'][ouid] = {'path': relative_path(portal, brain.getPath()),
+                                      'state': api.content.get_state(hp)}
+    return p_userid_to_person, e_userid_to_person, hps
+
+
 def get_plonegroup_orgs(portal, eid_fld='internal_number'):
     """get plonegroups organisations"""
     all_orgs = {}

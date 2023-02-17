@@ -11,6 +11,7 @@ from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_part
+from imio.transmogrifier.iadocs.utils import get_personnel
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
 from imio.transmogrifier.iadocs.utils import get_users
 from imio.transmogrifier.iadocs.utils import is_in_part
@@ -125,6 +126,9 @@ class Initialization(object):
         self.storage['data']['p_mailtype'] = get_mailtypes(self.portal)
         # store users
         self.storage['data']['p_user'] = get_users(self.portal)
+        # store personnel
+        (self.storage['data']['p_userid_to_pers'], self.storage['data']['p_euid_to_pers'],
+         self.storage['data']['p_hps']) = get_personnel(self.portal)
 
     def __iter__(self):
         for item in self.previous:
