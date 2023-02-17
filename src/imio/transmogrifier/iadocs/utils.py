@@ -8,6 +8,10 @@ from imio.helpers.transmogrifier import relative_path
 from imio.transmogrifier.iadocs import e_logger
 from plone import api
 
+itf = 'imio.dms.mail.browser.settings.IImioDmsMailConfig'
+MAILTYPES = {'te': '{}.mail_types'.format(itf), 'ts': '{}.omail_types'.format(itf),
+             'fe': '{}.omail_send_modes'.format(itf)}
+
 
 def encode_list(lst, encoding):
     """Encode a list following encoding.
@@ -26,10 +30,8 @@ def encode_list(lst, encoding):
 
 def get_mailtypes(portal):
     """Get mail types and send_mode"""
-    itf = 'imio.dms.mail.browser.settings.IImioDmsMailConfig'
     mailtypes = {}
-    for key, rec in (('te', '{}.mail_types'.format(itf)), ('ts', '{}.omail_types'.format(itf)),
-                     ('fe', '{}.omail_send_modes'.format(itf))):
+    for key, rec in MAILTYPES.items():
         mailtypes[key] = {}
         for dic in api.portal.get_registry_record(rec):
             dico = dict(dic)

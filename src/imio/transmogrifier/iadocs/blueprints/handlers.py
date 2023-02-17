@@ -4,11 +4,14 @@ from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from imio.helpers.transmogrifier import filter_keys
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
+from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
 from imio.transmogrifier.iadocs.utils import get_values_string
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
+from imio.transmogrifier.iadocs.utils import MAILTYPES
+from plone import api
 from Products.CMFPlone.utils import safe_unicode
 from zope.annotation import IAnnotations
 from zope.interface import classProvides
@@ -122,9 +125,14 @@ class BMailtypeUpdate(object):
                                                 'active': item['_active']}
                 continue
             yield item
+
         if self.to_add:
-            # TODO
-            pass
+            for typ in self.to_add:
+                values = list(api.portal.get_registry_record(MAILTYPES[typ]))
+                for key in self.to_add[typ]:
+                    values.append(self.to_add[typ][key])
+                api.portal.set_registry_record(MAILTYPES[typ], values)
+            self.storage['data']['p_mailtype'] = get_mailtypes(self.portal)
 
 
 class StoreInData(object):
