@@ -7,6 +7,8 @@ from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
+from imio.transmogrifier.iadocs.utils import get_part
+from imio.transmogrifier.iadocs.utils import is_in_part
 from Products.CMFPlone.utils import safe_unicode
 from zope.annotation.interfaces import IAnnotations
 from zope.interface import classProvides
@@ -99,6 +101,33 @@ class EnhancedCondition(object):
                     yield item
             else:
                 yield item
+
+
+class NeedOther(object):
+    """Stops if needed other part or section is not there.
+
+    Parameters:
+        * parts = O, needed parts (one letter list).
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.transmogrifier = transmogrifier
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        this_part = get_part(name)
+        if not is_in_part(self, this_part):
+            return
+        needed_parts = safe_unicode(options.get('parts') or u'').split()
+        for needed_part in needed_parts:
+            if not is_in_part(self, needed_part):
+                raise Exception("STOPPED because '{}' part needs '{}' part to be included".format(this_part,
+                                                                                                  needed_part))
+
+    def __iter__(self):
+        for item in self.previous:
+            yield item
 
 
 class ShortLog(object):

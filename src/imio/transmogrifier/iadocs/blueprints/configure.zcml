@@ -62,8 +62,14 @@
     />
 
   <utility
-    name="imio.transmogrifier.iadocs.lastsection"
+    name="imio.transmogrifier.iadocs.last_section"
     component=".main.LastSection"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
+    name="imio.transmogrifier.iadocs.need_other"
+    component=".various.NeedOther"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
