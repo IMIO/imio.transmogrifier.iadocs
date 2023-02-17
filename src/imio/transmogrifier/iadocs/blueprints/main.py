@@ -167,3 +167,21 @@ class CommonInputChecks(object):
                 for fld in self.booleans:
                     item[fld] = text_to_bool(item, fld, log_error)
             yield item
+
+
+class LastSection(object):
+    """Last section to do things at the end of each item process or global process.
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.transmogrifier = transmogrifier
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.portal = transmogrifier.context
+
+    def __iter__(self):
+        for item in self.previous:
+            yield item
+        # end of process
