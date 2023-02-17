@@ -156,6 +156,7 @@ class CSVWriter(object):
         * dialect = O, csv dialect. Default: excel.
         * fmtparam-strict = O, raises exception on row error. Default False.
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
+        * yield = O, flag to know if a yield must be done (0 or 1: default 1)
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -186,6 +187,7 @@ class CSVWriter(object):
                  options, key=key[len('fmtparam-'):])) for key, value
             in six.iteritems(options) if key.startswith('fmtparam-'))
         fmtparam['dialect'] = safe_unicode(options.get('dialect') or 'excel')
+        self.yld = bool(int(options.get('yield') or '1'))
         self.store_key = safe_unicode(options.get('store_key'))
         self.store_subkey = safe_unicode(options.get('store_subkey'))
         self.sort_key = safe_unicode(options.get('store_key_sort') or '_no_special_sort_key_')
@@ -214,6 +216,8 @@ class CSVWriter(object):
                                 self._row(dv, {self.store_key: key})
                 else:
                     writerow(csv_d, item)
+                if not self.yld:
+                    continue
             yield item
         if csv_d is not None and csv_d.get('fh') is not None:
             csv_d['fh'].close()
