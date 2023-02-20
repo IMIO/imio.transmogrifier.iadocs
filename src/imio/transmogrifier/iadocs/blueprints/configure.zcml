@@ -99,7 +99,7 @@
 
   <utility
     name="imio.transmogrifier.iadocs.store_in_data"
-    component=".handlers.StoreInData"
+    component=".main.StoreInData"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 

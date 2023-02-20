@@ -4,7 +4,6 @@ from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import correct_path
-from imio.helpers.transmogrifier import filter_keys
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_part
@@ -14,7 +13,6 @@ from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from imio.transmogrifier.iadocs.utils import MAILTYPES
 from plone import api
-from Products.CMFPlone.utils import safe_unicode
 from z3c.relationfield import RelationValue
 from zope.annotation import IAnnotations
 from zope.component import getUtility
@@ -220,53 +218,4 @@ class PostActions(object):
                 hps[puid]['hps'][ouid] = {'path': relative_path(portal, brain.getPath()),
                                           'state': api.content.get_state(hp)}
             yield item
-
-
-class StoreInData(object):
-    """Store items in a dictionary.
-
-    Parameters:
-        * ext_type = M, external type string representing csv
-        * store_key = M, storing keys for item. If defined, the item is stored in storage[{ext_type}][{store_key}]
-        * store_subkey = O, storing sub keys for item. If defined, the item is stored in
-          storage[{ext_type}][{store_key}][{store_subkey}]
-        * fieldnames = O, fieldnames to store. All if nothing.
-        * condition = O, condition expression
-        * yield = O, flag to know if a yield must be done (0 or 1: default 0)
-    """
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
-    def __init__(self, transmogrifier, name, options, previous):
-        self.previous = previous
-        self.name = name
-        self.portal = transmogrifier.context
-        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.part = get_part(name)
-        if not is_in_part(self, self.part):
-            return
-        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
-        # self.store_key = safe_unicode(options['store_key']).split()
-        self.store_key = safe_unicode(options['store_key'])
-        self.store_subkey = safe_unicode(options.get('store_subkey'))
-        self.ext_type = safe_unicode(options['ext_type'])
-        self.fieldnames = safe_unicode(options.get('fieldnames') or '').split()
-        self.yld = bool(int(options.get('yield') or '0'))
-        if self.ext_type not in self.storage['data']:
-            self.storage['data'][self.ext_type] = {}
-
-    def __iter__(self):
-        for item in self.previous:
-            if is_in_part(self, self.part) and self.condition(item):
-                # if not self.fieldnames and item['_etyp'] == self.ext_type:
-                #     del item['_etyp']
-                # key = get_values_string(item, self.store_key)
-                key = item[self.store_key]
-                if self.store_subkey:
-                    subkey = item.get(self.store_subkey)
-                    self.storage['data'][self.ext_type].setdefault(key, {})[subkey] = filter_keys(item, self.fieldnames)
-                else:
-                    self.storage['data'][self.ext_type][key] = filter_keys(item, self.fieldnames)
-                if not self.yld:
-                    continue
             yield item
