@@ -56,6 +56,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.d_om_sender_creation"
+    component=".handlers.DOMSenderCreation"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.init"
     component=".main.Initialization"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
@@ -70,6 +76,12 @@
   <utility
     name="imio.transmogrifier.iadocs.need_other"
     component=".various.NeedOther"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
+    name="imio.transmogrifier.iadocs.post_actions"
+    component=".handlers.PostActions"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
