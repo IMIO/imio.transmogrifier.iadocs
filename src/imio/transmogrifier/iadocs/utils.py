@@ -85,11 +85,12 @@ def get_plonegroup_orgs(portal, eid_fld='internal_number'):
     voc = factory(portal)
     for term in voc:
         org = uuidToObject(term.value)
-        eid = getattr(org, eid_fld)
+        value = getattr(org, eid_fld)
+        eids = value and value.split(u',') or []
         all_orgs[term.value] = {'p': relative_path(portal, '/'.join(org.getPhysicalPath())), 't': org.title,
-                                'ft': term.title, 'eid': eid, 'st': api.content.get_state(org),
+                                'ft': term.title, 'eids': eids, 'st': api.content.get_state(org),
                                 'sl': term.value in selected_orgs}
-        if eid:
+        for eid in eids:
             eid_to_orgs[eid] = term.value
     return all_orgs, eid_to_orgs
 

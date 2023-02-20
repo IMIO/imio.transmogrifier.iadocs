@@ -51,7 +51,9 @@ class AServiceUpdate(object):
                             continue
                         item['_type'] = 'organization'
                         item['_path'] = self.all_orgs[uid]['p']
-                        item['internal_number'] = item['_eid']
+                        if item['_eid'] not in self.all_orgs[uid]['eids']:
+                            self.all_orgs[uid]['eids'].append(item['_eid'])
+                            item['internal_number'] = u','.join(self.all_orgs[uid]['eids'])
                         change = True
                     else:
                         log_error(item, u"Not in matching file")
@@ -114,12 +116,12 @@ class BMailtypeUpdate(object):
         p_types = self.storage['data']['p_mailtype']
         for item in self.previous:
             if is_in_part(self, self.part) and self.condition(item, storage=self.storage):
-                #  _eid _etype _etitle _enature _esource _type _key _title _active
-                if not item['_type'] and not item['_key']:
+                #  _eid _etype _etitle _enature _esource _c_type _key _title _active
+                if not item['_c_type'] and not item['_key']:
                     log_error(item, u'Empty match: we pass _eid {}'.format(item['_eid']), 'warning')
                     continue
-                if item['_type'] not in p_types or item['_key'] not in p_types[item['_type']]:
-                    to_add = self.to_add.setdefault(item['_type'], {})
+                if item['_c_type'] not in p_types or item['_key'] not in p_types[item['_c_type']]:
+                    to_add = self.to_add.setdefault(item['_c_type'], {})
                     if item['_key'] not in to_add:
                         to_add[item['_key']] = {'value': item['_key'], 'dtitle': item['_title'],
                                                 'active': item['_active']}
