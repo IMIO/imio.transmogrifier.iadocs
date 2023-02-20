@@ -13,6 +13,7 @@ from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from imio.transmogrifier.iadocs.utils import MAILTYPES
 from plone import api
+from plone.i18n.normalizer import IIDNormalizer
 from z3c.relationfield import RelationValue
 from zope.annotation import IAnnotations
 from zope.component import getUtility
@@ -54,12 +55,12 @@ class AServiceUpdate(object):
                         if not uid or uid not in self.all_orgs:
                             log_error(item, u"Cannot find uid '{}' matched with service".format(uid))
                             continue
-                        item['_type'] = 'organization'
-                        item['_path'] = self.all_orgs[uid]['p']
                         if item['_eid'] not in self.all_orgs[uid]['eids']:
+                            item['_type'] = 'organization'
+                            item['_path'] = self.all_orgs[uid]['p']
                             self.all_orgs[uid]['eids'].append(item['_eid'])
                             item['internal_number'] = u','.join(self.all_orgs[uid]['eids'])
-                        change = True
+                            change = True
                     else:
                         log_error(item, u"Not in matching file")
                         continue
@@ -163,32 +164,67 @@ class DOMSenderCreation(object):
         self.euid_to_pers = self.storage['data']['p_euid_to_pers']
         self.p_hps = self.storage['data']['p_hps']
         self.p_eid_orgs = self.storage['data']['p_eid_to_orgs']
+        self.e_c_s = self.storage['data']['e_contacts_sender']
+        self.e_u_m = self.storage['data']['e_user_match']
         self.intids = getUtility(IIntIds)
 
+    def person(self, e_userid, item, pid, title, firstname=None, lastname=None, transitions=('deactivate',)):
+        if e_userid not in self.euid_to_pers:
+            # we create or update a person
+            path = os.path.join(self.storage['plone']['directory_path'], 'personnel-folder/{}'.format(pid))
+            pdic = {'_type': 'person', '_path': path, u'internal_number': e_userid, 'use_parent_address': False,
+                    u'_transitions': transitions, u'_etyp': u'person_sender', u'_eid': item['_eid'],
+                    u'_post_actions': (u'store_internal_person_info',), u'title': title}
+            if firstname is not None:
+                pdic[u'firstname'] = firstname
+            if lastname is not None:
+                pdic[u'lastname'] = lastname
+            return [pdic]
+        return []
+
+    def hp(self, e_userid, item, transitions=('deactivate',)):
+        puid = self.euid_to_pers[e_userid]
+        ouid = self.p_eid_orgs[item['_service']]
+        if ouid not in self.p_hps[puid]['hps']:
+            # we create a hp
+            path = os.path.join(self.p_hps[puid]['path'], ouid)
+            org = uuidToObject(ouid, unrestricted=True)
+            hpdic = {'_type': 'held_position', '_path': path, 'use_parent_address': True,
+                     'position': RelationValue(self.intids.getId(org)), 'internal_number': u'',
+                     u'_transitions': transitions, u'_etyp': u'hp_sender', u'_eid': item['_eid']}
+            self.p_hps[puid]['hps'][ouid] = {'path': path, 'state': 'deactivated'}
+            return [hpdic]
+        return []
+
     def __iter__(self):
+        idnormalizer = getUtility(IIDNormalizer)
         for item in self.previous:
             if is_in_part(self, self.part) and self.condition(item):
-                if item['_sender_id']:
-                    pass
-                else:
-                    if u'None' not in self.euid_to_pers:
-                        # we create a person
-                        path = correct_path(self.portal, os.path.join(self.storage['plone']['directory_path'],
-                                                                      'personnel-folder/reprise-donnees'))
-                        pdic = {'_type': 'person', '_path': path, u'internal_number': u'None', u'firstname': u'',
-                                u'lastname': u'Reprise données', u'_transitions': ('deactivate',),
-                                u'_etyp': u'person_sender', u'_post_actions': (u'store_internal_person_info', )}
-                        yield pdic
-                    puid = self.euid_to_pers[u'None']
-                    ouid = self.p_eid_orgs[item['_service']]
-                    if ouid not in self.p_hps[puid]['hps']:
-                        path = correct_path(self.portal, os.path.join(self.p_hps[puid]['path'], ouid))
-                        org = uuidToObject(ouid, unrestricted=True)
-                        hpdic = {'_type': 'organization', '_path': path, 'use_parent_address': True,
-                                 'position': RelationValue(self.intids.getId(org)), 'internal_number': u'',
-                                 u'_transitions': ('deactivate',), u'_etyp': u'hp_sender'}
-                        self.p_hps[puid]['hps'][ouid] = {'path': path, 'state': 'deactivated'}
-                        yield hpdic
+                if item['_sender_id'] and item['_sender_id'] in self.e_c_s:  # we have a user id
+                    e_userid = self.e_c_s[item['_sender_id']]['_uid']
+                    _euidm = self.e_u_m[e_userid]
+                    if _euidm['_uid']:  # we have a match
+                        if _euidm['_uid'] in self.puid_to_pers:  # we already have a person for this user
+                            pid = uuidToObject(self.puid_to_pers[_euidm['_uid']]).id
+                            for y in self.person(e_userid, item, pid, u'Existing', transitions=()): yield y
+                            for y in self.hp(e_userid, item): yield y
+                        else:
+                            pid = _euidm['_uid']
+                            # TODO take into account prenom nom order
+                            parts = _euidm['_fullname'].split()
+                            for y in self.person(e_userid, item, pid, u'Matched', firstname=parts[0],
+                                                 lastname=' '.join(parts[1:])): yield y
+                            for y in self.hp(e_userid, item): yield y
+                    else:
+                        pid = idnormalizer.normalize(_euidm['_prenom'] and u'{} {}'.format(_euidm['_prenom'],
+                                                     _euidm['_nom']) or _euidm['_nom'])
+                        for y in self.person(e_userid, item, pid, u'Unmatched', firstname=_euidm['_prenom'],
+                                             lastname=_euidm['_nom']): yield y
+                        for y in self.hp(e_userid, item): yield y
+                else:  # we do not have a _sender_id or _sender_id is not a user id
+                    for y in self.person(u'None', item, 'reprise-donnees', u'None', firstname=u'',
+                                         lastname=u'Reprise données'): yield y
+                    for y in self.hp(u'None', item): yield y
                 continue
             yield item
 
@@ -211,11 +247,7 @@ class PostActions(object):
                 eid = item[u'internal_number']
                 uid = self.portal.unrestrictedTraverse(item['_path']).UID()
                 self.storage['data']['p_euid_to_pers'][eid] = uid
-                self.storage['data']['p_hps'][uid] = {'path': item['_path'], 'eid': eid, 'hps': {},
-                                                      'state': 'deactivated'}
-            if u'store_internal_hp_info' in pa:
-
-                hps[puid]['hps'][ouid] = {'path': relative_path(portal, brain.getPath()),
-                                          'state': api.content.get_state(hp)}
-            yield item
+                if uid not in self.storage['data']['p_hps']:
+                    self.storage['data']['p_hps'][uid] = {'path': item['_path'], 'eid': eid, 'hps': {},
+                                                          'state': 'deactivated'}
             yield item
