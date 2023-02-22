@@ -5,6 +5,7 @@ from collective.transmogrifier.utils import Condition
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import correct_path
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
+from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
@@ -67,8 +68,8 @@ class AServiceUpdate(object):
             yield item
         # store services after plonegroup changes
         if change:
+            o_logger.info("Part a: some services have been updated.")
             self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
-            print(self.storage['data']['p_eid_to_orgs'])
 
 
 class BMailtypesByType(object):
@@ -135,6 +136,7 @@ class BMailtypeUpdate(object):
             yield item
 
         if self.to_add:
+            o_logger.info("Part b: adding some mail types")
             for typ in self.to_add:
                 values = list(api.portal.get_registry_record(MAILTYPES[typ]))
                 for key in self.to_add[typ]:
@@ -157,6 +159,7 @@ class DOMSenderCreation(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.part = get_part(name)
+        self.change = False
         if not is_in_part(self, self.part):
             return
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
@@ -179,6 +182,7 @@ class DOMSenderCreation(object):
                 pdic[u'firstname'] = firstname
             if lastname is not None:
                 pdic[u'lastname'] = lastname
+            self.change = True
             return [pdic]
         return []
 
@@ -193,6 +197,7 @@ class DOMSenderCreation(object):
                      'position': RelationValue(self.intids.getId(org)), 'internal_number': u'',
                      u'_transitions': transitions, u'_etyp': u'hp_sender', u'_eid': item['_eid']}
             self.p_hps[puid]['hps'][ouid] = {'path': path, 'state': 'deactivated'}
+            self.change = True
             return [hpdic]
         return []
 
@@ -227,6 +232,8 @@ class DOMSenderCreation(object):
                     for y in self.hp(u'None', item): yield y
                 continue
             yield item
+        if self.change:
+            o_logger.info("Part d: some internal persons or/and held positions have been added.")
 
 
 class PostActions(object):
