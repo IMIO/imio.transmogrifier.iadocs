@@ -20,6 +20,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.add_data_in_item"
+    component=".main.AddDataInItem"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.breakpoint"
     component=".various.Breakpoint"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
