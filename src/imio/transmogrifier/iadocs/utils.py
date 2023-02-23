@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 import os
 
+from collective.classification.tree.utils import iterate_over_tree
 from collective.contact.plonegroup.browser.settings import BaseOrganizationServicesVocabulary
 from collective.contact.plonegroup.config import get_registry_organizations
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.vocabularies import get_users_voc
 from imio.transmogrifier.iadocs import e_logger
+from imio.transmogrifier.iadocs import o_logger
 from plone import api
+from Products.CMFPlone.utils import safe_unicode
 
 itf = 'imio.dms.mail.browser.settings.IImioDmsMailConfig'
 MAILTYPES = {'te': '{}.mail_types'.format(itf), 'ts': '{}.omail_types'.format(itf),
@@ -27,6 +30,17 @@ def encode_list(lst, encoding):
             content = content.encode(encoding)
         new_list.append(content)
     return new_list
+
+
+def get_categories(portal):
+    """Get already defined categories"""
+    cats = {}
+    for cat in iterate_over_tree(portal.tree):
+        if cat.identifier in cats:
+            o_logger.error(u"code '{}' '{}' already loaded '{}'".format(cat.identifier, cat.title,
+                                                                        cats[cat.identifier]['title']))
+        cats[cat.identifier] = {'title': cat.title, 'uid': cat.UID(), 'enabled': cat.enabled}
+    return cats
 
 
 def get_mailtypes(portal):

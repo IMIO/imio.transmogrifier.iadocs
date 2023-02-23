@@ -10,6 +10,7 @@ from imio.helpers.transmogrifier import text_to_bool
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import get_categories
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_personnel
@@ -131,6 +132,7 @@ class Initialization(object):
         (self.storage['data']['p_userid_to_pers'], self.storage['data']['p_euid_to_pers'],
          self.storage['data']['p_hps']) = get_personnel(self.portal)
         # store categories
+        self.storage['data']['p_category'] = get_categories(self.portal)
 
     def __iter__(self):
         for item in self.previous:
