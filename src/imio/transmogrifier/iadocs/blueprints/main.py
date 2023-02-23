@@ -130,6 +130,7 @@ class Initialization(object):
         # store personnel
         (self.storage['data']['p_userid_to_pers'], self.storage['data']['p_euid_to_pers'],
          self.storage['data']['p_hps']) = get_personnel(self.portal)
+        # store categories
 
     def __iter__(self):
         for item in self.previous:
@@ -140,7 +141,7 @@ class CommonInputChecks(object):
     """Checks input values of the corresponding external type.
 
     Parameters:
-        * ext_type = M, external type string corresponding to csv
+        * bp_key = M, blueprint key corresponding to csv
         * condition = O, condition expression
         * booleans = O, list of fields to transform in booleans
         * hyphen_newline = O, list of fields where newline will be replaced by hyphen
@@ -152,11 +153,11 @@ class CommonInputChecks(object):
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.ext_type = safe_unicode(options['ext_type'])
+        self.bp_key = safe_unicode(options['bp_key'])
         self.part = get_part(name)
         if not is_in_part(self, self.part):
             return
-        fieldnames = self.storage['csv'].get(self.ext_type, {}).get('fd', [])
+        fieldnames = self.storage['csv'].get(self.bp_key, {}).get('fd', [])
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.hyphens = [key for key in safe_unicode(options.get('hyphen_newline', '')).split() if key in fieldnames]
         self.booleans = [key for key in safe_unicode(options.get('booleans', '')).split() if key in fieldnames]
@@ -197,10 +198,10 @@ class StoreInData(object):
     """Store items in a dictionary.
 
     Parameters:
-        * ext_type = M, external type string representing csv
-        * store_key = M, storing keys for item. If defined, the item is stored in storage[{ext_type}][{store_key}]
+        * bp_key = M, blueprint key representing csv
+        * store_key = M, storing keys for item. If defined, the item is stored in storage[{bp_key}][{store_key}]
         * store_subkey = O, storing sub keys for item. If defined, the item is stored in
-          storage[{ext_type}][{store_key}][{store_subkey}]
+          storage[{bp_key}][{store_key}][{store_subkey}]
         * fieldnames = O, fieldnames to store. All if nothing.
         * condition = O, condition expression
         * yield = O, flag to know if a yield must be done (0 or 1: default 0)
@@ -220,24 +221,24 @@ class StoreInData(object):
         # self.store_key = safe_unicode(options['store_key']).split()
         self.store_key = safe_unicode(options['store_key'])
         self.store_subkey = safe_unicode(options.get('store_subkey'))
-        self.ext_type = safe_unicode(options['ext_type'])
+        self.bp_key = safe_unicode(options['bp_key'])
         self.fieldnames = safe_unicode(options.get('fieldnames') or '').split()
         self.yld = bool(int(options.get('yield') or '0'))
-        if self.ext_type not in self.storage['data']:
-            self.storage['data'][self.ext_type] = {}
+        if self.bp_key not in self.storage['data']:
+            self.storage['data'][self.bp_key] = {}
 
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.part) and self.condition(item):
-                # if not self.fieldnames and item['_etyp'] == self.ext_type:
-                #     del item['_etyp']
+                # if not self.fieldnames and item['_bpk'] == self.bp_key:
+                #     del item['_bpk']
                 # key = get_values_string(item, self.store_key)
                 key = item[self.store_key]
                 if self.store_subkey:
                     subkey = item.get(self.store_subkey)
-                    self.storage['data'][self.ext_type].setdefault(key, {})[subkey] = filter_keys(item, self.fieldnames)
+                    self.storage['data'][self.bp_key].setdefault(key, {})[subkey] = filter_keys(item, self.fieldnames)
                 else:
-                    self.storage['data'][self.ext_type][key] = filter_keys(item, self.fieldnames)
+                    self.storage['data'][self.bp_key][key] = filter_keys(item, self.fieldnames)
                 if not self.yld:
                     continue
             yield item

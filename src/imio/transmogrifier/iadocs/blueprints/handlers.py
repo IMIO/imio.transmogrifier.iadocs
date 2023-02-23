@@ -178,7 +178,7 @@ class DOMSenderCreation(object):
             # we create or update a person
             path = os.path.join(self.storage['plone']['directory_path'], 'personnel-folder/{}'.format(pid))
             pdic = {'_type': 'person', '_path': path, u'internal_number': e_userid, 'use_parent_address': False,
-                    u'_transitions': transitions, u'_etyp': u'person_sender', u'_eid': item['_eid'],
+                    u'_transitions': transitions, u'_bpk': u'person_sender', u'_eid': item['_eid'],
                     u'_post_actions': (u'store_internal_person_info',), u'title': title}
             if firstname is not None:
                 pdic[u'firstname'] = firstname
@@ -197,7 +197,7 @@ class DOMSenderCreation(object):
             org = uuidToObject(ouid, unrestricted=True)
             hpdic = {'_type': 'held_position', '_path': path, 'use_parent_address': True,
                      'position': RelationValue(self.intids.getId(org)), 'internal_number': u'',
-                     u'_transitions': transitions, u'_etyp': u'hp_sender', u'_eid': item['_eid']}
+                     u'_transitions': transitions, u'_bpk': u'hp_sender', u'_eid': item['_eid']}
             self.p_hps[puid]['hps'][ouid] = {'path': path, 'state': 'deactivated'}
             self.change = True
             return [hpdic]
