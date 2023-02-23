@@ -15,6 +15,7 @@ from imio.transmogrifier.iadocs.utils import log_error
 from imio.transmogrifier.iadocs.utils import MAILTYPES
 from plone import api
 from plone.i18n.normalizer import IIDNormalizer
+from Products.CMFPlone.utils import safe_unicode
 from z3c.relationfield import RelationValue
 from zope.annotation import IAnnotations
 from zope.component import getUtility
@@ -88,12 +89,13 @@ class BMailtypesByType(object):
         self.part = get_part(name)
         if not is_in_part(self, self.part):
             return
+        self.related_storage = safe_unicode(options['related_storage'])
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
 
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.part) and self.condition(item, storage=self.storage):
-                for _etype in self.storage['data']['e_used_mailtype'][item['_eid']]:
+                for _etype in self.storage['data'][self.related_storage][item['_eid']]:
                     item['_etype'] = _etype
                     yield item
                 continue
