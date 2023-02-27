@@ -120,7 +120,7 @@ class Initialization(object):
         ofh.setLevel(logging.INFO)
         o_logger.addHandler(ofh)
         run_options = json.loads(transmogrifier.context.REQUEST.get('_transmo_options_') or '{}')
-        if run_options.get('commit'):
+        if run_options['commit']:
             ecfh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors_commit.log'), mode='a')
             ecfh.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
             ecfh.setLevel(logging.INFO)
@@ -160,6 +160,7 @@ class Initialization(object):
         self.storage['csv'] = {}
         self.storage['data'] = {}
         self.storage['parts'] = run_options['parts']
+        self.storage['commit'] = run_options['commit']
         self.storage['plone'] = {}
         # store parts on transmogrifier, so it can be used with standard condition
         transmogrifier.parts = self.storage['parts']

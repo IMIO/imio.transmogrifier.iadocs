@@ -35,11 +35,12 @@ def encode_list(lst, encoding):
 def get_categories(portal):
     """Get already defined categories"""
     cats = {}
+    # cats = {None: {'title': u'', 'uid': portal.tree.UID(), 'enabled': False}}  # the container tree
     for cat in iterate_over_tree(portal.tree):
         if cat.identifier in cats:
             o_logger.error(u"code '{}' '{}' already loaded '{}'".format(cat.identifier, cat.title,
                                                                         cats[cat.identifier]['title']))
-        cats[cat.identifier] = {'title': cat.title, 'uid': cat.UID(), 'enabled': cat.enabled}
+        cats[cat.identifier] = {'title': cat.title, 'uid': cat.UID(), 'enabled': cat.enabled, 'obj': cat}
     return cats
 
 

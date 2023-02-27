@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from collective.classification.tree.utils import create_category
+from collective.classification.tree.utils import get_parents
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
@@ -77,6 +79,7 @@ class BMailtypesByType(object):
     """Modify mailtypes items following use.
 
     Parameters:
+        * related_storage = M, related data storage
         * condition = O, condition expression
     """
     classProvides(ISectionBlueprint)
@@ -213,29 +216,98 @@ class DOMSenderCreation(object):
                     if _euidm['_uid']:  # we have a match
                         if _euidm['_uid'] in self.puid_to_pers:  # we already have a person for this user
                             pid = uuidToObject(self.puid_to_pers[_euidm['_uid']]).id
-                            for y in self.person(e_userid, item, pid, u'Existing', transitions=()): yield y
-                            for y in self.hp(e_userid, item): yield y
+                            for y in self.person(e_userid, item, pid, u'Existing', transitions=()): yield y  # noqa
+                            for y in self.hp(e_userid, item): yield y  # noqa
                         else:
                             pid = _euidm['_uid']
                             # TODO take into account prenom nom order
                             parts = _euidm['_fullname'].split()
                             for y in self.person(e_userid, item, pid, u'Matched', firstname=parts[0],
-                                                 lastname=' '.join(parts[1:])): yield y
-                            for y in self.hp(e_userid, item): yield y
+                                                 lastname=' '.join(parts[1:])): yield y  # noqa
+                            for y in self.hp(e_userid, item): yield y  # noqa
                     else:
                         pid = idnormalizer.normalize(_euidm['_prenom'] and u'{} {}'.format(_euidm['_prenom'],
                                                      _euidm['_nom']) or _euidm['_nom'])
                         for y in self.person(e_userid, item, pid, u'Unmatched', firstname=_euidm['_prenom'],
-                                             lastname=_euidm['_nom']): yield y
-                        for y in self.hp(e_userid, item): yield y
+                                             lastname=_euidm['_nom']): yield y  # noqa
+                        for y in self.hp(e_userid, item): yield y  # noqa
                 else:  # we do not have a _sender_id or _sender_id is not a user id
                     for y in self.person(u'None', item, 'reprise-donnees', u'None', firstname=u'',
-                                         lastname=u'Reprise données'): yield y
-                    for y in self.hp(u'None', item): yield y
+                                         lastname=u'Reprise données'): yield y  # noqa
+                    for y in self.hp(u'None', item): yield y  # noqa
                 continue
             yield item
         if self.change:
             o_logger.info("Part d: some internal persons or/and held positions have been added.")
+
+
+class ECategoryUpdate(object):
+    """Update category or create a new one.
+
+    Parameters:
+        * condition = O, condition expression
+        * title_replace_slash = O, replace / by - if 1 (default 1)
+        * decimal_import = O, identifier is decimal code if 1 (default 1)
+        * yield = O,
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.part = get_part(name)
+        if not is_in_part(self, self.part):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.replace_slash = bool(int(options.get('title_replace_slash') or '1'))
+        self.decimal_import = bool(int(options.get('decimal_import') or '1'))
+        if not self.decimal_import:
+            raise 'Code is only handling decimal import'
+        self.p_category = self.storage['data']['p_category']
+
+    def __iter__(self):
+        change = False
+        for item in self.previous:
+            if is_in_part(self, self.part) and self.condition(item):
+                if item['_pcode']:
+                    if item['_pcode'] not in self.p_category:
+                        log_error(item, u"The _pcode '{}' is not in the loaded categories. "
+                                        u"We pass it".format(item['_pcode']))
+                        continue
+                    node = self.p_category[item['_pcode']]['obj']
+                    if node.title == node.identifier and item['_etitle']:
+                        node.title = self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle']
+                        self.p_category[item['_pcode']]['title'] = node.title
+                        item['_ptitle'] = node.title
+                        change = True
+                else:  # we will create the category
+                    parent = self.portal.tree
+                    parts = get_parents(item['_ecode'])
+                    for part in parts[:-1]:
+                        if part not in self.p_category:  # not already in Plone
+                            parent = create_category(parent, {'identifier': part, 'title': part, 'enabled': False},
+                                                     event=False)
+                            self.p_category[parent.identifier] = {'title': parent.title, 'uid': parent.UID(),
+                                                                  'enabled': parent.enabled, 'obj': parent}
+                            change = True
+                        else:
+                            parent = self.p_category[part]['obj']
+                    if parts[-1] not in self.p_category:
+                        node = create_category(parent, {'identifier': parts[-1], 'title': self.replace_slash and
+                                               item['_etitle'].replace('/', '-') or item['_etitle'], 'enabled': True},
+                                               event=True)
+                        self.p_category[node.identifier] = {'title': node.title, 'uid': node.UID(),
+                                                            'enabled': node.enabled, 'obj': node}
+                        item['_pcode'], item['_ptitle'] = node.identifier, node.title
+                        item['_puid'], item['_pactive'] = node.UID(), node.enabled
+                        change = True
+                if not self.storage['commit']:
+                    continue
+            yield item
+        if change:
+            o_logger.info("Part e: some categories have been created or updated.")
 
 
 class PostActions(object):
