@@ -277,11 +277,21 @@ class ECategoryUpdate(object):
                                         u"We pass it".format(item['_pcode']))
                         continue
                     node = self.p_category[item['_pcode']]['obj']
+                    # when title is not "defined"
                     if node.title == node.identifier and item['_etitle']:
                         node.title = self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle']
                         self.p_category[item['_pcode']]['title'] = node.title
                         item['_ptitle'] = node.title
                         change = True
+                    # # when pcode is different (new matching) and title is different
+                    # new_title = self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle']
+                    # if item['_ecode'] != item['_pcode'] and new_title != node.title:
+                    #     o_logger.info(u"The code '{}' with title '{}' will be replaced by '{}'".format(
+                    #                   item['_pcode'], node.title, new_title))
+                    #     node.title = new_title
+                    #     self.p_category[item['_pcode']]['title'] = node.title
+                    #     item['_ptitle'] = node.title
+                    #     change = True
                 else:  # we will create the category
                     parent = self.portal.tree
                     parts = get_parents(item['_ecode'])
