@@ -12,6 +12,7 @@ from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import get_categories
+from imio.transmogrifier.iadocs.utils import get_folders
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_personnel
@@ -193,6 +194,8 @@ class Initialization(object):
          self.storage['data']['p_hps']) = get_personnel(self.portal)
         # store categories
         self.storage['data']['p_category'] = get_categories(self.portal)
+        # store classification folders
+        self.storage['data']['p_folder_uid'], self.storage['data']['p_folder_full_title'] = get_folders(self.portal)
 
     def __iter__(self):
         for item in self.previous:
@@ -236,7 +239,7 @@ class CommonInputChecks(object):
             if is_in_part(self, self.part) and self.condition(item):
                 # replace newline by hyphen on specified fields
                 for fld in self.hyphens:
-                    if '\n' in item[fld] or '':
+                    if '\n' in (item[fld] or ''):
                         item[fld] = ' - '.join([part.strip() for part in item[fld].split('\n') if part.strip()])
                 # to bool from int
                 for fld in self.booleans:

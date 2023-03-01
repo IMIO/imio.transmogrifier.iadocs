@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 
+from collective.classification.folder.content.vocabularies import full_title_categories
 from collective.classification.tree.utils import iterate_over_tree
 from collective.contact.plonegroup.browser.settings import BaseOrganizationServicesVocabulary
 from collective.contact.plonegroup.config import get_registry_organizations
@@ -42,6 +43,29 @@ def get_categories(portal):
                                                                         cats[cat.identifier]['title']))
         cats[cat.identifier] = {'title': cat.title, 'uid': cat.UID(), 'enabled': cat.enabled, 'obj': cat}
     return cats
+
+
+def get_folders(portal):
+    """Get already defined classification folders"""
+    folders_uids = {}
+    folders_titles = {}
+    crits = {'object_provides': 'collective.classification.folder.content.classification_folder.'
+                                'IClassificationFolder',
+             'sort_on': 'ClassificationFolderSort'}
+    for brain in portal.portal_catalog.unrestrictedSearchResults(**crits):
+        folder = brain._unrestrictedGetObject()
+        parent = folder.cf_parent()
+        # TODO consider internal_reference_no
+        full_title = full_title_categories(folder, with_irn=False, with_cat=False)[0]
+        folders_uids[brain.UID] = {'title': folder.title, 'path': brain.getPath(), 'full_title': full_title,
+                                   'parent': parent and parent.UID() or None,
+                                   'internal_number': getattr(folder, 'internal_number', None)}
+        if full_title not in folders_titles:
+            folders_titles[full_title] = {'uids': []}
+        folders_titles[full_title]['uids'].append(brain.UID)
+        # o_logger.error(u"Already found folder title '{}' ({}) on {}".format(full_title, brain.getPath(),
+        #                folders_uids[folders_titles[full_title]['uid']]['path']))
+    return folders_uids, folders_titles
 
 
 def get_mailtypes(portal):
