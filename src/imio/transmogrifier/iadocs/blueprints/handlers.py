@@ -305,9 +305,10 @@ class ECategoryUpdate(object):
                         else:
                             parent = self.p_category[part]['obj']
                     if parts[-1] not in self.p_category:
+                        # TODO check if _eactive is well boolean
                         node = create_category(parent, {'identifier': parts[-1], 'title': self.replace_slash and
-                                               item['_etitle'].replace('/', '-') or item['_etitle'], 'enabled': True},
-                                               event=True)
+                                               item['_etitle'].replace('/', '-') or item['_etitle'],
+                                               'enabled': item['_eactive']}, event=True)
                         self.p_category[node.identifier] = {'title': node.title, 'uid': node.UID(),
                                                             'enabled': node.enabled, 'obj': node}
                         item['_pcode'], item['_ptitle'] = node.identifier, node.title
