@@ -57,11 +57,11 @@ class AddDataInItem(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.part = get_part(name)
+        self.related_storage = safe_unicode(options['related_storage'])
         if not is_in_part(self, self.part):
             return
         b_condition = Condition(options.get('b_condition') or 'python:True', transmogrifier, name, options)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
-        self.related_storage = safe_unicode(options['related_storage'])
         if not b_condition(None, storage=self.storage):
             self.related_storage = None
             return
@@ -236,13 +236,15 @@ class CommonInputChecks(object):
             if is_in_part(self, self.part) and self.condition(item):
                 # replace newline by hyphen on specified fields
                 for fld in self.hyphens:
-                    if '\n' in item[fld]:
+                    if '\n' in item[fld] or '':
                         item[fld] = ' - '.join([part.strip() for part in item[fld].split('\n') if part.strip()])
                 # to bool from int
                 for fld in self.booleans:
                     item[fld] = text_to_bool(item, fld, log_error)
                 # strip chars
                 for fld, chars in self.strips:
+                    if not item[fld]:
+                        continue
                     item[fld] = item[fld].strip(chars)
             yield item
 
