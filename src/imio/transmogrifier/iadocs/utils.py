@@ -30,7 +30,7 @@ def encode_list(lst, encoding):
     """
     new_list = []
     for content in lst:
-        if isinstance(content, unicode):  #
+        if isinstance(content, unicode):
             content = content.encode(encoding)
         new_list.append(content)
     return new_list

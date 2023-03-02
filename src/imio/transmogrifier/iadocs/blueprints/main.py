@@ -39,15 +39,16 @@ class AddDataInItem(object):
 
     Parameters:
         * b_condition = O, blueprint condition expression
-        * bp_key = M, blueprint key representing csv
+        * bp_key = M, blueprint key
         * related_storage = M, storage to get data
         * store_key = M, store key in data. The data is gotten from storage[{related_storage}][{store_key}]
         * store_subkey = O, storing sub key. If defined, the item is gotten from
           storage[{related_storage}][{store_key}][{store_subkey}]
         * fieldnames = O, fieldnames to add to item. All if nothing.
-        * add_keys = O, flag to know if the store keys must be added in item (0 or 1: default 1)
+        * add_store_keys = O, flag to know if the store keys must be added in item (0 or 1: default 1)
         * prefix = O, prefix to add to fieldnames (to avoid collision with existing keys)
         * condition = O, condition expression
+        * marker = 0, marker name added in '_mar_ker' key if given
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -72,6 +73,7 @@ class AddDataInItem(object):
         self.fieldnames = safe_unicode(options.get('fieldnames') or '').split()
         self.add_store_keys = bool(int(options.get('add_store_keys') or '1'))
         self.prefix = safe_unicode(options.get('prefix', u''))
+        self.marker = safe_unicode(options.get('marker', u''))
 
     def __iter__(self):
         ddic = self.storage['data'].get(self.related_storage, {})
@@ -87,6 +89,8 @@ class AddDataInItem(object):
                         store_keys[u'{}{}'.format(self.prefix, self.store_subkey)] = (vdic and item[self.store_subkey]
                                                                                       or u'')
                 update_dic = {u'{}{}'.format(self.prefix, key): vdic.get(key, u'') for key in self.fieldnames}
+                if self.marker:
+                    item['_mar_ker'] = vdic and self.marker or u''
                 item.update(update_dic)
                 item.update(store_keys)
             yield item
