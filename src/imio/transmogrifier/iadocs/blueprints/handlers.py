@@ -171,7 +171,7 @@ class DOMSenderCreation(object):
         self.puid_to_pers = self.storage['data']['p_userid_to_pers']
         self.euid_to_pers = self.storage['data']['p_euid_to_pers']
         self.p_hps = self.storage['data']['p_hps']
-        self.p_eid_orgs = self.storage['data']['p_eid_to_orgs']
+        self.eid_to_orgs = self.storage['data']['p_eid_to_orgs']
         self.e_c_s = self.storage['data']['e_contacts_sender']
         self.e_u_m = self.storage['data']['e_user_match']
         self.intids = getUtility(IIntIds)
@@ -193,7 +193,7 @@ class DOMSenderCreation(object):
 
     def hp(self, e_userid, item, transitions=('deactivate',)):
         puid = self.euid_to_pers[e_userid]
-        ouid = self.p_eid_orgs[item['_service']]
+        ouid = self.eid_to_orgs[item['_service']]['uid']
         if ouid not in self.p_hps[puid]['hps']:
             # we create a hp
             path = os.path.join(self.p_hps[puid]['path'], ouid)

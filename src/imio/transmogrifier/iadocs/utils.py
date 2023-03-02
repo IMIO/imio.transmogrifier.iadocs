@@ -161,7 +161,7 @@ def get_plonegroup_orgs(portal, eid_fld='internal_number'):
                                 'ft': term.title, 'eids': eids, 'st': api.content.get_state(org),
                                 'sl': term.value in selected_orgs}
         for eid in eids:
-            eid_to_orgs[eid] = term.value
+            eid_to_orgs[eid] = {'uid': term.value}
     return all_orgs, eid_to_orgs
 
 
