@@ -195,7 +195,8 @@ class Initialization(object):
         # store categories
         self.storage['data']['p_category'] = get_categories(self.portal)
         # store classification folders
-        self.storage['data']['p_folder_uid'], self.storage['data']['p_folder_full_title'] = get_folders(self.portal)
+        (self.storage['data']['p_folder_uid'], self.storage['data']['p_irn_to_folder'],
+         self.storage['data']['p_folder_full_title']) = get_folders(self)
 
     def __iter__(self):
         for item in self.previous:

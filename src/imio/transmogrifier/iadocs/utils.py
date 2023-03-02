@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
-
 from collective.classification.folder.content.vocabularies import full_title_categories
 from collective.classification.tree.utils import iterate_over_tree
 from collective.contact.plonegroup.browser.settings import BaseOrganizationServicesVocabulary
@@ -8,10 +6,15 @@ from collective.contact.plonegroup.config import get_registry_organizations
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.vocabularies import get_users_voc
+from imio.pyutils.system import dump_var
+from imio.pyutils.system import load_var
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
 from plone import api
-from Products.CMFPlone.utils import safe_unicode
+
+import os
+import re
+
 
 itf = 'imio.dms.mail.browser.settings.IImioDmsMailConfig'
 MAILTYPES = {'te': '{}.mail_types'.format(itf), 'ts': '{}.omail_types'.format(itf),
@@ -45,27 +48,54 @@ def get_categories(portal):
     return cats
 
 
-def get_folders(portal):
+def get_folders(section):
     """Get already defined classification folders"""
+    portal = section.portal
     folders_uids = {}
+    irn_to_folder = {}
     folders_titles = {}
+    fuids_file = full_path(section.storage['csvp'], '2_folder_folders_uids.dic')
+    irntf_file = full_path(section.storage['csvp'], '2_folder_irn_to_folder.dic')
+    ft_file = full_path(section.storage['csvp'], '2_folder_folders_titles.dic')
+    if os.path.exists(fuids_file) and os.path.exists(irntf_file) and os.path.exists(ft_file):
+        load_var(fuids_file, folders_uids)
+        load_var(irntf_file, irn_to_folder)
+        load_var(ft_file, folders_titles)
+        return folders_uids, irn_to_folder, folders_titles
+
     crits = {'object_provides': 'collective.classification.folder.content.classification_folder.'
                                 'IClassificationFolder',
              'sort_on': 'ClassificationFolderSort'}
     for brain in portal.portal_catalog.unrestrictedSearchResults(**crits):
         folder = brain._unrestrictedGetObject()
         parent = folder.cf_parent()
-        # TODO consider internal_reference_no
         full_title = full_title_categories(folder, with_irn=False, with_cat=False)[0]
+        irn = folder.internal_reference_no
+        if irn:
+            # parts = re.split('/', irn)
+            parts = irn.split('/')
+            irn = parts[0]
+            # try:
+            #     int(irn)
+            # except ValueError:
+            #     o_logger.error(u"Invalid irn '{}' for '{}' ({})".format(irn, full_title, folder.absolute_url()))
         folders_uids[brain.UID] = {'title': folder.title, 'path': brain.getPath(), 'full_title': full_title,
-                                   'parent': parent and parent.UID() or None,
-                                   'internal_number': getattr(folder, 'internal_number', None)}
+                                   'parent': parent and parent.UID() or None, 'irn': irn}
+        if irn not in irn_to_folder:
+            irn_to_folder[irn] = {'uid': brain.UID}
+        elif not brain.getPath().startswith('{}/'.format(folders_uids[irn_to_folder[irn]['uid']]['path'])):
+            # subfolder has been created with parent irn but modified by user who has removed suffix
+            o_logger.error(u"Already found folder irn '{}' ({}) on {}".format(irn, brain.getPath(),
+                           folders_uids[irn_to_folder[irn]['uid']]['path']))
         if full_title not in folders_titles:
             folders_titles[full_title] = {'uids': []}
-        folders_titles[full_title]['uids'].append(brain.UID)
         # o_logger.error(u"Already found folder title '{}' ({}) on {}".format(full_title, brain.getPath(),
         #                folders_uids[folders_titles[full_title]['uid']]['path']))
-    return folders_uids, folders_titles
+        folders_titles[full_title]['uids'].append(brain.UID)
+    dump_var(fuids_file, folders_uids)
+    dump_var(irntf_file, irn_to_folder)
+    dump_var(ft_file, folders_titles)
+    return folders_uids, irn_to_folder, folders_titles
 
 
 def get_mailtypes(portal):
