@@ -80,7 +80,8 @@ def get_folders(section):
             # except ValueError:
             #     o_logger.error(u"Invalid irn '{}' for '{}' ({})".format(irn, full_title, folder.absolute_url()))
         folders_uids[brain.UID] = {'title': folder.title, 'path': brain.getPath(), 'full_title': full_title,
-                                   'parent': parent and parent.UID() or None, 'irn': irn}
+                                   'parent': parent and parent.UID() or None, 'irn': folder.internal_reference_no,
+                                   'peid': irn}
         if irn not in irn_to_folder:
             irn_to_folder[irn] = {'uid': brain.UID}
         elif not brain.getPath().startswith('{}/'.format(folders_uids[irn_to_folder[irn]['uid']]['path'])):
