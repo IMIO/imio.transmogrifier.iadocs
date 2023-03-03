@@ -4,6 +4,8 @@ from zope.i18nmessageid import MessageFactory
 
 import logging
 
+# types shortcuts
+T_S = {'dmsincomingmail': 'IM', 'dmsincoming_email': 'IE', 'dmsoutgoingmail': 'OM'}
 
 logger = logging.getLogger('dt')
 logger.setLevel(logging.INFO)  # needed to be displayed with instance run

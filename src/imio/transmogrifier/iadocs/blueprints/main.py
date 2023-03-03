@@ -3,6 +3,7 @@ from collections import OrderedDict
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
+from imio.helpers.transmogrifier import correct_path
 from imio.helpers.transmogrifier import filter_keys
 from imio.helpers.transmogrifier import get_main_path
 from imio.helpers.transmogrifier import pool_tuples
@@ -24,8 +25,10 @@ from imio.transmogrifier.iadocs.utils import log_error
 from plone import api
 from plone.dexterity.fti import DexterityFTIModificationDescription
 from plone.dexterity.fti import ftiModified
+from plone.i18n.normalizer import IIDNormalizer
 from Products.CMFPlone.utils import safe_unicode
 from zope.annotation import IAnnotations
+from zope.component import getUtility
 from zope.interface import classProvides
 from zope.interface import implements
 from zope.lifecycleevent import ObjectModifiedEvent
@@ -202,6 +205,8 @@ class Initialization(object):
         # store classification folders
         (self.storage['data']['p_folder_uid'], self.storage['data']['p_irn_to_folder'],
          self.storage['data']['p_folder_full_title']) = get_folders(self)
+        # store already imported mails
+        self.storage['data']['p_mail_ids'] = {}
 
     def __iter__(self):
         for item in self.previous:
@@ -246,7 +251,7 @@ class CommonInputChecks(object):
                 for fld in self.hyphens:
                     if '\n' in (item[fld] or ''):
                         item[fld] = ' - '.join([part.strip() for part in item[fld].split('\n') if part.strip()])
-                # to bool from int
+                # to bool
                 for fld in self.booleans:
                     item[fld] = str_to_bool(item, fld, log_error)
                 # to dates
@@ -277,6 +282,54 @@ class LastSection(object):
             yield item
         # end of process
         # import ipdb; ipdb.set_trace()
+
+
+class PathInsert(object):
+    """Adds _path if not yet defined, to create new items.
+
+    Parameters:
+        * bp_key = M, blueprint key representing csv
+        * id_keys = M, fieldnames to use to create id.
+        * condition = O, condition expression
+        * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.part = get_part(name)
+        self.bp_key = safe_unicode(options['bp_key'])
+        if not is_in_part(self, self.part):
+            return
+        self.ids = self.storage['data']['p_mail_ids']
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        fieldnames = self.storage['csv'].get(self.bp_key, {}).get('fd', [])
+        self.id_keys = [key for key in safe_unicode(options.get('id_keys', '')).split() if key in fieldnames]
+        self.roe = bool(int(options.get('raise_on_error', '1')))
+
+    def __iter__(self):
+        idnormalizer = getUtility(IIDNormalizer)
+        for item in self.previous:
+            if '_path' in item:  # _path is already set
+                yield item
+                continue
+            if is_in_part(self, self.part) and self.condition(item):
+                title = u'-'.join([item[key] for key in self.id_keys if item[key]])
+                if not title:
+                    log_error(item, u'cannot get an id from id keys {}'.format(self.id_keys), level='critical')
+                    if self.roe:
+                        raise Exception(u'No title ! See log...')
+                    continue
+                new_id = idnormalizer.normalize(title)
+                item['_path'] = '/'.join([item['_parent'], new_id])
+                item['_path'] = correct_path(self.portal, item['_path'])
+                item['_act'] = 'N'
+                self.ids.setdefault(item['_eid'], {})['path'] = item['_path']
+            yield item
 
 
 class StoreInData(object):
