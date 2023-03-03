@@ -19,15 +19,15 @@ tableX = ['eAdresses', 'eClassement', 'eClassementDossiers', 'eContacts', 'eCont
           'eCourriersLiens', 'eCourriersServices', 'eGroupes', 'eGroupesContacts', 'eGroupesMembres', 'eNatures',
           'eRues', 'eServices', 'eTypeAction', 'eUsers']
 tables = OrderedDict([
-    ('eAdresses', {'c': ''}), ('eClassement', {'c': ''}), ('eClassementDossiers', {'c': ''}), ('eContacts', {'c': ''}),
-    ('eContactsAdresses', {'c': ''}), ('eContactsTitres', {'c': ''}), ('eContactsType', {'c': ''}),
-    ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'"}),
-    ('eCourriersDestinataires', {'c': ''}), ('eCourriersFichiers', {'c': ''}), ('eCourriersDossiers', {'c': ''}),
-    ('eCourriersLiens', {'c': ''}), ('eCourriersServices', {'c': ''}), ('eGroupes', {'c': ''}),
-    ('eGroupesContacts', {'c': ''}), ('eGroupesMembres', {'c': ''}), ('eNatures', {'c': ''}), ('eRues', {'c': ''}),
-    ('eServices', {'c': ''}), ('eTypeAction', {'c': ''}), ('eUsers', {'c': ''})])
+    ('eAdresses', {}), ('eClassement', {}), ('eClassementDossiers', {}), ('eContacts', {}),
+    ('eContactsAdresses', {}), ('eContactsTitres', {}), ('eContactsType', {}),
+    ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'", 'o': "DateEncodage"}),
+    ('eCourriersDestinataires', {}), ('eCourriersFichiers', {}), ('eCourriersDossiers', {}),
+    ('eCourriersLiens', {}), ('eCourriersServices', {}), ('eGroupes', {}),
+    ('eGroupesContacts', {}), ('eGroupesMembres', {}), ('eNatures', {}), ('eRues', {}),
+    ('eServices', {}), ('eTypeAction', {}), ('eUsers', {})])
 fwf_cmd = 'docker exec -u root -it {dock} /opt/mssql-tools/bin/sqlcmd -S localhost -d {db} -U SA -P "{pwd}" ' \
-          '-Q "select * from {table}{where}" -o "/srv/sqlcmd.fwf" -s"{sep}"'
+          '-Q "select * from {table}{where}{order}" -o "/srv/sqlcmd.fwf" -s"{sep}"'
 cp_cmd = 'docker cp {dock}:/srv/sqlcmd.fwf "{of}"'
 
 
@@ -41,10 +41,13 @@ def main(docker, db_name, pwd, delim, input_filter, output_dir, only_new, simula
         if only_new and os.path.exists(out_file):
             continue
         where = ''
-        if tables[table]['c']:
+        if tables[table].get('c'):
             where = ' where {}'.format(tables[table]['c'])
+        order = ''
+        if tables[table].get('o'):
+            order = ' order by {}'.format(tables[table]['o'])
         cmd = fwf_cmd.format(**{'dock': docker, 'db': db_name, 'pwd': pwd, 'table': table, 'sep': delim,
-                                'where': where})
+                                'where': where, 'order': order})
         if simulate:
             logger.info(cmd)
             continue
