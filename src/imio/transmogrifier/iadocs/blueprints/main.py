@@ -8,6 +8,7 @@ from imio.helpers.transmogrifier import get_main_path
 from imio.helpers.transmogrifier import pool_tuples
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.transmogrifier import text_to_bool
+from imio.helpers.transmogrifier import str_to_date
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
@@ -215,6 +216,7 @@ class CommonInputChecks(object):
         * condition = O, condition expression
         * booleans = O, list of fields to transform in booleans
         * hyphen_newline = O, list of fields where newline will be replaced by hyphen
+        * dates = O, list of triplets (fieldname format as_date) to transform in date
         * strip_chars = O, list of pairs (fieldname chars) on which a strip must be done
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
     """
@@ -232,12 +234,10 @@ class CommonInputChecks(object):
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.hyphens = [key for key in safe_unicode(options.get('hyphen_newline', '')).split() if key in fieldnames]
         self.booleans = [key for key in safe_unicode(options.get('booleans', '')).split() if key in fieldnames]
+        self.dates = safe_unicode(options.get('dates', '')).strip().split()
+        self.dates = [tup for tup in pool_tuples(self.dates, 3, 'dates option') if tup[0] in fieldnames]
         self.strips = safe_unicode(options.get('strip_chars', '')).strip().split()
-        if self.strips:
-            if len(self.strips) % 2:
-                raise Exception("The '{}' section 'strip_chars' option must contain a multiple of "
-                                "2 elements: values = '{}'".format(name, self.strips))
-            self.strips = pool_tuples(self.strips, 2)
+        self.strips = [tup for tup in pool_tuples(self.strips, 2, 'strip_chars option') if tup[0] in fieldnames]
 
     def __iter__(self):
         for item in self.previous:
@@ -249,6 +249,9 @@ class CommonInputChecks(object):
                 # to bool from int
                 for fld in self.booleans:
                     item[fld] = text_to_bool(item, fld, log_error)
+                # to dates
+                for fld, fmt, as_date in self.dates:
+                    item[fld] = str_to_date(item, fld, log_error, fmt=fmt, as_date=bool(int(as_date)))
                 # strip chars
                 for fld, chars in self.strips:
                     if not item[fld]:
