@@ -3,10 +3,11 @@
 from __future__ import print_function
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
-# from imio.transmogrifier.iadocs.utils import shortcut
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
+from imio.helpers.transmogrifier import key_val as dim
+from imio.transmogrifier.iadocs import T_S
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import is_in_part
 from Products.CMFPlone.utils import safe_unicode
@@ -142,8 +143,8 @@ class ShortLog(object):
 
     def __iter__(self):
         for item in self.previous:
-            to_print = u"{}: {}, {}".format(item['_bpk'], item.get('_eid', ''),
-                                            item.get('title', '') or item.get('_path', ''))
+            to_print = u"{}:{},{},{},{}".format(item['_bpk'], item.get('_eid', ''), dim(item.get('_type', ''), T_S),
+                                                item.get('_act', '?'), item.get('_path', '') or item.get('title', ''))
             # print(to_print, file=sys.stderr)
             o_logger.info(to_print)
             yield item
