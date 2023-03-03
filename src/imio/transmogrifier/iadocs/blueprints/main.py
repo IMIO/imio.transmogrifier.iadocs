@@ -7,7 +7,7 @@ from imio.helpers.transmogrifier import filter_keys
 from imio.helpers.transmogrifier import get_main_path
 from imio.helpers.transmogrifier import pool_tuples
 from imio.helpers.transmogrifier import relative_path
-from imio.helpers.transmogrifier import text_to_bool
+from imio.helpers.transmogrifier import str_to_bool
 from imio.helpers.transmogrifier import str_to_date
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
@@ -248,7 +248,7 @@ class CommonInputChecks(object):
                         item[fld] = ' - '.join([part.strip() for part in item[fld].split('\n') if part.strip()])
                 # to bool from int
                 for fld in self.booleans:
-                    item[fld] = text_to_bool(item, fld, log_error)
+                    item[fld] = str_to_bool(item, fld, log_error)
                 # to dates
                 for fld, fmt, as_date in self.dates:
                     item[fld] = str_to_date(item, fld, log_error, fmt=fmt, as_date=bool(int(as_date)))
