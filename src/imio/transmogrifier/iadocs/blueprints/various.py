@@ -33,6 +33,7 @@ class Breakpoint(object):
         self.condition = Condition(condition, transmogrifier, name, options)
         self.previous = previous
         self.transmogrifier = transmogrifier
+        self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
 
     def __iter__(self):
