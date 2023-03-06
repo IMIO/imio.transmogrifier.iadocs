@@ -4,6 +4,7 @@ from collective.classification.tree.utils import get_parents
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
+from imio.dms.mail.utils import create_period_folder
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import correct_path
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
@@ -319,6 +320,30 @@ class ECategoryUpdate(object):
             yield item
         if change:
             o_logger.info("Part e: some categories have been created or updated.")
+
+
+class ParentPathInsert(object):
+    """Add parent path key following type"""
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.im_folder = self.portal['incoming-mail']
+
+    def __iter__(self):
+        for item in self.previous:
+            ptyp = item.get('_type')
+            if not ptyp:
+                yield item
+                continue
+            if ptyp in ('dmsincomingmail', 'dmsincoming_email'):
+                container = create_period_folder(self.im_folder, item['creation_date'])
+                item['_parenth'] = u'/incoming-mail/{}'.format(container.id)
+            yield item
 
 
 class PostActions(object):

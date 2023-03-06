@@ -325,7 +325,7 @@ class PathInsert(object):
                         raise Exception(u'No title ! See log...')
                     continue
                 new_id = idnormalizer.normalize(title)
-                item['_path'] = '/'.join([item['_parent'], new_id])
+                item['_path'] = '/'.join([item['_parenth'], new_id])
                 item['_path'] = correct_path(self.portal, item['_path'])
                 item['_act'] = 'N'
                 self.ids.setdefault(item['_eid'], {})['path'] = item['_path']
