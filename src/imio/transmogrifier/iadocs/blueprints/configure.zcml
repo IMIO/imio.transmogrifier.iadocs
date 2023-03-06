@@ -116,6 +116,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.state_set"
+    component=".main.StateSet"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.stop"
     component=".various.Stop"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

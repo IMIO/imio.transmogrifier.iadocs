@@ -3,6 +3,7 @@ from collections import OrderedDict
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
+from DateTime.DateTime import DateTime
 from imio.helpers.transmogrifier import correct_path
 from imio.helpers.transmogrifier import filter_keys
 from imio.helpers.transmogrifier import get_main_path
@@ -342,6 +343,62 @@ class PathInsert(object):
                 item['_path'] = correct_path(self.portal, item['_path'])
                 item['_act'] = 'N'
                 self.ids.setdefault(item['_eid'], {})['path'] = item['_path']
+            yield item
+
+
+class StateSet(object):
+    """Sets state in workflow history.
+
+    Parameters:
+        * workflow_id = M, workflow id
+        * state_id = M, state id
+        * date_key = O, date key. Or don't change
+        * condition = O, condition expression
+        * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.part = get_part(name)
+        if not is_in_part(self, self.part):
+            return
+        self.workflow_id = options['workflow_id']
+        self.state_id = options['state_id']
+        self.date_key = options.get('date_key')
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.roe = bool(int(options.get('raise_on_error', '1')))
+
+    def __iter__(self):
+        for item in self.previous:
+            if is_in_part(self, self.part) and self.condition(item):
+                try:
+                    obj = self.portal.unrestrictedTraverse(safe_unicode(item['_path'][1:]).encode('utf8'))
+                except AttributeError:
+                    log_error(item, "The corresponding object '{}' cannot be found".format(item['_path']))
+                    continue
+                if self.workflow_id not in obj.workflow_history:
+                    log_error(item, "Cannot find '{}' wkf id in workflow_history: {}".format(self.workflow_id,
+                                                                                             obj.workflow_history))
+                if len(obj.workflow_history[self.workflow_id]) > 1:
+                    log_error(item, "workflow_history len > 1: {}".format(obj.workflow_history))
+                wfh = []
+                change = False
+                for status in obj.workflow_history.get(self.workflow_id):
+                    # replace old state by new one
+                    if status['review_state'] == 'created':
+                        status['review_state'] = self.state_id
+                    if self.date_key and item.get(self.date_key):
+                        status['time'] = DateTime(item[self.date_key])
+                    # actor ?
+                    wfh.append(status)
+                    change = True
+                if change:
+                    obj.workflow_history[self.workflow_id] = tuple(wfh)
             yield item
 
 
