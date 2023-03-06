@@ -119,6 +119,7 @@ class Initialization(object):
         if not csvpath:
             csvpath = workingpath
         in_types = safe_unicode(transmogrifier['config'].get('internal_number_types') or '').split()
+
         # setting logs
         efh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors.log'), mode='w')
         efh.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
@@ -173,6 +174,7 @@ class Initialization(object):
         self.storage['plone'] = {}
         # store parts on transmogrifier, so it can be used with standard condition
         transmogrifier.parts = self.storage['parts']
+
         # find directory
         brains = api.content.find(portal_type='directory')
         if brains:
@@ -191,6 +193,7 @@ class Initialization(object):
             dir_org_config_len[typ] = len(dir_org_config[typ])
         # self.storage['data']['dir_org_config'] = dir_org_config
         # self.storage['data']['dir_org_config_len'] = dir_org_config_len
+
         # store services
         self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
         # store mailtypes
@@ -207,6 +210,12 @@ class Initialization(object):
          self.storage['data']['p_folder_full_title']) = get_folders(self)
         # store already imported mails
         self.storage['data']['p_mail_ids'] = {}
+
+        # deactivate versioning
+        pr_tool = api.portal.get_tool('portal_repository')
+        self.storage['plone']['pr_vct'] = tuple(pr_tool._versionable_content_types)
+        pr_tool._versionable_content_types[:] = ()
+
 
     def __iter__(self):
         for item in self.previous:
@@ -281,6 +290,10 @@ class LastSection(object):
         for item in self.previous:
             yield item
         # end of process
+        # deactivate versioning
+        pr_tool = api.portal.get_tool('portal_repository')
+        pr_tool._versionable_content_types[:] = ()
+        pr_tool._versionable_content_types.extend(self.storage['plone']['pr_vct'])
         # import ipdb; ipdb.set_trace()
 
 
