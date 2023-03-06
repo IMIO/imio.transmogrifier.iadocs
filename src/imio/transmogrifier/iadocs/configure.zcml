@@ -6,6 +6,7 @@
 
   <!-- Set up z3c.autoinlcude to scan dependencies and plugins of this package -->
   <includePlugins package="." />
+  <include package="transmogrify.dexterity" />
   <include package=".blueprints" />
 
   <!--five:registerPackage package="." initialize=".initialize" />
@@ -17,5 +18,11 @@
       description="Installation profile for imio.transmogrifier.iadocs"
       provides="Products.GenericSetup.interfaces.EXTENSION"
       /-->
+
+  <!-- Set deserializer on treating_groups field, otherwise ObjectDeserializer is gotten -->
+  <adapter
+      factory="transmogrify.dexterity.converters.DefaultDeserializer"
+      for="collective.task.interfaces.ILocalRoleMasterSelectField"
+      />
 
 </configure>
