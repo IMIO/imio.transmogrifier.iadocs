@@ -337,7 +337,7 @@ class ParentPathInsert(object):
     def __iter__(self):
         for item in self.previous:
             ptyp = item.get('_type')
-            if not ptyp:
+            if not ptyp or '_path' in item or '_parenth' in item:
                 yield item
                 continue
             if ptyp in ('dmsincomingmail', 'dmsincoming_email'):
