@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import pickle
 from collections import OrderedDict
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
@@ -14,6 +15,7 @@ from imio.helpers.transmogrifier import str_to_date
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import full_path
 from imio.transmogrifier.iadocs.utils import get_categories
 from imio.transmogrifier.iadocs.utils import get_folders
 from imio.transmogrifier.iadocs.utils import get_mailtypes
@@ -172,6 +174,8 @@ class Initialization(object):
         self.storage['data'] = {}
         self.storage['parts'] = run_options['parts']
         self.storage['commit'] = run_options['commit']
+        self.storage['commit_nb'] = run_options['commit_nb']
+        self.storage['batch_nb'] = run_options['batch_nb']
         self.storage['plone'] = {}
         # store parts on transmogrifier, so it can be used with standard condition
         transmogrifier.parts = self.storage['parts']
@@ -319,7 +323,7 @@ class PathInsert(object):
         self.bp_key = safe_unicode(options['bp_key'])
         if not is_in_part(self, self.part):
             return
-        self.ids = self.storage['data']['p_mail_ids']
+        self.eids = self.storage['data'].setdefault(self.bp_key, {})
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         fieldnames = self.storage['csv'].get(self.bp_key, {}).get('fd', [])
         self.id_keys = [key for key in safe_unicode(options.get('id_keys', '')).split() if key in fieldnames]
@@ -342,8 +346,49 @@ class PathInsert(object):
                 item['_path'] = '/'.join([item['_parenth'], new_id])
                 item['_path'] = correct_path(self.portal, item['_path'])
                 item['_act'] = 'N'
-                self.ids.setdefault(item['_eid'], {})['path'] = item['_path']
+                self.eids.setdefault(item['_eid'], {})['path'] = item['_path']
             yield item
+
+
+class PickleData(object):
+    """Pickle data.
+
+    Parameters:
+        * filename = M, filename to load and dump
+        * store_key = M, store key in data dicts
+        * d_condition = O, dump condition expression (default: False)
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.transmogrifier = transmogrifier
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.part = get_part(name)
+        if not is_in_part(self, self.part):
+            self.filename = None
+            return
+        self.filename = safe_unicode(options['filename'])
+        if not self.filename:
+            return
+        self.store_key = safe_unicode(options['store_key'])
+        self.filename = full_path(self.storage['csvp'], self.filename)
+        self.storage['data'].setdefault(self.store_key, {})
+        if os.path.exists(self.filename):
+            o_logger.info(u"Loading '{}'".format(self.filename))
+            with open(self.filename, 'rb') as fh:
+                self.storage['data'][self.store_key] = pickle.load(fh)
+        self.d_condition = Condition(options.get('d_condition') or 'python:False', transmogrifier, name, options)
+
+    def __iter__(self):
+        for item in self.previous:
+            yield item
+        if self.filename and self.d_condition(None, storage=self.storage):
+            o_logger.info(u"Dumping '{}'".format(self.filename))
+            with open(self.filename, 'wb') as fh:
+                pickle.dump(self.storage['data'][self.store_key], fh)
 
 
 class StateSet(object):

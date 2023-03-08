@@ -104,6 +104,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.pickle_data"
+    component=".main.PickleData"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.post_actions"
     component=".handlers.PostActions"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
