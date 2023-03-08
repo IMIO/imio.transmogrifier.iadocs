@@ -111,7 +111,9 @@ def get_mailtypes(portal):
 
 
 def get_part(name):
-    return name[0:1]
+    if name[1:2] == '_':
+        return name[0:1]
+    return 'ZZ'
 
 
 def get_personnel(portal, eid_fld='internal_number'):
