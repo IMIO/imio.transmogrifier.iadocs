@@ -9,6 +9,7 @@ from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import correct_path
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import clean_value
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
@@ -320,6 +321,31 @@ class ECategoryUpdate(object):
             yield item
         if change:
             o_logger.info("Part e: some categories have been created or updated.")
+
+
+class J1ContactHandling(object):
+    """Handles contact"""
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+
+    # _sender_id _sender
+    # e_contact = _uid _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
+    def __iter__(self):
+        for item in self.previous:
+            desc = item.get('description', u'')
+            d_t = item.get('data_transfer', u'')
+            title = []
+            address = []
+            m_sender = clean_value(item['_sender'], patterns=[r'^["\']+$'])
+            if item['_sender_id']:
+                infos = self.storage['data']['e_contact'][item['_sender_id']]
+            yield item
 
 
 class ParentPathInsert(object):
