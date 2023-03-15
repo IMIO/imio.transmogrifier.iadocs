@@ -21,6 +21,18 @@ MAILTYPES = {'te': '{}.mail_types'.format(itf), 'ts': '{}.omail_types'.format(it
              'fe': '{}.omail_send_modes'.format(itf)}
 
 
+def clean_value(value, sep=u'\n', strip=u' ', patterns=[]):
+    """Remove useless part in multiline value"""
+    parts = []
+    for part in value.split(sep):
+        part = part.strip(strip)
+        for pattern in patterns:
+            part = re.sub(pattern, u'', part)
+        if part:
+            parts.append(part)
+    return sep.join(parts)
+
+
 def encode_list(lst, encoding):
     """Encode a list following encoding.
 
