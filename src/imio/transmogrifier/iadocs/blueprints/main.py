@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import pickle
 from collections import OrderedDict
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
@@ -36,9 +35,11 @@ from zope.interface import classProvides
 from zope.interface import implements
 from zope.lifecycleevent import ObjectModifiedEvent
 
+import csv
 import json
 import logging
 import os
+import pickle
 
 
 class AddDataInItem(object):
@@ -234,6 +235,8 @@ class CommonInputChecks(object):
         * bp_key = M, blueprint key corresponding to csv
         * condition = O, condition expression
         * booleans = O, list of fields to transform in booleans
+        * invalids = O, list of pairs (fieldname values) for which field content will be replaced with None
+          if it is equal to a value. values are | separated
         * hyphen_newline = O, list of fields where newline will be replaced by hyphen
         * dates = O, list of triplets (fieldname format as_date) to transform in date
         * strip_chars = O, list of pairs (fieldname chars) on which a strip must be done
@@ -251,6 +254,10 @@ class CommonInputChecks(object):
             return
         fieldnames = self.storage['csv'].get(self.bp_key, {}).get('fd', [])
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.invalids = next(csv.reader([options.get('invalids', '').strip()], delimiter=' ', quotechar='"',
+                                        skipinitialspace=True))
+        self.invalids = [cell.decode('utf8') for cell in self.invalids]
+        self.invalids = [tup for tup in pool_tuples(self.invalids, 2, 'invalids option') if tup[0] in fieldnames]
         self.hyphens = [key for key in safe_unicode(options.get('hyphen_newline', '')).split() if key in fieldnames]
         self.booleans = [key for key in safe_unicode(options.get('booleans', '')).split() if key in fieldnames]
         self.dates = safe_unicode(options.get('dates', '')).strip().split()
@@ -261,6 +268,12 @@ class CommonInputChecks(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.part) and self.condition(item):
+                # replace values on specified fields
+                for fld, values in self.invalids:
+                    for value in values.split(u'|'):
+                        if item[fld] == value:
+                            item[fld] = None
+                            break
                 # replace newline by hyphen on specified fields
                 for fld in self.hyphens:
                     if '\n' in (item[fld] or ''):

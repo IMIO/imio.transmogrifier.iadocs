@@ -1,21 +1,16 @@
 # -*- coding: utf-8 -*-
 """Setup tests for this package."""
 from imio.transmogrifier.iadocs.utils import clean_value
-from plone import api
-from plone.app.testing import setRoles
-from plone.app.testing import TEST_USER_ID
 from imio.transmogrifier.iadocs.testing import IMIO_TRANSMOGRIFIER_IADOCS_INTEGRATION_TESTING  # noqa
 
 import unittest
 
 
-class TestSetup(unittest.TestCase):
-    """Test that imio.transmogrifier.iadocs is properly installed."""
+class TestUtils(unittest.TestCase):
 
     layer = IMIO_TRANSMOGRIFIER_IADOCS_INTEGRATION_TESTING
 
     def setUp(self):
-        """Custom shared utility setup for tests."""
         self.portal = self.layer['portal']
 
     def test_clean_value(self):
