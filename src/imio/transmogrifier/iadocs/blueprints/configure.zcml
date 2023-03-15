@@ -105,7 +105,7 @@
 
   <utility
     name="imio.transmogrifier.iadocs.path_insert"
-    component=".main.PathInsert"
+    component=".main.InsertPath"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
@@ -129,7 +129,7 @@
 
   <utility
     name="imio.transmogrifier.iadocs.state_set"
-    component=".main.StateSet"
+    component=".main.SetState"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 

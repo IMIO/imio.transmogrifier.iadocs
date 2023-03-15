@@ -279,30 +279,7 @@ class CommonInputChecks(object):
             yield item
 
 
-class LastSection(object):
-    """Last section to do things at the end of each item process or global process.
-    """
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
-    def __init__(self, transmogrifier, name, options, previous):
-        self.previous = previous
-        self.transmogrifier = transmogrifier
-        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.portal = transmogrifier.context
-
-    def __iter__(self):
-        for item in self.previous:
-            yield item
-        # end of process
-        # deactivate versioning
-        pr_tool = api.portal.get_tool('portal_repository')
-        pr_tool._versionable_content_types[:] = ()
-        pr_tool._versionable_content_types.extend(self.storage['plone']['pr_vct'])
-        # import ipdb; ipdb.set_trace()
-
-
-class PathInsert(object):
+class InsertPath(object):
     """Adds _path if not yet defined, to create new items.
 
     Parameters:
@@ -350,6 +327,29 @@ class PathInsert(object):
             yield item
 
 
+class LastSection(object):
+    """Last section to do things at the end of each item process or global process.
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.transmogrifier = transmogrifier
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.portal = transmogrifier.context
+
+    def __iter__(self):
+        for item in self.previous:
+            yield item
+        # end of process
+        # deactivate versioning
+        pr_tool = api.portal.get_tool('portal_repository')
+        pr_tool._versionable_content_types[:] = ()
+        pr_tool._versionable_content_types.extend(self.storage['plone']['pr_vct'])
+        # import ipdb; ipdb.set_trace()
+
+
 class PickleData(object):
     """Pickle data.
 
@@ -391,7 +391,7 @@ class PickleData(object):
                 pickle.dump(self.storage['data'][self.store_key], fh)
 
 
-class StateSet(object):
+class SetState(object):
     """Sets state in workflow history.
 
     Parameters:
