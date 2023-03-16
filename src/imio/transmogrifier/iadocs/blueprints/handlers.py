@@ -6,6 +6,8 @@ from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from imio.dms.mail.utils import create_period_folder
 from imio.helpers.content import uuidToObject
+from imio.pyutils.utils import all_of_dict_values
+from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import clean_value
@@ -331,19 +333,55 @@ class J1ContactHandling(object):
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
 
-    # _sender_id _sender
-    # e_contact = _uid _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
     def __iter__(self):
         for item in self.previous:
-            # desc = item.get('description', u'')
-            # d_t = item.get('data_transfer', u'')
-            # title = []
-            # address = []
-            clean_value(item['_sender'], patterns=[r'^["\']+$'])
-            # m_sender = clean_value(item['_sender'], patterns=[r'^["\']+$'])
-            # if item['_sender_id']:
-            #     infos = self.storage['data']['e_contact'][item['_sender_id']]
+            if not self.condition(item):
+                yield item
+                continue
+            desc = item.get('description', u'').split('\r\n')
+            d_t = item.get('data_transfer', u'').split('\r\n')
+            sender = []
+            sender_infos = []
+            m_sender = clean_value(item['_sender'], patterns=[r'^["\']+$'])
+            if item['_sender_id']:
+                infos = self.storage['data']['e_contact'][item['_sender_id']]
+                name = u' '.join(all_of_dict_values(infos, ['_lname', '_fname']))
+                if not name and infos['_name2']:
+                    name = infos['_name2']
+                if name:
+                    sender.append(name)
+                eml = one_of_dict_values(infos, ['_email1', '_email2', '_email3'])
+                if eml:
+                    sender.append(eml)
+                if infos['_function']:
+                    sender.append(infos['_function'])
+                if infos['_e_nb']:
+                    sender.append(infos['_e_nb'])
+                # TODO add ctyp
+                desc.append(u'Expéditeur: {}.'.format(u', '.join(sender)))
+                # address
+                address = all_of_dict_values(infos, ['_street', '_pc', '_city'])
+                if address:
+                    d_t.append(u'Adresse: {}.'.format(u' '.join(address)))
+                # phones
+                phones = []
+                phone = one_of_dict_values(infos, ['_phone1', '_phone2', '_phone3'])
+                if phone:
+                    phones.append(phone)
+                cell = one_of_dict_values(infos, ['_cell1', '_cell2', '_cell3'])
+                if cell:
+                    phones.append(cell)
+                if phones:
+                    d_t.append(u'Tél: {}.'.format(u', '.join(phones)))
+                # TODO include _parent_id and _addr_id
+            if m_sender:
+                pass
+            item['description'] = u'\r\n'.join(desc)
+            item['data_transfer'] = u'\r\n'.join(d_t)
+            # e_contact = _uid _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb
+            # _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
             yield item
 
 

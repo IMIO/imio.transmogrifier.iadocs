@@ -86,6 +86,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.j_1_contact_as_text"
+    component=".handlers.J1ContactHandling"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.last_section"
     component=".main.LastSection"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
