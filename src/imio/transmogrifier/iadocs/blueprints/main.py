@@ -268,27 +268,27 @@ class CommonInputChecks(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.part) and self.condition(item):
-                # replace values on specified fields
+                # strip chars
+                for fld, chars in self.strips:
+                    if not item[fld]:
+                        continue
+                    item[fld] = item[fld].strip(chars)
+                # replace newline by hyphen on specified fields
+                for fld in self.hyphens:
+                    if '\n' in (item[fld] or ''):
+                        item[fld] = ' - '.join([part.strip() for part in item[fld].split('\n') if part.strip()])
+                # replace invalid values on specified fields
                 for fld, values in self.invalids:
                     for value in values.split(u'|'):
                         if item[fld] == value:
                             item[fld] = None
                             break
-                # replace newline by hyphen on specified fields
-                for fld in self.hyphens:
-                    if '\n' in (item[fld] or ''):
-                        item[fld] = ' - '.join([part.strip() for part in item[fld].split('\n') if part.strip()])
                 # to bool
                 for fld in self.booleans:
                     item[fld] = str_to_bool(item, fld, log_error)
                 # to dates
                 for fld, fmt, as_date in self.dates:
                     item[fld] = str_to_date(item, fld, log_error, fmt=fmt, as_date=bool(int(as_date)))
-                # strip chars
-                for fld, chars in self.strips:
-                    if not item[fld]:
-                        continue
-                    item[fld] = item[fld].strip(chars)
             yield item
 
 
