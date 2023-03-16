@@ -335,6 +335,41 @@ class J1ContactHandling(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
 
+    def get_sender_name(self, dic):
+        sender = []
+        name = u' '.join(all_of_dict_values(dic, ['_lname', '_fname']))
+        if not name and dic.get('_name2'):
+            name = dic['_name2']
+        if name:
+            sender.append(name)
+        eml = one_of_dict_values(dic, ['_email1', '_email2', '_email3'])
+        if eml:
+            sender.append(eml)
+        if dic.get('_function'):
+            sender.append(dic['_function'])
+        if dic.get('_e_nb'):
+            sender.append(dic['_e_nb'])
+        # TODO add ctyp
+        return sender
+
+    def get_sender_phone(self, dic1, dic2):
+        phones = []
+        phone = one_of_dict_values(dic1, ['_phone1', '_phone2', '_phone3'])
+        if phone:
+            phones.append(phone)
+        else:
+            phone = one_of_dict_values(dic2, ['_phone1', '_phone2', '_phone3'])
+            if phone:
+                phones.append(phone)
+        cell = one_of_dict_values(dic1, ['_cell1', '_cell2', '_cell3'])
+        if cell:
+            phones.append(cell)
+        else:
+            cell = one_of_dict_values(dic2, ['_cell1', '_cell2', '_cell3'])
+            if cell:
+                phones.append(cell)
+        return phones
+
     def __iter__(self):
         for item in self.previous:
             if not self.condition(item):
@@ -347,35 +382,26 @@ class J1ContactHandling(object):
             m_sender = clean_value(item['_sender'], patterns=[r'^["\']+$'])
             if item['_sender_id']:
                 infos = self.storage['data']['e_contact'][item['_sender_id']]
-                name = u' '.join(all_of_dict_values(infos, ['_lname', '_fname']))
-                if not name and infos['_name2']:
-                    name = infos['_name2']
-                if name:
-                    sender.append(name)
-                eml = one_of_dict_values(infos, ['_email1', '_email2', '_email3'])
-                if eml:
-                    sender.append(eml)
-                if infos['_function']:
-                    sender.append(infos['_function'])
-                if infos['_e_nb']:
-                    sender.append(infos['_e_nb'])
-                # TODO add ctyp
+                parent_infos = {}
+                if infos['_parent_id']:
+                    parent_infos = self.storage['data']['e_contact'].get(infos['_parent_id'], {})
+                p_sender = self.get_sender_name(parent_infos)
+                sender = self.get_sender_name(infos)
+                if p_sender:
+                    desc.append(u'Expéditeur parent: {}.'.format(u', '.join(p_sender)))
                 desc.append(u'Expéditeur: {}.'.format(u', '.join(sender)))
                 # address
+                p_address = all_of_dict_values(parent_infos, ['_street', '_pc', '_city'])
                 address = all_of_dict_values(infos, ['_street', '_pc', '_city'])
                 if address:
                     d_t.append(u'Adresse: {}.'.format(u' '.join(address)))
+                elif p_address:  # we add just one address
+                    d_t.append(u'Adresse parent: {}.'.format(u' '.join(p_address)))
                 # phones
-                phones = []
-                phone = one_of_dict_values(infos, ['_phone1', '_phone2', '_phone3'])
-                if phone:
-                    phones.append(phone)
-                cell = one_of_dict_values(infos, ['_cell1', '_cell2', '_cell3'])
-                if cell:
-                    phones.append(cell)
+                phones = self.get_sender_phone(infos, parent_infos)
                 if phones:
                     d_t.append(u'Tél: {}.'.format(u', '.join(phones)))
-                # TODO include _parent_id and _addr_id
+                # TODO include _addr_id
             if m_sender:
                 pass
             item['description'] = u'\r\n'.join(desc)
