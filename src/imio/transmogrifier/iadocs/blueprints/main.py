@@ -222,7 +222,6 @@ class Initialization(object):
         self.storage['plone']['pr_vct'] = tuple(pr_tool._versionable_content_types)
         pr_tool._versionable_content_types[:] = ()
 
-
     def __iter__(self):
         for item in self.previous:
             yield item

@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-
-# from __future__ import print_function
-from collective.transmogrifier.utils import Expression
-from imio.transmogrifier.iadocs import o_logger
-from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
+from collective.transmogrifier.utils import Expression
 from imio.helpers.transmogrifier import key_val as dim
+from imio.transmogrifier.iadocs import ANNOTATION_KEY
+from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs import T_S
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import is_in_part
@@ -17,7 +15,6 @@ from zope.interface import classProvides
 from zope.interface import implements
 
 import ipdb
-# import sys
 
 
 class Breakpoint(object):

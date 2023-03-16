@@ -6,14 +6,12 @@ from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from imio.dms.mail.utils import create_period_folder
 from imio.helpers.content import uuidToObject
-from imio.helpers.transmogrifier import correct_path
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import clean_value
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
-from imio.transmogrifier.iadocs.utils import get_values_string
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from imio.transmogrifier.iadocs.utils import MAILTYPES
@@ -338,13 +336,14 @@ class J1ContactHandling(object):
     # e_contact = _uid _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
     def __iter__(self):
         for item in self.previous:
-            desc = item.get('description', u'')
-            d_t = item.get('data_transfer', u'')
-            title = []
-            address = []
-            m_sender = clean_value(item['_sender'], patterns=[r'^["\']+$'])
-            if item['_sender_id']:
-                infos = self.storage['data']['e_contact'][item['_sender_id']]
+            # desc = item.get('description', u'')
+            # d_t = item.get('data_transfer', u'')
+            # title = []
+            # address = []
+            clean_value(item['_sender'], patterns=[r'^["\']+$'])
+            # m_sender = clean_value(item['_sender'], patterns=[r'^["\']+$'])
+            # if item['_sender_id']:
+            #     infos = self.storage['data']['e_contact'][item['_sender_id']]
             yield item
 
 

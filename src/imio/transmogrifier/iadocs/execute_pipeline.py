@@ -3,7 +3,7 @@ from AccessControl.SecurityManagement import newSecurityManager
 from collective.transmogrifier.transmogrifier import _load_config
 from collective.transmogrifier.transmogrifier import configuration_registry
 from collective.transmogrifier.transmogrifier import Transmogrifier
-from imio.helpers.security import setup_logger
+# from imio.helpers.security import setup_logger
 from imio.pyutils.system import stop
 from imio.transmogrifier.iadocs import logger
 from imio.transmogrifier.iadocs import o_logger
@@ -14,6 +14,7 @@ import json
 import os
 import sys
 import transaction
+
 
 PIPELINE_ID = 'imio.transmogrifier.iadocs.pipeline'
 USAGE = """
@@ -95,7 +96,7 @@ def auto_parts(ns, func_part):
         if get_part(section) == func_part and config[section]['blueprint'] == 'imio.transmogrifier.iadocs.need_other':
             needed = config[section]['parts']
             break
-    return ''.join(sorted(set(needed+ns.parts+func_part)))
+    return ''.join(sorted(set(needed + ns.parts + func_part)))
 
 
 if __name__ == '__main__':
