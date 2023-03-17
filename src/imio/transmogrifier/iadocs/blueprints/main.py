@@ -264,16 +264,16 @@ class CommonInputChecks(object):
             return
         fieldnames = self.storage['csv'].get(self.bp_key, {}).get('fd', [])
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.strips = safe_unicode(options.get('strip_chars', '')).strip().split()
+        self.strips = [tup for tup in pool_tuples(self.strips, 2, 'strip_chars option') if tup[0] in fieldnames]
+        self.hyphens = [key for key in safe_unicode(options.get('hyphen_newline', '')).split() if key in fieldnames]
         self.invalids = next(csv.reader([options.get('invalids', '').strip()], delimiter=' ', quotechar='"',
                                         skipinitialspace=True))
         self.invalids = [cell.decode('utf8') for cell in self.invalids]
         self.invalids = [tup for tup in pool_tuples(self.invalids, 2, 'invalids option') if tup[0] in fieldnames]
-        self.hyphens = [key for key in safe_unicode(options.get('hyphen_newline', '')).split() if key in fieldnames]
         self.booleans = [key for key in safe_unicode(options.get('booleans', '')).split() if key in fieldnames]
         self.dates = safe_unicode(options.get('dates', '')).strip().split()
         self.dates = [tup for tup in pool_tuples(self.dates, 3, 'dates option') if tup[0] in fieldnames]
-        self.strips = safe_unicode(options.get('strip_chars', '')).strip().split()
-        self.strips = [tup for tup in pool_tuples(self.strips, 2, 'strip_chars option') if tup[0] in fieldnames]
 
     def __iter__(self):
         for item in self.previous:
