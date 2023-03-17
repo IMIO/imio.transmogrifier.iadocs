@@ -104,21 +104,42 @@ class EnhancedCondition(object):
 
 
 class EnhancedInserter(object):
+    """Set or append value in key, if condition is matched.
+
+    Parameters:
+        * key = M, key value expression
+        * value = M, value expression
+        * condition = O, matching condition
+        * separator = O, separator expression: if specified, the value is appended after the separator
+    """
     classProvides(ISectionBlueprint)
     implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.key = Expression(options['key'], transmogrifier, name, options)
         self.value = Expression(options['value'], transmogrifier, name, options)
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
-        self.previous = previous
-        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        if options.get('separator'):
+            self.separator = Expression(options.get('separator', ''), transmogrifier, name, options)(None)
+        else:
+            self.separator = None
 
     def __iter__(self):
         for item in self.previous:
             key = self.key(item)
             if self.condition(item, key=key, storage=self.storage):
-                item[key] = self.value(item, key=key, storage=self.storage)
+                value = self.value(item, key=key, storage=self.storage)
+                if self.separator and item.get(key):  # with self.separator, we append
+                    if value:
+                        content = item[key].split(self.separator)
+                        content.append(value)
+                        item[key] = self.separator.join(content)
+                    else:
+                        yield item
+                        continue
+                item[key] = value
             yield item
 
 

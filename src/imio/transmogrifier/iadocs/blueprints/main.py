@@ -458,7 +458,7 @@ class SetState(object):
                 change = False
                 for status in obj.workflow_history.get(self.workflow_id):
                     # replace old state by new one
-                    if status['review_state'] == 'created':
+                    if status['review_state'] == 'created':  # TODO must be a parameter
                         status['review_state'] = self.state_id
                     if self.date_key and item.get(self.date_key):
                         status['time'] = DateTime(item[self.date_key])
