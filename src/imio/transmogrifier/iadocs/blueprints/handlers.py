@@ -335,22 +335,34 @@ class J1ContactHandling(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
 
-    def get_sender_name(self, dic):
+    def get_sender_name(self, dic, dic2):
         sender = []
+        p_sender = []
+        p_name = u' '.join(all_of_dict_values(dic2, ['_lname', '_fname']))
+        if not p_name and dic2.get('_name2'):
+            p_name = dic2['_name2']
+        if p_name:
+            p_sender.append(p_name)
         name = u' '.join(all_of_dict_values(dic, ['_lname', '_fname']))
         if not name and dic.get('_name2'):
             name = dic['_name2']
-        if name:
+        if name and (not p_name or name != p_name):
             sender.append(name)
+        # email
+        p_eml = one_of_dict_values(dic2, ['_email1', '_email2', '_email3'])
+        if p_eml:
+            p_sender.append(p_eml)
         eml = one_of_dict_values(dic, ['_email1', '_email2', '_email3'])
-        if eml:
+        if eml and (not p_eml or eml != p_eml):
             sender.append(eml)
         if dic.get('_function'):
             sender.append(dic['_function'])
-        if dic.get('_e_nb'):
-            sender.append(dic['_e_nb'])
+        if dic2.get('_e_nb'):
+            p_sender.append(u'NE:{}'.format(dic2['_e_nb']))
+        if dic.get('_e_nb') and (not dic2.get('_e_nb') or dic.get('_e_nb') != dic2.get('_e_nb')):
+            sender.append(u'NE:{}'.format(dic['_e_nb']))
         # TODO add ctyp
-        return sender
+        return sender, p_sender
 
     def get_sender_phone(self, dic1, dic2):
         phones = []
@@ -375,21 +387,21 @@ class J1ContactHandling(object):
             if not self.condition(item):
                 yield item
                 continue
-            desc = item.get('description', u'').split('\r\n')
-            d_t = item.get('data_transfer', u'').split('\r\n')
+            desc = 'description' in item and item.get('description').split('\r\n') or []
+            d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
             sender = []
-            sender_infos = []
+            p_sender = []
             m_sender = clean_value(item['_sender'], patterns=[r'^["\']+$'])
             if item['_sender_id']:
                 infos = self.storage['data']['e_contact'][item['_sender_id']]
                 parent_infos = {}
                 if infos['_parent_id']:
                     parent_infos = self.storage['data']['e_contact'].get(infos['_parent_id'], {})
-                p_sender = self.get_sender_name(parent_infos)
-                sender = self.get_sender_name(infos)
+                sender, p_sender = self.get_sender_name(infos, parent_infos)
                 if p_sender:
                     desc.append(u'Expéditeur parent: {}.'.format(u', '.join(p_sender)))
-                desc.append(u'Expéditeur: {}.'.format(u', '.join(sender)))
+                if sender:
+                    desc.append(u'Expéditeur: {}.'.format(u', '.join(sender)))
                 # address
                 p_address = all_of_dict_values(parent_infos, ['_street', '_pc', '_city'])
                 address = all_of_dict_values(infos, ['_street', '_pc', '_city'])
@@ -397,13 +409,17 @@ class J1ContactHandling(object):
                     d_t.append(u'Adresse: {}.'.format(u' '.join(address)))
                 elif p_address:  # we add just one address
                     d_t.append(u'Adresse parent: {}.'.format(u' '.join(p_address)))
+                else:
+                    pass  # include _addr_id ? no!
                 # phones
                 phones = self.get_sender_phone(infos, parent_infos)
                 if phones:
                     d_t.append(u'Tél: {}.'.format(u', '.join(phones)))
-                # TODO include _addr_id
             if m_sender:
-                pass
+                lines = m_sender.split('\n')
+                desc.append(u'Expéditeur libre: {}'.format(lines.pop(0)))
+                if lines:
+                    d_t.append(u'Expéditeur libre: {}'.format(u', '.join(lines)))
             item['description'] = u'\r\n'.join(desc)
             item['data_transfer'] = u'\r\n'.join(d_t)
             # e_contact = _uid _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb
