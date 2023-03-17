@@ -122,7 +122,8 @@ class Initialization(object):
         csvpath = safe_unicode(options.get('csvpath') or '')
         if not csvpath:
             csvpath = workingpath
-        in_types = safe_unicode(transmogrifier['config'].get('internal_number_types') or '').split()
+        inb_types = safe_unicode(transmogrifier['config'].get('internal_number_behavior_types') or '').split()
+        dtb_types = safe_unicode(transmogrifier['config'].get('data_transfer_behavior_types') or '').split()
 
         # setting logs
         efh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors.log'), mode='w')
@@ -145,14 +146,14 @@ class Initialization(object):
             o_logger.addHandler(ocfh)
 
         # check package installation and configuration
-        if in_types:
+        if inb_types:
             if not self.portal.portal_quickinstaller.isProductInstalled('collective.behavior.internalnumber'):
                 self.portal.portal_setup.runAllImportStepsFromProfile(
                     'profile-collective.behavior.internalnumber:default', dependency_strategy='new')
                 o_logger.info('Installed collective.behavior.internalnumber')
             reg_key = 'collective.behavior.internalnumber.browser.settings.IInternalNumberConfig.portal_type_config'
             inptc = list(api.portal.get_registry_record(reg_key))
-            for typ in in_types:
+            for typ in inb_types:
                 if not [dic for dic in inptc if dic['portal_type'] == typ]:
                     inptc.append({'portal_type': typ, 'uniqueness': True, 'default_expression': None,
                                   'default_number': 1})
@@ -166,6 +167,16 @@ class Initialization(object):
                     ftiModified(fti, ObjectModifiedEvent(fti,
                                                          DexterityFTIModificationDescription('behaviors', old_bav)))
                     o_logger.info('Added internalnumber behavior on type {}'.format(typ))
+        if dtb_types:
+            for typ in dtb_types:
+                fti = getattr(self.portal.portal_types, typ)
+                if 'imio.dms.mail.content.behaviors.IDmsMailDataTransfer' not in fti.behaviors:
+                    old_bav = tuple(fti.behaviors)
+                    fti.behaviors = tuple(list(fti.behaviors) +
+                                          ['imio.dms.mail.content.behaviors.IDmsMailDataTransfer'])
+                    ftiModified(fti, ObjectModifiedEvent(fti,
+                                                         DexterityFTIModificationDescription('behaviors', old_bav)))
+                    o_logger.info('Added datatransfer behavior on type {}'.format(typ))
 
         # set global variables in annotation
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
