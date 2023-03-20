@@ -21,16 +21,28 @@ MAILTYPES = {'te': '{}.mail_types'.format(itf), 'ts': '{}.omail_types'.format(it
              'fe': '{}.omail_send_modes'.format(itf)}
 
 
-def clean_value(value, sep=u'\n', strip=u' ', patterns=[]):
-    """Remove useless part in multiline value"""
+def clean_value(value, isep=u'\n', strip=u' ', patterns=[], osep=None):
+    """Clean multiline value
+
+    :param value: input string
+    :param isep: input separatr
+    :param strip: chars to strip
+    :param patterns: line patterns to remove
+    :param osep: output separator
+    :return: string
+    """
     parts = []
-    for part in value.split(sep):
+    if not value:
+        return value
+    if osep is None:
+        osep = isep
+    for part in value.split(isep):
         part = part.strip(strip)
         for pattern in patterns:
             part = re.sub(pattern, u'', part)
         if part:
             parts.append(part)
-    return sep.join(parts)
+    return osep.join(parts)
 
 
 def encode_list(lst, encoding):
