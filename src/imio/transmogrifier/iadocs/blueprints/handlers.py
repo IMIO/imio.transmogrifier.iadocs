@@ -323,7 +323,7 @@ class ECategoryUpdate(object):
             o_logger.info("Part e: some categories have been created or updated.")
 
 
-class J1ContactHandling(object):
+class L1ContactHandling(object):
     """Handles contact"""
     classProvides(ISectionBlueprint)
     implements(ISection)
