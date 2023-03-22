@@ -420,7 +420,10 @@ class SetState(object):
     Parameters:
         * workflow_id = M, workflow id
         * state_id = M, state id
+        * action_id = M, action id
+        * replace = O, state id
         * date_key = O, date key. Or don't change
+        * actor = 0, actor
         * condition = O, condition expression
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
     """
@@ -437,6 +440,9 @@ class SetState(object):
             return
         self.workflow_id = options['workflow_id']
         self.state_id = options['state_id']
+        self.state_id = options['action_id']
+        self.replace = options.get('replace')
+        self.actor = options.get('actor')
         self.date_key = options.get('date_key')
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.roe = bool(int(options.get('raise_on_error', '1')))
@@ -457,12 +463,20 @@ class SetState(object):
                 wfh = []
                 change = False
                 for status in obj.workflow_history.get(self.workflow_id):
-                    # replace old state by new one
-                    if status['review_state'] == 'created':  # TODO must be a parameter
-                        status['review_state'] = self.state_id
-                    if self.date_key and item.get(self.date_key):
-                        status['time'] = DateTime(item[self.date_key])
-                    # actor ?
+                    if self.replace:
+                        if status['review_state'] == self.replace:
+                            status['review_state'] = self.state_id
+                            if self.action:
+                                status['action'] = self.action
+                            if self.date_key and item.get(self.date_key):
+                                status['time'] = DateTime(item[self.date_key])
+                            if self.actor:
+                                status['actor'] = self.actor
+                    wfh.append(status)
+                    change = True
+                if not self.replace:
+                    status = {'action': self.action, 'actor': self.actor, 'comments': '',
+                              'review_state': self.state_id, 'time': DateTime(item[self.date_key])}
                     wfh.append(status)
                     change = True
                 if change:
