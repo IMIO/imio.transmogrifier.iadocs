@@ -7,6 +7,7 @@ from collective.transmogrifier.utils import Condition
 from imio.dms.mail.utils import create_period_folder
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import clean_value
+from imio.helpers.transmogrifier import get_obj_from_path
 from imio.pyutils.utils import all_of_dict_values
 from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
@@ -467,7 +468,7 @@ class PostActions(object):
             pa = item.get('_post_actions', [])
             if u'store_internal_person_info' in pa:
                 eid = item[u'internal_number']
-                uid = self.portal.unrestrictedTraverse(item['_path']).UID()
+                uid = get_obj_from_path(self.portal, item).UID()
                 self.storage['data']['p_euid_to_pers'][eid] = uid
                 if uid not in self.storage['data']['p_hps']:
                     self.storage['data']['p_hps'][uid] = {'path': item['_path'], 'eid': eid, 'hps': {},

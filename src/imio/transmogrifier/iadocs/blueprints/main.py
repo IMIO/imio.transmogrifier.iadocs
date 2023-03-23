@@ -437,7 +437,7 @@ class SetOwner(object):
     def __iter__(self):
         for item in self.previous:
             if self.condition(item):
-                obj = get_obj_from_path(self.portal, item, '_path')
+                obj = get_obj_from_path(self.portal, item)
                 obj.changeOwnership(self.owner)  # userid or username ?
             yield item
 
