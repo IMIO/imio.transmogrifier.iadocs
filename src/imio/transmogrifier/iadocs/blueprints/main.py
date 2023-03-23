@@ -440,7 +440,7 @@ class SetState(object):
             return
         self.workflow_id = options['workflow_id']
         self.state_id = options['state_id']
-        self.state_id = options['action_id']
+        self.action_id = options['action_id']
         self.replace = options.get('replace')
         self.actor = options.get('actor')
         self.date_key = options.get('date_key')
@@ -466,8 +466,8 @@ class SetState(object):
                     if self.replace:
                         if status['review_state'] == self.replace:
                             status['review_state'] = self.state_id
-                            if self.action:
-                                status['action'] = self.action
+                            if self.action_id:
+                                status['action'] = self.action_id
                             if self.date_key and item.get(self.date_key):
                                 status['time'] = DateTime(item[self.date_key])
                             if self.actor:
@@ -475,7 +475,7 @@ class SetState(object):
                     wfh.append(status)
                     change = True
                 if not self.replace:
-                    status = {'action': self.action, 'actor': self.actor, 'comments': '',
+                    status = {'action': self.action_id, 'actor': self.actor, 'comments': '',
                               'review_state': self.state_id, 'time': DateTime(item[self.date_key])}
                     wfh.append(status)
                     change = True
