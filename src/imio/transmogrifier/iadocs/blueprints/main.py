@@ -442,7 +442,7 @@ class SetState(object):
         self.state_id = options['state_id']
         self.action_id = options['action_id']
         self.replace = options.get('replace')
-        self.actor = options.get('actor')
+        self.actor = options.get('actor') or api.user.get_current().getId()  # username or userid ?
         self.date_key = options.get('date_key')
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.roe = bool(int(options.get('raise_on_error', '1')))
