@@ -7,10 +7,12 @@ from DateTime.DateTime import DateTime
 from imio.helpers.transmogrifier import correct_path
 from imio.helpers.transmogrifier import filter_keys
 from imio.helpers.transmogrifier import get_main_path
+from imio.helpers.transmogrifier import get_obj_from_path
 from imio.helpers.transmogrifier import pool_tuples
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.transmogrifier import str_to_bool
 from imio.helpers.transmogrifier import str_to_date
+from imio.pyutils.system import stop
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
@@ -412,6 +414,32 @@ class PickleData(object):
             o_logger.info(u"Dumping '{}'".format(self.filename))
             with open(self.filename, 'wb') as fh:
                 pickle.dump(self.storage['data'][self.store_key], fh)
+
+
+class SetOwner(object):
+    """Sets ownership on created object.
+
+    """
+
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.owner = api.portal.get_tool('acl_users').getUserById(options['owner'])
+        if not self.owner:
+            stop("Section name '{}': owner not found '{}' !".format(name, options['owner']), o_logger)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+
+    def __iter__(self):
+        for item in self.previous:
+            if self.condition(item):
+                obj = get_obj_from_path(self.portal, item, '_path')
+                obj.changeOwnership(self.owner)  # userid or username ?
+            yield item
 
 
 class SetState(object):

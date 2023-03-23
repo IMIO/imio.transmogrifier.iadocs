@@ -104,6 +104,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.owner_set"
+    component=".main.SetOwner"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.parent_path_insert"
     component=".handlers.ParentPathInsert"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
