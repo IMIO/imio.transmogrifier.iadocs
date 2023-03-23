@@ -6,11 +6,11 @@ from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from imio.dms.mail.utils import create_period_folder
 from imio.helpers.content import uuidToObject
+from imio.helpers.transmogrifier import clean_value
 from imio.pyutils.utils import all_of_dict_values
 from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
-from imio.transmogrifier.iadocs.utils import clean_value
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_part
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
