@@ -13,7 +13,6 @@ from imio.transmogrifier.iadocs import o_logger
 from plone import api
 
 import os
-import re
 
 
 itf = 'imio.dms.mail.browser.settings.IImioDmsMailConfig'
