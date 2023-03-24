@@ -20,7 +20,7 @@ from imio.transmogrifier.iadocs.utils import full_path
 from imio.transmogrifier.iadocs.utils import get_categories
 from imio.transmogrifier.iadocs.utils import get_folders
 from imio.transmogrifier.iadocs.utils import get_mailtypes
-from imio.transmogrifier.iadocs.utils import get_part
+from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import get_personnel
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
 from imio.transmogrifier.iadocs.utils import get_users
@@ -68,9 +68,9 @@ class AddDataInItem(object):
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.part = get_part(name)
+        self.parts = get_related_parts(name)
         self.related_storage = safe_unicode(options['related_storage'])
-        if not is_in_part(self, self.part):
+        if not is_in_part(self, self.parts):
             return
         b_condition = Condition(options.get('b_condition') or 'python:True', transmogrifier, name, options)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
@@ -88,7 +88,7 @@ class AddDataInItem(object):
     def __iter__(self):
         ddic = self.storage['data'].get(self.related_storage, {})
         for item in self.previous:
-            if is_in_part(self, self.part) and self.related_storage is not None and self.condition(item):
+            if is_in_part(self, self.parts) and self.related_storage is not None and self.condition(item):
                 store_keys = {}
                 vdic = ddic.get(item[self.store_key], {})
                 if self.add_store_keys:
@@ -261,8 +261,8 @@ class CommonInputChecks(object):
         self.previous = previous
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.bp_key = safe_unicode(options['bp_key'])
-        self.part = get_part(name)
-        if not is_in_part(self, self.part):
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
             return
         fieldnames = self.storage['csv'].get(self.bp_key, {}).get('fd', [])
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
@@ -279,7 +279,7 @@ class CommonInputChecks(object):
 
     def __iter__(self):
         for item in self.previous:
-            if is_in_part(self, self.part) and self.condition(item):
+            if is_in_part(self, self.parts) and self.condition(item):
                 # strip chars
                 for fld, chars in self.strips:
                     if not item[fld]:
@@ -321,9 +321,9 @@ class InsertPath(object):
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.part = get_part(name)
+        self.parts = get_related_parts(name)
         self.bp_key = safe_unicode(options['bp_key'])
-        if not is_in_part(self, self.part):
+        if not is_in_part(self, self.parts):
             return
         self.eids = self.storage['data'].setdefault(self.bp_key, {})
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
@@ -337,7 +337,7 @@ class InsertPath(object):
             if '_path' in item:  # _path is already set
                 yield item
                 continue
-            if is_in_part(self, self.part) and self.condition(item):
+            if is_in_part(self, self.parts) and self.condition(item):
                 title = u'-'.join([item[key] for key in self.id_keys if item[key]])
                 if not title:
                     log_error(item, u'cannot get an id from id keys {}'.format(self.id_keys), level='critical')
@@ -391,8 +391,8 @@ class PickleData(object):
         self.name = name
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.part = get_part(name)
-        if not is_in_part(self, self.part):
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
             self.filename = None
             return
         self.filename = safe_unicode(options['filename'])
@@ -463,8 +463,8 @@ class SetState(object):
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.part = get_part(name)
-        if not is_in_part(self, self.part):
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
             return
         self.workflow_id = options['workflow_id']
         self.state_id = options['state_id']
@@ -477,7 +477,7 @@ class SetState(object):
 
     def __iter__(self):
         for item in self.previous:
-            if is_in_part(self, self.part) and self.condition(item):
+            if is_in_part(self, self.parts) and self.condition(item):
                 try:
                     obj = self.portal.unrestrictedTraverse(safe_unicode(item['_path'][1:]).encode('utf8'))
                 except AttributeError:
@@ -532,8 +532,8 @@ class StoreInData(object):
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.part = get_part(name)
-        if not is_in_part(self, self.part):
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         # self.store_key = safe_unicode(options['store_key']).split()
@@ -547,7 +547,7 @@ class StoreInData(object):
 
     def __iter__(self):
         for item in self.previous:
-            if is_in_part(self, self.part) and self.condition(item):
+            if is_in_part(self, self.parts) and self.condition(item):
                 # if not self.fieldnames and item['_bpk'] == self.bp_key:
                 #     del item['_bpk']
                 # key = get_values_string(item, self.store_key)

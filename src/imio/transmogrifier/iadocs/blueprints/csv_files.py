@@ -8,7 +8,7 @@ from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import encode_list
 from imio.transmogrifier.iadocs.utils import full_path
-from imio.transmogrifier.iadocs.utils import get_part
+from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from Products.CMFPlone.utils import safe_unicode
@@ -44,8 +44,8 @@ class CSVReader(object):
         self.previous = previous
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.part = get_part(name)
-        if not is_in_part(self, self.part):
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
             return
         self.csv_headers = Condition(options.get('csv_headers') or 'python:True', transmogrifier, name, options)
         self.dialect = safe_unicode(options.get('dialect') or 'excel')
@@ -76,7 +76,7 @@ class CSVReader(object):
     def __iter__(self):
         for item in self.previous:
             yield item
-        if not is_in_part(self, self.part) or not self.filename:
+        if not is_in_part(self, self.parts) or not self.filename:
             return
         csv_d = self.storage['csv'][self.bp_key]
         fieldnames = csv_d['fd']
@@ -166,8 +166,8 @@ class CSVWriter(object):
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.bp_key = safe_unicode(options['bp_key'])
-        self.part = get_part(name)
-        if not is_in_part(self, self.part):
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
             return
         doit = Condition(options.get('b_condition') or 'python:True', transmogrifier, name, options)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
@@ -203,7 +203,7 @@ class CSVWriter(object):
     def __iter__(self):
         csv_d = self.storage['csv'].get(self.bp_key)
         for item in self.previous:
-            if is_in_part(self, self.part) and self.doit and self.condition(item, storage=self.storage):
+            if is_in_part(self, self.parts) and self.doit and self.condition(item, storage=self.storage):
                 if self.store_key:
                     if csv_d['fh'] is None:  # only doing one time
                         for (key, dv) in sorted(self.storage['data'][self.bp_key].items(),

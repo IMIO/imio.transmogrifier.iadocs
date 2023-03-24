@@ -7,7 +7,7 @@ from collective.transmogrifier.transmogrifier import Transmogrifier
 from imio.pyutils.system import stop
 from imio.transmogrifier.iadocs import logger
 from imio.transmogrifier.iadocs import o_logger
-from imio.transmogrifier.iadocs.utils import get_part
+from imio.transmogrifier.iadocs.utils import get_related_parts
 
 import argparse
 import json
@@ -92,8 +92,9 @@ def auto_parts(ns, func_part):
     sections = [sec for sec in config['transmogrifier']['pipeline'].splitlines() if sec]
     needed = ''
     for section in sections:
-        # we consider sections starting with func_part _
-        if get_part(section) == func_part and config[section]['blueprint'] == 'imio.transmogrifier.iadocs.need_other':
+        # we consider sections starting with func_part __
+        if config[section]['blueprint'] == 'imio.transmogrifier.iadocs.need_other' and \
+                func_part in get_related_parts(section) or []:
             needed = config[section]['parts']
             break
     return ''.join(sorted(set(needed + ns.parts + func_part)))

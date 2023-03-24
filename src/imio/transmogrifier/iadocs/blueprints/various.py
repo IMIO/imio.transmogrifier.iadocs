@@ -7,7 +7,7 @@ from imio.helpers.transmogrifier import key_val as dim
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs import T_S
-from imio.transmogrifier.iadocs.utils import get_part
+from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import is_in_part
 from Products.CMFPlone.utils import safe_unicode
 from zope.annotation.interfaces import IAnnotations
@@ -156,10 +156,10 @@ class NeedOther(object):
         self.previous = previous
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        this_part = get_part(name)
+        this_part = get_related_parts(name)
         if not is_in_part(self, this_part):
             return
-        needed_parts = safe_unicode(options.get('parts') or u'').split()
+        needed_parts = safe_unicode(options.get('parts') or u'')
         for needed_part in needed_parts:
             if not is_in_part(self, needed_part):
                 raise Exception("STOPPED because '{}' part needs '{}' part to be included".format(this_part,

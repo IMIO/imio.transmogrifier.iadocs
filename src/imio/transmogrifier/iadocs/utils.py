@@ -109,10 +109,10 @@ def get_mailtypes(portal):
     return mailtypes
 
 
-def get_part(name):
-    if name[1:2] == '_':
-        return name[0:1]
-    return 'ZZ'
+def get_related_parts(name):
+    if '__' in name:
+        return name.split('__')[0]
+    return None
 
 
 def get_personnel(portal, eid_fld='internal_number'):
@@ -192,9 +192,12 @@ def full_path(path, filename):
     return filename
 
 
-def is_in_part(section, part):
+def is_in_part(section, parts):
     """Check if part is one of given."""
-    return part in section.storage.get('parts', '')
+    for part in parts or []:
+        if part in section.storage.get('parts', ''):
+            return True
+    return False
 
 
 def log_error(item, msg, level='error', fld='_eid'):

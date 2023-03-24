@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from plone.app.testing import FunctionalTesting
 from plone.app.testing import IntegrationTesting
 from plone.app.testing import PLONE_FIXTURE
 from plone.app.testing import PloneSandboxLayer
 from plone.app.testing import setRoles
 from plone.app.testing import TEST_USER_ID
+from zope.annotation import IAnnotations
 
 import imio.transmogrifier.iadocs
 
@@ -22,6 +24,11 @@ class ImioTransmogrifierIadocsLayer(PloneSandboxLayer):
     def setUpPloneSite(self, portal):
         # applyProfile(portal, 'imio.transmogrifier.iadocs:testing')
         setRoles(portal, TEST_USER_ID, ['Manager'])
+
+
+def get_storage(portal):
+    annot = IAnnotations(portal)
+    return annot.setdefault(ANNOTATION_KEY, {})
 
 
 IMIO_TRANSMOGRIFIER_IADOCS_FIXTURE = ImioTransmogrifierIadocsLayer()
