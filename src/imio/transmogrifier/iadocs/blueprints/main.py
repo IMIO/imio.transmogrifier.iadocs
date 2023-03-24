@@ -24,6 +24,7 @@ from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import get_personnel
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
 from imio.transmogrifier.iadocs.utils import get_users
+from imio.transmogrifier.iadocs.utils import get_users_groups
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from plone import api
@@ -228,7 +229,9 @@ class Initialization(object):
         (self.storage['data']['p_folder_uid'], self.storage['data']['p_irn_to_folder'],
          self.storage['data']['p_folder_full_title']) = get_folders(self)
         # store already imported mails
-        self.storage['data']['p_mail_ids'] = {}
+        self.storage['data']['p_mail_ids'] = {}  # TODO will replace pkl file ?
+        # store user groups
+        self.storage['data']['p_user_service'] = get_users_groups(self.portal, self.storage['data']['p_user'])
 
         # deactivate versioning
         pr_tool = api.portal.get_tool('portal_repository')

@@ -3,6 +3,8 @@ from collective.classification.folder.content.vocabularies import full_title_cat
 from collective.classification.tree.utils import iterate_over_tree
 from collective.contact.plonegroup.browser.settings import BaseOrganizationServicesVocabulary
 from collective.contact.plonegroup.config import get_registry_organizations
+from collective.contact.plonegroup.utils import get_organizations
+from imio.helpers.cache import get_plone_groups_for_user
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.vocabularies import get_users_voc
@@ -171,6 +173,24 @@ def get_users(portal):
     res = {}
     for term in get_users_voc(False):
         res[term.value] = {'fullname': term.title}
+    return res
+
+
+def get_users_groups(portal, u_dic):
+    """Get users groups"""
+    res = {}
+    org_uids = get_organizations(only_selected=False, the_objects=False, caching=False)
+    for userid in u_dic:
+        res[userid] = {}
+        for groupid in get_plone_groups_for_user(user_id=userid):
+            if groupid == 'AuthenticatedUsers':
+                continue
+            parts = groupid.split('_')
+            if len(parts) == 1 or parts[0] not in org_uids:
+                group_suffix = ''
+            else:
+                group_suffix = '_'.join(parts[1:])
+            res[userid].setdefault(group_suffix, {})[parts[0]] = {}
     return res
 
 
