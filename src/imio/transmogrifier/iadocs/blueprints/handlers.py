@@ -4,7 +4,9 @@ from collective.classification.tree.utils import get_parents
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
+from imio.dms.mail import IM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail.utils import create_period_folder
+from imio.dms.mail.utils import is_in_user_groups
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import clean_value
 from imio.helpers.transmogrifier import get_obj_from_path
@@ -324,7 +326,7 @@ class ECategoryUpdate(object):
             o_logger.info("Part e: some categories have been created or updated.")
 
 
-class L1ContactHandling(object):
+class L1SenderHandling(object):
     """Handles contact"""
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -426,6 +428,50 @@ class L1ContactHandling(object):
             # e_contact = _uid _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb
             # _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
             yield item
+
+
+class M1AssignedUserHandling(object):
+    """Handles assigned user"""
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.im_paths = self.storage['data']['e_mail_i']
+        self.contacts = self.storage['data']['e_contacts_sender']
+        self.user_match = self.storage['data']['e_user_match']
+        self.p_user_service = self.storage['data']['p_user_service']
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            if item['_contact_id'] not in self.contacts:
+                o_logger.warning("eid '%s', contact id not a user '%s'", item['_eid'], item['_contact_id'])
+                continue
+            e_userid = self.contacts[item['_contact_id']]['_uid']
+            p_userid = self.user_match[e_userid]['_uid']
+            if not p_userid:
+                continue
+            imail = get_obj_from_path(self.portal, path=self.im_paths[item['_mail_id']]['path'])
+            if imail is None or not imail.treating_groups:
+                continue
+            # res[userid][fct][org] = {}
+            # user is in the treating_group
+            if imail.treating_groups in [org for fct in self.p_user_service[p_userid]
+                                         if fct in IM_EDITOR_SERVICE_FUNCTIONS
+                                         for org in self.p_user_service[p_userid][fct]]:
+                item = {'_edi': item['_eid'], '_path': self.im_paths[item['_mail_id']]['path'],
+                        '_type': imail.portal_type, '_bpk': 'i_assigned_user', 'assigned_user': p_userid, '_act': 'U'}
+                yield item
+            # TODO to be continued
+
 
 
 class ParentPathInsert(object):
