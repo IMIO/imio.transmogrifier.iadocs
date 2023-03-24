@@ -192,7 +192,7 @@ class Initialization(object):
         self.storage['batch_nb'] = run_options['batch_nb']
         self.storage['plone'] = {}
         # store parts on transmogrifier, so it can be used with standard condition
-        transmogrifier.parts = self.storage['parts']
+        transmogrifier.storage = self.storage
 
         # find directory
         brains = api.content.find(portal_type='directory')
