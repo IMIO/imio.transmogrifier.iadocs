@@ -7,6 +7,7 @@ from collective.transmogrifier.utils import Condition
 from imio.dms.mail import IM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail.utils import create_period_folder
 from imio.dms.mail.utils import is_in_user_groups
+from imio.dms.mail.utils import separate_fullname
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import clean_value
 from imio.helpers.transmogrifier import get_obj_from_path
@@ -14,6 +15,7 @@ from imio.pyutils.utils import all_of_dict_values
 from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import full_name
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
@@ -225,14 +227,14 @@ class DOMSenderCreation(object):
                             for y in self.hp(e_userid, item): yield y  # noqa
                         else:
                             pid = _euidm['_uid']
-                            # TODO take into account prenom nom order
-                            parts = _euidm['_fullname'].split()
-                            for y in self.person(e_userid, item, pid, u'Matched', firstname=parts[0],
-                                                 lastname=' '.join(parts[1:])): yield y  # noqa
+                            fn, ln = separate_fullname(None, fn_first=self.storage['plone']['firstname_first'],
+                                                       fullname=_euidm['_fullname'])
+                            for y in self.person(e_userid, item, pid, u'Matched', firstname=fn,
+                                                 lastname=ln): yield y  # noqa
                             for y in self.hp(e_userid, item): yield y  # noqa
                     else:
-                        pid = idnormalizer.normalize(_euidm['_prenom'] and u'{} {}'.format(_euidm['_prenom'],
-                                                     _euidm['_nom']) or _euidm['_nom'])
+                        pid = idnormalizer.normalize(full_name(_euidm['_prenom'], _euidm['_nom'],
+                                                               fn_first=self.storage['plone']['firstname_first']))
                         for y in self.person(e_userid, item, pid, u'Unmatched', firstname=_euidm['_prenom'],
                                              lastname=_euidm['_nom']): yield y  # noqa
                         for y in self.hp(e_userid, item): yield y  # noqa

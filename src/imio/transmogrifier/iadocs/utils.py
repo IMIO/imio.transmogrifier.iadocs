@@ -206,6 +206,16 @@ def get_values_string(item, keys, sep=u':'):
     return sep.join(ret)
 
 
+def full_name(firstname, lastname, fn_first=True):
+    if firstname:
+        if fn_first:
+            return u'{} {}'.format(firstname, lastname)
+        else:
+            return u'{} {}'.format(lastname, firstname)
+    else:
+        return lastname
+
+
 def full_path(path, filename):
     if not os.path.isabs(filename):
         return os.path.join(path, filename)

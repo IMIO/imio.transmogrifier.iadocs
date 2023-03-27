@@ -4,6 +4,7 @@ from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from DateTime.DateTime import DateTime
+from imio.dms.mail.browser.settings import IImioDmsMailConfig
 from imio.helpers.transmogrifier import correct_path
 from imio.helpers.transmogrifier import filter_keys
 from imio.helpers.transmogrifier import get_main_path
@@ -195,6 +196,9 @@ class Initialization(object):
         # store parts on transmogrifier, so it can be used with standard condition
         transmogrifier.storage = self.storage
 
+        # store fullname order
+        start = api.portal.get_registry_record('omail_fullname_used_form', IImioDmsMailConfig, default='firstname')
+        self.storage['plone']['firstname_first'] = (start == 'firstname')
         # find directory
         brains = api.content.find(portal_type='directory')
         if brains:
