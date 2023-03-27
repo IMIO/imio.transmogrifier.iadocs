@@ -25,7 +25,7 @@ tables = OrderedDict([
     ('eCourriersDestinataires', {}), ('eCourriersFichiers', {}), ('eCourriersDossiers', {}),
     ('eCourriersLiens', {}), ('eCourriersServices', {}), ('eGroupes', {}),
     ('eGroupesContacts', {}), ('eGroupesMembres', {}), ('eNatures', {}), ('eRues', {}),
-    ('eServices', {}), ('eTypeAction', {}), ('eUsers', {})])
+    ('eServices', {}), ('eTypeAction', {}), ('eUsers', {}), ('eUsersServices', {})])
 fwf_cmd = 'docker exec -u root -it {dock} /opt/mssql-tools/bin/sqlcmd -S localhost -d {db} -U SA -P "{pwd}" ' \
           '-Q "select * from {table}{where}{order}" -o "/srv/sqlcmd.fwf" -s"{sep}"'
 cp_cmd = 'docker cp {dock}:/srv/sqlcmd.fwf "{of}"'
