@@ -448,6 +448,15 @@ class M1AssignedUserHandling(object):
         self.contacts = self.storage['data']['e_contacts_sender']
         self.user_match = self.storage['data']['e_user_match']
         self.p_user_service = self.storage['data']['p_user_service']
+        # calculate once the editor services for each user
+        self.p_u_s_editor = {}
+        for user in self.p_user_service:
+            self.p_u_s_editor[user] = []
+            for fct in self.p_user_service[user]:
+                if fct in IM_EDITOR_SERVICE_FUNCTIONS:
+                    for org in self.p_user_service[user][fct]:
+                        if org not in self.p_u_s_editor[user]:
+                            self.p_u_s_editor[user].append(org)
 
     def __iter__(self):
         for item in self.previous:
@@ -459,18 +468,22 @@ class M1AssignedUserHandling(object):
                 continue
             e_userid = self.contacts[item['_contact_id']]['_uid']
             p_userid = self.user_match[e_userid]['_uid']
-            if not p_userid:
-                continue
             imail = get_obj_from_path(self.portal, path=self.im_paths[item['_mail_id']]['path'])
             if imail is None or not imail.treating_groups:
                 continue
-            # res[userid][fct][org] = {}
-            # user is in the treating_group
-            if imail.treating_groups in [org for fct in self.p_user_service[p_userid]
-                                         if fct in IM_EDITOR_SERVICE_FUNCTIONS
-                                         for org in self.p_user_service[p_userid][fct]]:
-                item = {'_edi': item['_eid'], '_path': self.im_paths[item['_mail_id']]['path'],
-                        '_type': imail.portal_type, '_bpk': 'i_assigned_user', 'assigned_user': p_userid, '_act': 'U'}
+            # store info in data_transfer
+            d_t = (imail.data_transfer or u'').split('\r\n')
+            r_name = u' '.join(all_of_dict_values(self.user_match[e_userid], ['_nom', '_prenom']))
+            r_messages = u', '.join(all_of_dict_values(item, [u'_action', u'_message', u'_response'],
+                                                       labels=[u'', u'message', u'réponse']))
+            r_infos = u"Destinataire: {}{}".format(r_name, r_messages and u', {}'.format(r_messages) or u'')
+            if r_infos not in d_t:
+                d_t.append(r_infos)
+            # plone user is in the treating_group
+            if p_userid and imail.treating_groups in self.p_u_s_editor[p_userid]:
+                item = {'_eid': item['_eid'], '_path': self.im_paths[item['_mail_id']]['path'],
+                        '_type': imail.portal_type, '_bpk': 'i_assigned_user', 'assigned_user': p_userid, '_act': 'U',
+                        'data_transfer': u'\r\n'.join(d_t)}
                 yield item
             # TODO to be continued
 
