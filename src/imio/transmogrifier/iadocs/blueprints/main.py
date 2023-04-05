@@ -14,6 +14,7 @@ from imio.helpers.transmogrifier import relative_path
 from imio.helpers.transmogrifier import str_to_bool
 from imio.helpers.transmogrifier import str_to_date
 from imio.pyutils.system import stop
+from imio.pyutils.utils import setup_logger
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
@@ -128,7 +129,8 @@ class Initialization(object):
             csvpath = workingpath
         inb_types = safe_unicode(transmogrifier['config'].get('internal_number_behavior_types') or '').split()
         dtb_types = safe_unicode(transmogrifier['config'].get('data_transfer_behavior_types') or '').split()
-
+        if bool(int(transmogrifier['config'].get('debug') or '0')):
+            setup_logger(o_logger, level=logging.DEBUG)
         # setting logs
         efh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors.log'), mode='w')
         efh.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))

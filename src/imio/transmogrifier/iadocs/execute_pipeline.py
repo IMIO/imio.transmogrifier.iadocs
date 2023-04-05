@@ -3,7 +3,6 @@ from AccessControl.SecurityManagement import newSecurityManager
 from collective.transmogrifier.transmogrifier import _load_config
 from collective.transmogrifier.transmogrifier import configuration_registry
 from collective.transmogrifier.transmogrifier import Transmogrifier
-# from imio.helpers.security import setup_logger
 from imio.pyutils.system import stop
 from imio.transmogrifier.iadocs import logger
 from imio.transmogrifier.iadocs import o_logger
@@ -22,8 +21,6 @@ Usage : bin/instance run -O{plonepath} \
 src/imio.transmogrifier.iadocs/src/imio/transmogrifier/iadocs/execute_pipeline.py \
 {PILELINE_FILE} -h
 """
-
-# setup_logger(20)
 
 if 'app' not in locals() or 'obj' not in locals():
     stop("This script must be run via 'bin/instance -Oxxx run' !")

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Init and utils."""
+from imio.pyutils.utils import setup_logger
 from zope.i18nmessageid import MessageFactory
 
 import logging
@@ -9,13 +10,13 @@ import logging
 T_S = {'dmsincomingmail': 'IM', 'dmsincoming_email': 'IE', 'dmsoutgoingmail': 'OM'}
 
 logger = logging.getLogger('dt')
-logger.setLevel(logging.INFO)  # needed to be displayed with instance run
+setup_logger(logger)   # needed to be displayed with instance run.
 
 e_logger = logging.getLogger('dt-input')
-e_logger.setLevel(logging.INFO)
+setup_logger(e_logger)
 
 o_logger = logging.getLogger('dt-output')
-o_logger.setLevel(logging.INFO)
+setup_logger(o_logger)
 
 ANNOTATION_KEY = 'imio.transmogrifier.iadocs'
 

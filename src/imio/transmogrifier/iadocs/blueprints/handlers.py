@@ -468,6 +468,7 @@ class M1AssignedUserHandling(object):
                 continue
             e_userid = self.contacts[item['_contact_id']]['_uid']
             p_userid = self.user_match[e_userid]['_uid']
+            o_logger.debug("mail %s: euser %s, puser %s", item['_mail_id'], self.user_match[e_userid]['_nom'], p_userid)
             imail = get_obj_from_path(self.portal, path=self.im_paths[item['_mail_id']]['path'])
             if imail is None or not imail.treating_groups:
                 continue
@@ -485,6 +486,8 @@ class M1AssignedUserHandling(object):
                         '_type': imail.portal_type, '_bpk': 'i_assigned_user', 'assigned_user': p_userid, '_act': 'U',
                         'data_transfer': u'\r\n'.join(d_t)}
                 yield item
+            elif p_userid:
+                pass
             # TODO to be continued
 
 
