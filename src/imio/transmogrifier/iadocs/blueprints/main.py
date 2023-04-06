@@ -353,11 +353,15 @@ class InsertPath(object):
                     if self.roe:
                         raise Exception(u'No title ! See log...')
                     continue
-                new_id = idnormalizer.normalize(title)
-                item['_path'] = '/'.join([item['_parenth'], new_id])
-                item['_path'] = correct_path(self.portal, item['_path'])
-                item['_act'] = 'N'
-                self.eids.setdefault(item['_eid'], {})['path'] = item['_path']
+                if item['_eid'] in self.eids:  # already created
+                    item['_path'] = self.eids[item['_eid']]['path']
+                    item['_act'] = 'U'
+                else:
+                    new_id = idnormalizer.normalize(title)
+                    item['_path'] = '/'.join([item['_parenth'], new_id])
+                    item['_path'] = correct_path(self.portal, item['_path'])
+                    item['_act'] = 'N'
+                    self.eids.setdefault(item['_eid'], {})['path'] = item['_path']
             yield item
 
 
