@@ -120,6 +120,7 @@ class EnhancedInserter(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.key = Expression(options['key'], transmogrifier, name, options)
         self.value = Expression(options['value'], transmogrifier, name, options)
@@ -136,13 +137,9 @@ class EnhancedInserter(object):
                 value = self.value(item, key=key, storage=self.storage)
                 if self.separator and item.get(key):  # with self.separator, we append
                     if value:
-                        content = item[key].split(self.separator)
-                        content.append(value)
-                        item[key] = self.separator.join(content)
-                    else:
-                        yield item
-                        continue
-                item[key] = value
+                        item[key] += u'{}{}'.format(self.separator, value)
+                else:
+                    item[key] = value
             yield item
 
 
