@@ -77,8 +77,6 @@ class Count(object):
             yield item
         for group in counter:
             o_logger.info("{} '{}' = {}".format(self.name, group, counter[group]['c']))
-        # for group in self.storage['count'][self.name]:
-        #     o_logger.info("{} '{}' = {}".format(self.name, group, self.storage['count'][self.name][group]['c']))
 
 
 class EnhancedCondition(object):

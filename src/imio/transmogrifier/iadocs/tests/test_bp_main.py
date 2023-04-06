@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Setup tests for this package."""
+"""Blueprints tests for this package."""
 from datetime import date
 from datetime import datetime
 from imio.transmogrifier.iadocs.blueprints.main import CommonInputChecks
