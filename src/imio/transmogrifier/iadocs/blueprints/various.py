@@ -47,6 +47,7 @@ class Count(object):
 
     Parameters:
         * group_key = M, item key to group counting.
+        * condition = O, matching condition.
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -56,6 +57,7 @@ class Count(object):
         self.name = name
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         if 'count' not in self.storage:
             self.storage['count'] = {}
         self.storage['count'][name] = {}
@@ -64,13 +66,14 @@ class Count(object):
     def __iter__(self):
         counter = self.storage['count'][self.name]
         for item in self.previous:
-            if self.group_key:
-                if self.group_key in item:
-                    counter.setdefault(item[self.group_key], {'c': 0})['c'] += 1
+            if self.condition(item):
+                if self.group_key:
+                    if self.group_key in item:
+                        counter.setdefault(item[self.group_key], {'c': 0})['c'] += 1
+                    else:
+                        counter.setdefault('{}_missing'.format(self.group_key), {'c': 0})['c'] += 1
                 else:
-                    counter.setdefault('{}_missing'.format(self.group_key), {'c': 0})['c'] += 1
-            else:
-                counter.setdefault('', {'c': 0})['c'] += 1
+                    counter.setdefault('', {'c': 0})['c'] += 1
             yield item
         for group in counter:
             o_logger.info("{} '{}' = {}".format(self.name, group, counter[group]['c']))
