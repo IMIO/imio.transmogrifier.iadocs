@@ -27,7 +27,7 @@ class Breakpoint(object):
     implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
-        condition = options.get('condition') or 'python:True'
+        condition = options.get('condition') or 'python:False'
         self.condition = Condition(condition, transmogrifier, name, options)
         self.previous = previous
         self.transmogrifier = transmogrifier
