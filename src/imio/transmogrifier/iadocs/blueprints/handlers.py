@@ -444,9 +444,12 @@ class M1AssignedUserHandling(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        if not is_in_part(self, self.parts):
+            return
         self.im_paths = self.storage['data']['e_mail_i']
         self.contacts = self.storage['data']['e_contacts_sender']
         self.user_match = self.storage['data']['e_user_match']
+        # self.e_user_service = self.storage['data']['e_user_service']
         self.p_user_service = self.storage['data']['p_user_service']
         # calculate once the editor services for each user
         self.p_u_s_editor = {}
@@ -470,8 +473,12 @@ class M1AssignedUserHandling(object):
             p_userid = self.user_match[e_userid]['_uid']
             o_logger.debug("mail %s: euser %s, puser %s", item['_mail_id'], self.user_match[e_userid]['_nom'], p_userid)
             imail = get_obj_from_path(self.portal, path=self.im_paths[item['_mail_id']]['path'])
-            if imail is None or not imail.treating_groups:
+            if imail is None:
+                o_logger.warning("mail %s: path '%s' not found", item['_mail_id'],
+                                 self.im_paths[item['_mail_id']]['path'])
                 continue
+            item = {'_eid': item['_eid'], '_path': self.im_paths[item['_mail_id']]['path'],
+                    '_type': imail.portal_type, '_bpk': 'i_assigned_user', '_act': 'U'}
             # store info in data_transfer
             d_t = (imail.data_transfer or u'').split('\r\n')
             r_name = u' '.join(all_of_dict_values(self.user_match[e_userid], ['_nom', '_prenom']))
@@ -480,16 +487,19 @@ class M1AssignedUserHandling(object):
             r_infos = u"Destinataire: {}{}".format(r_name, r_messages and u', {}'.format(r_messages) or u'')
             if r_infos not in d_t:
                 d_t.append(r_infos)
+                item['data_transfer'] = u'\r\n'.join(d_t)
             # plone user is in the treating_group
-            if p_userid and imail.treating_groups in self.p_u_s_editor[p_userid]:
-                item = {'_eid': item['_eid'], '_path': self.im_paths[item['_mail_id']]['path'],
-                        '_type': imail.portal_type, '_bpk': 'i_assigned_user', 'assigned_user': p_userid, '_act': 'U',
-                        'data_transfer': u'\r\n'.join(d_t)}
-                yield item
+            if p_userid and imail.treating_groups and imail.treating_groups in self.p_u_s_editor[p_userid]:
+                item['assigned_user'] = p_userid
             elif p_userid:
+                # comblain: cannot put user service in copy because most users have more than one service
                 pass
-            # TODO to be continued
-
+            else:
+                # comblain: cannot put user service in copy because most users have more than one service
+                pass
+            if 'data_transfer' in item or 'assigned_user' in item:
+                # o_logger.debug(item)
+                yield item
 
 
 class ParentPathInsert(object):
