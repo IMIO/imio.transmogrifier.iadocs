@@ -513,6 +513,7 @@ class ParentPathInsert(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.im_folder = self.portal['incoming-mail']
+        self.om_folder = self.portal['outgoing-mail']
 
     def __iter__(self):
         for item in self.previous:
@@ -523,6 +524,9 @@ class ParentPathInsert(object):
             if ptyp in ('dmsincomingmail', 'dmsincoming_email'):
                 container = create_period_folder(self.im_folder, item['creation_date'])
                 item['_parenth'] = u'/incoming-mail/{}'.format(container.id)
+            elif ptyp == 'dmsoutgoingmail':
+                container = create_period_folder(self.om_folder, item['creation_date'])
+                item['_parenth'] = u'/outgoing-mail/{}'.format(container.id)
             yield item
 
 
