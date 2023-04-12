@@ -502,6 +502,51 @@ class M1AssignedUserHandling(object):
                 yield item
 
 
+class POMSender(object):
+    """Set sender held_position.
+
+    Parameters:
+        * condition = O, condition expression
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.change = False
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.puid_to_pers = self.storage['data']['p_userid_to_pers']
+        self.euid_to_pers = self.storage['data']['p_euid_to_pers']
+        self.p_hps = self.storage['data']['p_hps']
+        self.eid_to_orgs = self.storage['data']['p_eid_to_orgs']
+        self.e_c_s = self.storage['data']['e_contact']
+        self.e_u_m = self.storage['data']['e_user_match']
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            if item['_sender_id']:
+                if self.e_c_s[item['_sender_id']]['_uid']:  # we have a user id
+                    e_userid = self.e_c_s[item['_sender_id']]['_uid']
+                else:  # _sender_id is not a user id
+                    e_userid = u'None'
+                    # TODO add info in data_transfer
+            else:  # we do not have a _sender_id
+                e_userid = u'None'
+            pers_uid = self.euid_to_pers[e_userid]
+            ouid = self.eid_to_orgs[item['_service_id']]['uid']
+            hp_dic = self.p_hps[pers_uid]['hps'][ouid]
+            item['sender'] = hp_dic['puid']
+            yield item
+
+
 class ParentPathInsert(object):
     """Add parent path key following type"""
     classProvides(ISectionBlueprint)

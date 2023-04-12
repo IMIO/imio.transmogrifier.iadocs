@@ -144,7 +144,8 @@ def get_personnel(portal, eid_fld='internal_number'):
                          'state': api.content.get_state(person)}
         if ouid not in hps[puid]['hps']:
             hps[puid]['hps'][ouid] = {'path': relative_path(portal, brain.getPath()),
-                                      'state': api.content.get_state(hp)}
+                                      'state': api.content.get_state(hp),
+                                      'puid': brain.UID}
     return p_userid_to_person, e_userid_to_person, hps
 
 
