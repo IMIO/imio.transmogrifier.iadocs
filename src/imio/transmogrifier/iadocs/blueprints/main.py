@@ -11,6 +11,7 @@ from imio.helpers.transmogrifier import get_main_path
 from imio.helpers.transmogrifier import get_obj_from_path
 from imio.helpers.transmogrifier import pool_tuples
 from imio.helpers.transmogrifier import relative_path
+from imio.helpers.transmogrifier import split_text
 from imio.helpers.transmogrifier import str_to_bool
 from imio.helpers.transmogrifier import str_to_date
 from imio.pyutils.system import stop
@@ -255,12 +256,14 @@ class CommonInputChecks(object):
     Parameters:
         * bp_key = M, blueprint key corresponding to csv
         * condition = O, condition expression
-        * booleans = O, list of fields to transform in booleans
+        * strip_chars = O, list of pairs (fieldname chars) on which a strip must be done
+        * hyphen_newline = O, list of fields where newline will be replaced by hyphen
         * invalids = O, list of pairs (fieldname values) for which field content will be replaced with None
           if it is equal to a value. values are | separated
-        * hyphen_newline = O, list of fields where newline will be replaced by hyphen
+        * split_text = O, list of quintets (fieldname length remainder_field remainder_position separator)
+          for which fieldname is split at length and remainder is put in remainder field
+        * booleans = O, list of fields to transform in booleans
         * dates = O, list of triplets (fieldname format as_date) to transform in date
-        * strip_chars = O, list of pairs (fieldname chars) on which a strip must be done
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
     """
     classProvides(ISectionBlueprint)
@@ -282,6 +285,11 @@ class CommonInputChecks(object):
                                         skipinitialspace=True))
         self.invalids = [cell.decode('utf8') for cell in self.invalids]
         self.invalids = [tup for tup in pool_tuples(self.invalids, 2, 'invalids option') if tup[0] in fieldnames]
+        self.splits = next(csv.reader([options.get('split_text', '').strip()], delimiter=' ', quotechar='"',
+                                      skipinitialspace=True))
+        self.splits = [cell.decode('utf8') for cell in self.splits]
+        self.splits = [(tup[0], int(tup[1]), tup[2], int(tup[3]), tup[4]) for tup in
+                       pool_tuples(self.splits, 5, 'splits option') if tup[0] in fieldnames]
         self.booleans = [key for key in safe_unicode(options.get('booleans', '')).split() if key in fieldnames]
         self.dates = safe_unicode(options.get('dates', '')).strip().split()
         self.dates = [tup for tup in pool_tuples(self.dates, 3, 'dates option') if tup[0] in fieldnames]
@@ -304,6 +312,15 @@ class CommonInputChecks(object):
                         if item[fld] == value:
                             item[fld] = None
                             break
+                # split long value
+                for fld, length, dest_fld, dest_pos, sep in self.splits:
+                    part1, part2 = split_text(item[fld], length)
+                    if part1 != item[fld]:
+                        item[fld] = part1
+                        if part2:
+                            remainder = dest_fld in item and item.get(dest_fld).split(sep) or []
+                            remainder.insert(dest_pos, u"Suite titre: {}".format(part2))
+                            item[dest_fld] = sep.join(remainder)
                 # to bool
                 for fld in self.booleans:
                     item[fld] = str_to_bool(item, fld, log_error)
