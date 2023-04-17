@@ -573,7 +573,7 @@ class POMSender(object):
             ouid = self.eid_to_orgs[item['_service_id']]['uid']
             hp_dic = self.p_hps[pers_uid]['hps'][ouid]
             item['sender'] = hp_dic['puid']
-            o_logger.debug(u"OM sender info '%s'. Sender '%s', Description '%s', Data '%s'", item['_eid'],
+            o_logger.debug(u"OM sender info '%s'. Sender '%s', Description '%r', Data '%r'", item['_eid'],
                            item['sender'], item.get('description', u''), item.get('data_transfer', u''))
             yield item
 
