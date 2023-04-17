@@ -328,6 +328,109 @@ class ECategoryUpdate(object):
             o_logger.info("Part e: some categories have been created or updated.")
 
 
+def get_contact_name(dic, dic2):
+    sender = []
+    p_sender = []
+    p_name = u' '.join(all_of_dict_values(dic2, ['_lname', '_fname']))
+    if not p_name and dic2.get('_name2'):
+        p_name = dic2['_name2']
+    if p_name:
+        p_sender.append(p_name)
+    name = u' '.join(all_of_dict_values(dic, ['_lname', '_fname']))
+    if not name and dic.get('_name2'):
+        name = dic['_name2']
+    if name and (not p_name or name != p_name):
+        sender.append(name)
+    # email
+    p_eml = one_of_dict_values(dic2, ['_email1', '_email2', '_email3'])
+    if p_eml:
+        p_sender.append(p_eml)
+    eml = one_of_dict_values(dic, ['_email1', '_email2', '_email3'])
+    if eml and (not p_eml or eml != p_eml):
+        sender.append(eml)
+    if dic.get('_function'):
+        sender.append(dic['_function'])
+    if dic2.get('_e_nb'):
+        p_sender.append(u'NE:{}'.format(dic2['_e_nb']))
+    if dic.get('_e_nb') and (not dic2.get('_e_nb') or dic.get('_e_nb') != dic2.get('_e_nb')):
+        sender.append(u'NE:{}'.format(dic['_e_nb']))
+    # TODO add ctyp
+    return sender, p_sender
+
+
+def get_contact_phone(dic1, dic2):
+    phones = []
+    phone = one_of_dict_values(dic1, ['_phone1', '_phone2', '_phone3'])
+    if phone:
+        phones.append(phone)
+    else:
+        phone = one_of_dict_values(dic2, ['_phone1', '_phone2', '_phone3'])
+        if phone:
+            phones.append(phone)
+    cell = one_of_dict_values(dic1, ['_cell1', '_cell2', '_cell3'])
+    if cell:
+        phones.append(cell)
+    else:
+        cell = one_of_dict_values(dic2, ['_cell1', '_cell2', '_cell3'])
+        if cell:
+            phones.append(cell)
+    return phones
+
+
+def get_contact_info(section, item, c_id_fld, free_fld, dest1, dest2):
+    """Get contact infos
+
+    :param section: section object
+    :param item: yielded dic
+    :param c_id_fld: field name containing contact id
+    :param free_fld: field name containing free contact text
+    :param dest1: main list where to add main infos
+    :param dest2: secondary list where to add less important infos
+    :return: boolean indicating changes
+    """
+    # e_contact = _uid _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb
+    # _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
+    change = False
+    sender = []
+    p_sender = []
+    m_sender = clean_value(item[free_fld], patterns=[r'^["\']+$'])
+    if item[c_id_fld]:
+        infos = section.storage['data']['e_contact'][item[c_id_fld]]
+        parent_infos = {}
+        if infos['_parent_id']:
+            parent_infos = section.storage['data']['e_contact'].get(infos['_parent_id'], {})
+        sender, p_sender = get_contact_name(infos, parent_infos)
+        if p_sender:
+            change = True
+            dest1.append(u'Expéditeur parent: {}.'.format(u', '.join(p_sender)))
+        if sender:
+            change = True
+            dest1.append(u'Expéditeur: {}.'.format(u', '.join(sender)))
+        # address
+        p_address = all_of_dict_values(parent_infos, ['_street', '_pc', '_city'])
+        address = all_of_dict_values(infos, ['_street', '_pc', '_city'])
+        if address:
+            change = True
+            dest2.append(u'Adresse: {}.'.format(u' '.join(address)))
+        elif p_address:  # we add just one address
+            change = True
+            dest2.append(u'Adresse parent: {}.'.format(u' '.join(p_address)))
+        else:
+            pass  # include _addr_id ? no!
+        # phones
+        phones = get_contact_phone(infos, parent_infos)
+        if phones:
+            change = True
+            dest2.append(u'Tél: {}.'.format(u', '.join(phones)))
+    if m_sender:
+        lines = m_sender.split('\n')
+        change = True
+        dest1.append(u'Expéditeur libre: {}'.format(lines.pop(0)))
+        if lines:
+            dest2.append(u'Expéditeur libre: {}'.format(u', '.join(lines)))
+    return change
+
+
 class L1SenderHandling(object):
     """Handles contact"""
     classProvides(ISectionBlueprint)
@@ -340,53 +443,6 @@ class L1SenderHandling(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
 
-    def get_sender_name(self, dic, dic2):
-        sender = []
-        p_sender = []
-        p_name = u' '.join(all_of_dict_values(dic2, ['_lname', '_fname']))
-        if not p_name and dic2.get('_name2'):
-            p_name = dic2['_name2']
-        if p_name:
-            p_sender.append(p_name)
-        name = u' '.join(all_of_dict_values(dic, ['_lname', '_fname']))
-        if not name and dic.get('_name2'):
-            name = dic['_name2']
-        if name and (not p_name or name != p_name):
-            sender.append(name)
-        # email
-        p_eml = one_of_dict_values(dic2, ['_email1', '_email2', '_email3'])
-        if p_eml:
-            p_sender.append(p_eml)
-        eml = one_of_dict_values(dic, ['_email1', '_email2', '_email3'])
-        if eml and (not p_eml or eml != p_eml):
-            sender.append(eml)
-        if dic.get('_function'):
-            sender.append(dic['_function'])
-        if dic2.get('_e_nb'):
-            p_sender.append(u'NE:{}'.format(dic2['_e_nb']))
-        if dic.get('_e_nb') and (not dic2.get('_e_nb') or dic.get('_e_nb') != dic2.get('_e_nb')):
-            sender.append(u'NE:{}'.format(dic['_e_nb']))
-        # TODO add ctyp
-        return sender, p_sender
-
-    def get_sender_phone(self, dic1, dic2):
-        phones = []
-        phone = one_of_dict_values(dic1, ['_phone1', '_phone2', '_phone3'])
-        if phone:
-            phones.append(phone)
-        else:
-            phone = one_of_dict_values(dic2, ['_phone1', '_phone2', '_phone3'])
-            if phone:
-                phones.append(phone)
-        cell = one_of_dict_values(dic1, ['_cell1', '_cell2', '_cell3'])
-        if cell:
-            phones.append(cell)
-        else:
-            cell = one_of_dict_values(dic2, ['_cell1', '_cell2', '_cell3'])
-            if cell:
-                phones.append(cell)
-        return phones
-
     def __iter__(self):
         for item in self.previous:
             if not self.condition(item):
@@ -394,41 +450,9 @@ class L1SenderHandling(object):
                 continue
             desc = 'description' in item and item.get('description').split('\r\n') or []
             d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
-            sender = []
-            p_sender = []
-            m_sender = clean_value(item['_sender'], patterns=[r'^["\']+$'])
-            if item['_sender_id']:
-                infos = self.storage['data']['e_contact'][item['_sender_id']]
-                parent_infos = {}
-                if infos['_parent_id']:
-                    parent_infos = self.storage['data']['e_contact'].get(infos['_parent_id'], {})
-                sender, p_sender = self.get_sender_name(infos, parent_infos)
-                if p_sender:
-                    desc.append(u'Expéditeur parent: {}.'.format(u', '.join(p_sender)))
-                if sender:
-                    desc.append(u'Expéditeur: {}.'.format(u', '.join(sender)))
-                # address
-                p_address = all_of_dict_values(parent_infos, ['_street', '_pc', '_city'])
-                address = all_of_dict_values(infos, ['_street', '_pc', '_city'])
-                if address:
-                    d_t.append(u'Adresse: {}.'.format(u' '.join(address)))
-                elif p_address:  # we add just one address
-                    d_t.append(u'Adresse parent: {}.'.format(u' '.join(p_address)))
-                else:
-                    pass  # include _addr_id ? no!
-                # phones
-                phones = self.get_sender_phone(infos, parent_infos)
-                if phones:
-                    d_t.append(u'Tél: {}.'.format(u', '.join(phones)))
-            if m_sender:
-                lines = m_sender.split('\n')
-                desc.append(u'Expéditeur libre: {}'.format(lines.pop(0)))
-                if lines:
-                    d_t.append(u'Expéditeur libre: {}'.format(u', '.join(lines)))
-            item['description'] = u'\r\n'.join(desc)
-            item['data_transfer'] = u'\r\n'.join(d_t)
-            # e_contact = _uid _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb
-            # _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
+            if get_contact_info(self, item, '_sender_id', '_sender', desc, d_t):
+                item['description'] = u'\r\n'.join(desc)
+                item['data_transfer'] = u'\r\n'.join(d_t)
             yield item
 
 
@@ -537,13 +561,20 @@ class POMSender(object):
                     e_userid = self.e_c_s[item['_sender_id']]['_uid']
                 else:  # _sender_id is not a user id
                     e_userid = u'None'
-                    # TODO add info in data_transfer
+                    # add info in data_transfer
+                    desc = 'description' in item and item.get('description').split('\r\n') or []
+                    d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
+                    if get_contact_info(self, item, '_sender_id', '_sender', desc, d_t):
+                        item['description'] = u'\r\n'.join(desc)
+                        item['data_transfer'] = u'\r\n'.join(d_t)
             else:  # we do not have a _sender_id
                 e_userid = u'None'
             pers_uid = self.euid_to_pers[e_userid]
             ouid = self.eid_to_orgs[item['_service_id']]['uid']
             hp_dic = self.p_hps[pers_uid]['hps'][ouid]
             item['sender'] = hp_dic['puid']
+            o_logger.debug(u"OM sender info '%s'. Sender '%s', Description '%s', Data '%s'", item['_eid'],
+                           item['sender'], item.get('description', u''), item.get('data_transfer', u''))
             yield item
 
 
