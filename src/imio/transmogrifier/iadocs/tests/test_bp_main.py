@@ -27,6 +27,12 @@ class TestBluePrintMain(unittest.TestCase):
         bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'strip_chars': '1 $.'}, None)
         bp.previous = [{u'1': u'aa.$', u'2': u'bb'}]
         self.assertDictEqual(next(iter(bp)), {u'1': u'aa', u'2': u'bb'})
+        # check clean_value
+        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'clean_value':
+                               '1 python:"\\n" " " "python:[r\'^["" ]+$\']" python:"\\r\\n"'}, None)
+        self.assertListEqual(bp.cleans, [(u'1', u'\n', u' ', ['^[" ]+$'], u'\r\n')])
+        bp.previous = [{u'1': u'aa\n" "\nbb', u'2': None}]
+        self.assertDictEqual(next(iter(bp)), {u'1': u'aa\r\nbb', u'2': None})
         # check hyphen_newline
         bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'hyphen_newline': '1 2'}, None)
         bp.previous = [{u'1': u'aa\n', u'2': u'aa\nbb'}]
@@ -39,7 +45,7 @@ class TestBluePrintMain(unittest.TestCase):
         self.assertDictEqual(next(iter(bp)), {u'1': None, u'2': u''})
         # check split_text
         bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'split_text':
-                               '1 11 2 0 "\r\n" "Suite: "'}, None)
+                               '1 11 2 0 python:\'\\r\\n\' "Suite: "'}, None)
         self.assertListEqual(bp.splits, [(u'1', 11, u'2', 0, u'\r\n', u'Suite: ')])
         bp.previous = [{u'1': u'aa bb cc dd ee', u'2': None}]
         self.assertDictEqual(next(iter(bp)), {u'1': u'aa bb cc dd', u'2': u'Suite:  ee'})

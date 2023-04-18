@@ -3,8 +3,10 @@ from collections import OrderedDict
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
+from collective.transmogrifier.utils import Expression
 from DateTime.DateTime import DateTime
 from imio.dms.mail.browser.settings import IImioDmsMailConfig
+from imio.helpers.transmogrifier import clean_value
 from imio.helpers.transmogrifier import correct_path
 from imio.helpers.transmogrifier import filter_keys
 from imio.helpers.transmogrifier import get_main_path
@@ -257,10 +259,12 @@ class CommonInputChecks(object):
         * bp_key = M, blueprint key corresponding to csv
         * condition = O, condition expression
         * strip_chars = O, list of pairs (fieldname chars) on which a strip must be done
+        * clean_value = 0, list of quintets (fieldname isep_expr strip patterns osep_expr)
+          for which field multilines content will be cleaned
         * hyphen_newline = O, list of fields where newline will be replaced by hyphen
         * invalids = O, list of pairs (fieldname values) for which field content will be replaced with None
           if it is equal to a value. values are | separated
-        * split_text = O, list of sextets (fieldname length remainder_field remainder_position separator prefix)
+        * split_text = O, list of sextets (fieldname length remainder_field remainder_position separator_expr prefix)
           for which fieldname is split at length and remainder is put in remainder field
         * booleans = O, list of fields to transform in booleans
         * dates = O, list of triplets (fieldname format as_date) to transform in date
@@ -280,6 +284,13 @@ class CommonInputChecks(object):
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.strips = safe_unicode(options.get('strip_chars', '')).strip().split()
         self.strips = [tup for tup in pool_tuples(self.strips, 2, 'strip_chars option') if tup[0] in fieldnames]
+        self.cleans = next(csv.reader([options.get('clean_value', '').strip()], delimiter=' ', quotechar='"',
+                                      skipinitialspace=True))
+        self.cleans = [cell.decode('utf8') for cell in self.cleans]
+        self.cleans = [(tup[0], Expression(tup[1], transmogrifier, name, options)(None), tup[2],
+                        Expression(tup[3], transmogrifier, name, options)(None),
+                        Expression(tup[4], transmogrifier, name, options)(None))
+                       for tup in pool_tuples(self.cleans, 5, 'clean_value option') if tup[0] in fieldnames]
         self.hyphens = [key for key in safe_unicode(options.get('hyphen_newline', '')).split() if key in fieldnames]
         self.invalids = next(csv.reader([options.get('invalids', '').strip()], delimiter=' ', quotechar='"',
                                         skipinitialspace=True))
@@ -288,7 +299,8 @@ class CommonInputChecks(object):
         self.splits = next(csv.reader([options.get('split_text', '').strip()], delimiter=' ', quotechar='"',
                                       skipinitialspace=True))
         self.splits = [cell.decode('utf8') for cell in self.splits]
-        self.splits = [(tup[0], int(tup[1]), tup[2], int(tup[3]), tup[4], tup[5]) for tup in
+        self.splits = [(tup[0], int(tup[1]), tup[2], int(tup[3]),
+                        Expression(tup[4], transmogrifier, name, options)(None), tup[5]) for tup in
                        pool_tuples(self.splits, 6, 'splits option') if tup[0] in fieldnames]
         self.booleans = [key for key in safe_unicode(options.get('booleans', '')).split() if key in fieldnames]
         self.dates = safe_unicode(options.get('dates', '')).strip().split()
@@ -302,6 +314,9 @@ class CommonInputChecks(object):
                     if not item[fld]:
                         continue
                     item[fld] = item[fld].strip(chars)
+                # clean multiline value
+                for fld, isep, strip, patterns, osep in self.cleans:
+                    item[fld] = clean_value(item[fld], isep, strip, patterns, osep)
                 # replace newline by hyphen on specified fields
                 for fld in self.hyphens:
                     if '\n' in (item[fld] or ''):
