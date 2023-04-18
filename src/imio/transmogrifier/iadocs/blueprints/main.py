@@ -260,7 +260,7 @@ class CommonInputChecks(object):
         * hyphen_newline = O, list of fields where newline will be replaced by hyphen
         * invalids = O, list of pairs (fieldname values) for which field content will be replaced with None
           if it is equal to a value. values are | separated
-        * split_text = O, list of quintets (fieldname length remainder_field remainder_position separator)
+        * split_text = O, list of sextets (fieldname length remainder_field remainder_position separator prefix)
           for which fieldname is split at length and remainder is put in remainder field
         * booleans = O, list of fields to transform in booleans
         * dates = O, list of triplets (fieldname format as_date) to transform in date
@@ -288,8 +288,8 @@ class CommonInputChecks(object):
         self.splits = next(csv.reader([options.get('split_text', '').strip()], delimiter=' ', quotechar='"',
                                       skipinitialspace=True))
         self.splits = [cell.decode('utf8') for cell in self.splits]
-        self.splits = [(tup[0], int(tup[1]), tup[2], int(tup[3]), tup[4]) for tup in
-                       pool_tuples(self.splits, 5, 'splits option') if tup[0] in fieldnames]
+        self.splits = [(tup[0], int(tup[1]), tup[2], int(tup[3]), tup[4], tup[5]) for tup in
+                       pool_tuples(self.splits, 6, 'splits option') if tup[0] in fieldnames]
         self.booleans = [key for key in safe_unicode(options.get('booleans', '')).split() if key in fieldnames]
         self.dates = safe_unicode(options.get('dates', '')).strip().split()
         self.dates = [tup for tup in pool_tuples(self.dates, 3, 'dates option') if tup[0] in fieldnames]
@@ -313,13 +313,13 @@ class CommonInputChecks(object):
                             item[fld] = None
                             break
                 # split long value
-                for fld, length, dest_fld, dest_pos, sep in self.splits:
+                for fld, length, dest_fld, dest_pos, sep, prefix in self.splits:
                     part1, part2 = split_text(item[fld], length)
                     if part1 != item[fld]:
                         item[fld] = part1
                         if part2:
-                            remainder = dest_fld in item and item.get(dest_fld).split(sep) or []
-                            remainder.insert(dest_pos, u"Suite titre: {}".format(part2))
+                            remainder = dest_fld in item and item[dest_fld] and item[dest_fld].split(sep) or []
+                            remainder.insert(dest_pos, u"{}{}".format(prefix, part2))
                             item[dest_fld] = sep.join(remainder)
                 # to bool
                 for fld in self.booleans:

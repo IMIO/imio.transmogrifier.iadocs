@@ -37,6 +37,15 @@ class TestBluePrintMain(unittest.TestCase):
         self.assertDictEqual(next(iter(bp)), {u'1': u'aa', u'2': None})
         bp.previous = [{u'1': u'0', u'2': u''}]
         self.assertDictEqual(next(iter(bp)), {u'1': None, u'2': u''})
+        # check split_text
+        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'split_text':
+                               '1 11 2 0 "\r\n" "Suite: "'}, None)
+        self.assertListEqual(bp.splits, [(u'1', 11, u'2', 0, u'\r\n', u'Suite: ')])
+        bp.previous = [{u'1': u'aa bb cc dd ee', u'2': None}]
+        self.assertDictEqual(next(iter(bp)), {u'1': u'aa bb cc dd', u'2': u'Suite:  ee'})
+        bp.previous = [{u'1': u'aa bb cc dd', u'2': u'Première\r\nDeuxième'}]
+        bp.splits = [(u'1', 6, u'2', 50, u'\r\n', u'Suite: ')]
+        self.assertDictEqual(next(iter(bp)), {u'1': u'aa bb ', u'2': u'Premi\xe8re\r\nDeuxi\xe8me\r\nSuite: cc dd'})
         # check booleans
         self.storage['csv']['cip']['fd'] = [u'1', u'2', u'3', u'4', u'5', u'6', u'7']
         bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'booleans': '1 2 3 4 5 6'}, None)
