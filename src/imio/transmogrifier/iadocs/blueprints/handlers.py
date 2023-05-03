@@ -157,6 +157,42 @@ class BMailtypeUpdate(object):
             self.storage['data']['p_mailtype'] = get_mailtypes(self.portal)
 
 
+class DefaultContactSet(object):
+    """Set default contact.
+
+    Parameters:
+        * fieldname = M, field to set
+        * is_list = M, int for boolean (1 if the field is a list)
+        * condition = O, condition expression
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.field = safe_unicode(options['fieldname'])
+        self.is_list = bool(int(options.get('is_list') or '1'))
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        intids = getUtility(IIntIds)
+        self.def_ctct_iid = intids.getId(self.storage['plone']['def_contact'])
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            if self.is_list:
+                item[self.field] = [RelationValue(self.def_ctct_iid)]
+            else:
+                item[self.field] = RelationValue(self.def_ctct_iid)
+            yield item
+
+
 class DOMSenderCreation(object):
     """Create sender held_position if necessary.
 
