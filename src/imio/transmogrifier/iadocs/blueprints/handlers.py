@@ -709,3 +709,30 @@ class Q1RecipientsAsTextUpdate(object):
                         d_t.append(r_messages)
                 item2['data_transfer'] = u'\r\n'.join(d_t)
                 yield item2
+
+
+class T1DmsfileCreation(object):
+    """Create file.
+
+    Parameters:
+        * condition = O, condition expression
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            item2 = {'_eid': item['_eid'], '_path': '',
+                     '_type': '', '_bpk': 'e_dmsfile', '_act': 'N'}

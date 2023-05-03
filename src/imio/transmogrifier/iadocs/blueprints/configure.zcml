@@ -181,4 +181,10 @@
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
+  <utility
+    name="imio.transmogrifier.iadocs.t_1_dmsfile_creation"
+    component=".handlers.T1DmsfileCreation"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
 </configure>

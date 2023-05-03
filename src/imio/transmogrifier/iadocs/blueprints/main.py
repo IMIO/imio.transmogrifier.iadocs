@@ -133,6 +133,9 @@ class Initialization(object):
         csvpath = safe_unicode(options.get('csvpath') or '')
         if not csvpath:
             csvpath = workingpath
+        filespath = safe_unicode(options.get('filespath') or '')
+        if not filespath:
+            filespath = workingpath
         inb_types = safe_unicode(transmogrifier['config'].get('internal_number_behavior_types') or '').split()
         dtb_types = safe_unicode(transmogrifier['config'].get('data_transfer_behavior_types') or '').split()
         if bool(int(transmogrifier['config'].get('debug') or '0')):
@@ -194,6 +197,7 @@ class Initialization(object):
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
         self.storage['wp'] = workingpath
         self.storage['csvp'] = csvpath
+        self.storage['filesp'] = filespath
         self.storage['csv'] = {}
         self.storage['data'] = {}
         self.storage['parts'] = run_options['parts']
