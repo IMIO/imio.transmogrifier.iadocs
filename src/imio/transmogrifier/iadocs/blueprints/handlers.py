@@ -6,7 +6,6 @@ from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from imio.dms.mail import IM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail.utils import create_period_folder
-from imio.dms.mail.utils import is_in_user_groups
 from imio.dms.mail.utils import separate_fullname
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import clean_value
@@ -468,7 +467,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     return change
 
 
-class L1SenderHandling(object):
+class L1SenderAsTextSet(object):
     """Handles contact"""
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -563,7 +562,7 @@ class M1AssignedUserHandling(object):
                 yield item
 
 
-class POMSender(object):
+class POMSenderSet(object):
     """Set sender held_position.
 
     Parameters:
@@ -577,7 +576,6 @@ class POMSender(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
-        self.change = False
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
@@ -667,7 +665,7 @@ class PostActions(object):
             yield item
 
 
-class Q1Recipients(object):
+class Q1RecipientsAsTextUpdate(object):
     """Handles om recipients.
 
     Parameters:
@@ -681,7 +679,6 @@ class Q1Recipients(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
-        self.change = False
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)

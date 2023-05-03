@@ -92,8 +92,8 @@
     />
 
   <utility
-    name="imio.transmogrifier.iadocs.l_1_contact_as_text"
-    component=".handlers.L1SenderHandling"
+    name="imio.transmogrifier.iadocs.l_1_sender_as_text_set"
+    component=".handlers.L1SenderAsTextSet"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
@@ -122,8 +122,8 @@
     />
 
   <utility
-    name="imio.transmogrifier.iadocs.p_om_sender"
-    component=".handlers.POMSender"
+    name="imio.transmogrifier.iadocs.p_om_sender_set"
+    component=".handlers.POMSenderSet"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
@@ -152,8 +152,8 @@
     />
 
   <utility
-    name="imio.transmogrifier.iadocs.q_1_recipients"
-    component=".handlers.Q1Recipients"
+    name="imio.transmogrifier.iadocs.q_1_recipients_as_text_update"
+    component=".handlers.Q1RecipientsAsTextUpdate"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
