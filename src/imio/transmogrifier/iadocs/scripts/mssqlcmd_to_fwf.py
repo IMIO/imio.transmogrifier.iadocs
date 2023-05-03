@@ -22,7 +22,7 @@ tables = OrderedDict([
     ('eAdresses', {}), ('eClassement', {}), ('eClassementDossiers', {}), ('eContacts', {}),
     ('eContactsAdresses', {}), ('eContactsTitres', {}), ('eContactsType', {}),
     ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'", 'o': "DateEncodage"}),
-    ('eCourriersDestinataires', {}), ('eCourriersFichiers', {}), ('eCourriersDossiers', {}),
+    ('eCourriersDestinataires', {}), ('eCourriersFichiers', {'o': "CourrierID, OrdreAffichage"}), ('eCourriersDossiers', {}),
     ('eCourriersLiens', {}), ('eCourriersServices', {}), ('eGroupes', {}),
     ('eGroupesContacts', {}), ('eGroupesMembres', {}), ('eNatures', {}), ('eRues', {}),
     ('eServices', {}), ('eTypeAction', {}), ('eUsers', {}), ('eUsersServices', {})])
