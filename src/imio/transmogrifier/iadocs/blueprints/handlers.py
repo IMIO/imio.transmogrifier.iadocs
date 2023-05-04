@@ -13,6 +13,7 @@ from imio.helpers.transmogrifier import get_obj_from_path
 from imio.pyutils.utils import all_of_dict_values
 from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
+from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import full_name
@@ -736,6 +737,7 @@ class T1DmsfileCreation(object):
     """Create file.
 
     Parameters:
+        * bp_key = M, blueprint key
         * condition = O, condition expression
     """
     classProvides(ISectionBlueprint)
@@ -750,6 +752,8 @@ class T1DmsfileCreation(object):
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.bp_key = safe_unicode(options['bp_key'])
+        self.files = {}
 
     def __iter__(self):
         for item in self.previous:
@@ -757,6 +761,33 @@ class T1DmsfileCreation(object):
                 yield item
                 continue
             course_store(self)
-            item2 = {'_eid': item['_eid'], '_path': '',
-                     '_type': '', '_bpk': 'e_dmsfile', '_act': 'N', 'creation_date': item['creation_date'],
+            order = item['_order'] is not None and int(item['_order']) or None
+            if item['_mail_id'] not in self.files:
+                self.files[item['_mail_id']] = {'lo': order, 'ids': [item['_eid']]}
+                typ = 'dmsmainfile'
+                # if item['_desc'] != u'Fichier scanné':
+                #     e_logger.warn(u"eid:{}, mid:{}: not fichier scanné".format(item['_eid'], item['_mail_id']))
+            else:
+                typ = 'dmsappendixfile'
+                # if order is None and self.files[item['_mail_id']]['lo'] is None:
+                #     pass
+                # elif order is None:
+                #     e_logger.warn(u"eid:{}, mid:{}: order is None while previous not".format(item['_eid'],
+                #                                                                              item['_mail_id']))
+                # elif self.files[item['_mail_id']]['lo'] is None:
+                #     e_logger.warn(u"eid:{}, mid:{}: order not None while previous is None".format(item['_eid'],
+                #                                                                                   item['_mail_id']))
+                # elif order != self.files[item['_mail_id']]['lo']+1:
+                #     e_logger.warn(u"eid:{}, mid:{}: order discontinuity {} <> {}".format(
+                #         item['_eid'], item['_mail_id'], order, self.files[item['_mail_id']]['lo']))
+                # elif order != len(self.files[item['_mail_id']]['ids'])+1:
+                #     e_logger.warn(u"eid:{}, mid:{}: order discordance {} <> {}".format(
+                #         item['_eid'], item['_mail_id'], order, len(self.files[item['_mail_id']]['ids'])))
+                self.files[item['_mail_id']]['lo'] = order
+                self.files[item['_mail_id']]['ids'].append(item['_eid'])
+
+            item2 = {'_eid': item['_eid'], '_parenth': self.storage['data']['e_mail_i'][item['_mail_id']]['path'],
+                     '_fn': item['_filename'], 'label': item['_desc'], 'title': item['_eid'],
+                     '_type': typ, '_bpk': self.bp_key, 'creation_date': item['creation_date'],
                      'modification_date': item['creation_date']}
+            yield item2
