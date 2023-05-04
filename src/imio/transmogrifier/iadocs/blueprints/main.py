@@ -406,7 +406,10 @@ class InsertPath(object):
                 continue
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self)
-                title = u'-'.join([item[key] for key in self.id_keys if item[key]])
+                if 'title' in item:
+                    title = item['title']
+                else:
+                    title = u'-'.join([item[key] for key in self.id_keys if item[key]])
                 if not title:
                     log_error(item, u'cannot get an id from id keys {}'.format(self.id_keys), level='critical')
                     if self.roe:
@@ -416,7 +419,10 @@ class InsertPath(object):
                     item['_path'] = self.eids[item['_eid']]['path']
                     item['_act'] = 'U'
                 else:
-                    new_id = idnormalizer.normalize(title)
+                    if '_id' in item:
+                        new_id = item['id']
+                    else:
+                        new_id = idnormalizer.normalize(title)
                     item['_path'] = '/'.join([item['_parenth'], new_id])
                     item['_path'] = correct_path(self.portal, item['_path'])
                     item['_act'] = 'N'
