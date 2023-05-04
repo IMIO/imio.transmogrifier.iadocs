@@ -6,6 +6,7 @@ from collective.transmogrifier.utils import Expression
 from collective.transmogrifier.utils import openFileReference
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import encode_list
 from imio.transmogrifier.iadocs.utils import full_path
 from imio.transmogrifier.iadocs.utils import get_related_parts
@@ -42,6 +43,7 @@ class CSVReader(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
@@ -84,6 +86,7 @@ class CSVReader(object):
         reader = csv.DictReader(csv_d['fh'], dialect=self.dialect, fieldnames=fieldnames, restkey='_rest',
                                 restval='__NO_CO_LU_MN__', **self.fmtparam)
         for item in reader:
+            course_store(self)
             item['_bpk'] = self.bp_key
             item['_ln'] = reader.line_num
             # check fieldnames length on first line
@@ -163,6 +166,7 @@ class CSVWriter(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.bp_key = safe_unicode(options['bp_key'])
@@ -204,6 +208,7 @@ class CSVWriter(object):
         csv_d = self.storage['csv'].get(self.bp_key)
         for item in self.previous:
             if is_in_part(self, self.parts) and self.doit and self.condition(item, storage=self.storage):
+                course_store(self)
                 if self.store_key:
                     if csv_d['fh'] is None:  # only doing one time
                         for (key, dv) in sorted(self.storage['data'][self.bp_key].items(),

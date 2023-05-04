@@ -22,6 +22,20 @@ MAILTYPES = {'te': '{}.mail_types'.format(itf), 'ts': '{}.omail_types'.format(it
              'fe': '{}.omail_send_modes'.format(itf)}
 
 
+def course_store(section):
+    """Stores course in blueprints.  Needs storage and name as section attributes"""
+    if section.name in section.storage['course']:
+        section.storage['course'][section.name] += 1
+    else:
+        section.storage['course'][section.name] = 1
+
+
+def course_print(section):
+    """Prints course"""
+    for name in section.storage['course']:
+        o_logger.info("> {}: {}".format(name, section.storage['course'][name]))
+
+
 def encode_list(lst, encoding):
     """Encode a list following encoding.
 

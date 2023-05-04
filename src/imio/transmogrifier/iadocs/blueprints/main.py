@@ -21,6 +21,8 @@ from imio.pyutils.utils import setup_logger
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import course_print
+from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import full_path
 from imio.transmogrifier.iadocs.utils import get_categories
 from imio.transmogrifier.iadocs.utils import get_folders
@@ -98,6 +100,7 @@ class AddDataInItem(object):
         ddic = self.storage['data'].get(self.related_storage, {})
         for item in self.previous:
             if is_in_part(self, self.parts) and self.related_storage is not None and self.condition(item):
+                course_store(self)
                 store_keys = {}
                 vdic = ddic.get(item[self.store_key], {})
                 if self.add_store_keys:
@@ -127,6 +130,7 @@ class Initialization(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         workingpath = get_main_path(safe_unicode(options.get('basepath') or ''),
                                     safe_unicode(options.get('subpath') or ''))
@@ -200,6 +204,8 @@ class Initialization(object):
         self.storage['filesp'] = filespath
         self.storage['csv'] = {}
         self.storage['data'] = {}
+        self.storage['course'] = OrderedDict()
+        course_store(self)
         self.storage['parts'] = run_options['parts']
         self.storage['commit'] = run_options['commit']
         self.storage['commit_nb'] = run_options['commit_nb']
@@ -290,6 +296,7 @@ class CommonInputChecks(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.bp_key = safe_unicode(options['bp_key'])
         self.parts = get_related_parts(name)
@@ -327,6 +334,7 @@ class CommonInputChecks(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
+                course_store(self)
                 # strip chars
                 for fld, chars in self.strips:
                     if not item[fld]:
@@ -397,6 +405,7 @@ class InsertPath(object):
                 yield item
                 continue
             if is_in_part(self, self.parts) and self.condition(item):
+                course_store(self)
                 title = u'-'.join([item[key] for key in self.id_keys if item[key]])
                 if not title:
                     log_error(item, u'cannot get an id from id keys {}'.format(self.id_keys), level='critical')
@@ -423,6 +432,7 @@ class LastSection(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.portal = transmogrifier.context
@@ -431,6 +441,8 @@ class LastSection(object):
         for item in self.previous:
             yield item
         # end of process
+        course_store(self)
+        course_print(self)
         # deactivate versioning
         pr_tool = api.portal.get_tool('portal_repository')
         pr_tool._versionable_content_types[:] = ()
@@ -474,6 +486,7 @@ class PickleData(object):
         for item in self.previous:
             yield item
         if self.filename and self.d_condition(None, storage=self.storage):
+            course_store(self)
             o_logger.info(u"Dumping '{}'".format(self.filename))
             with open(self.filename, 'wb') as fh:
                 pickle.dump(self.storage['data'][self.store_key], fh)
@@ -500,6 +513,7 @@ class SetOwner(object):
     def __iter__(self):
         for item in self.previous:
             if self.condition(item):
+                course_store(self)
                 obj = get_obj_from_path(self.portal, item)
                 obj.changeOwnership(self.owner)  # userid or username ?
             yield item
@@ -541,6 +555,7 @@ class SetState(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
+                course_store(self)
                 try:
                     obj = self.portal.unrestrictedTraverse(safe_unicode(item['_path'][1:]).encode('utf8'))
                 except AttributeError:
@@ -611,6 +626,7 @@ class StoreInData(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
+                course_store(self)
                 # if not self.fieldnames and item['_bpk'] == self.bp_key:
                 #     del item['_bpk']
                 # key = get_values_string(item, self.store_key)

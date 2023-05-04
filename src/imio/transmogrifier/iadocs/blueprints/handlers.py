@@ -14,6 +14,7 @@ from imio.pyutils.utils import all_of_dict_values
 from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import full_name
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_related_parts
@@ -45,6 +46,7 @@ class AServiceUpdate(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
@@ -59,6 +61,7 @@ class AServiceUpdate(object):
         change = False
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
+                course_store(self)
                 if item['_eid'] not in self.eid_to_orgs:  # eid not yet in Plone
                     if item['_eid'] in self.match:
                         uid = self.match[item['_eid']]['uid']
@@ -93,6 +96,7 @@ class BMailtypesByType(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
@@ -104,6 +108,7 @@ class BMailtypesByType(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
+                course_store(self)
                 for _etype in self.storage['data'][self.related_storage][item['_eid']]:
                     item['_etype'] = _etype
                     yield item
@@ -122,6 +127,7 @@ class BMailtypeUpdate(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
@@ -134,6 +140,7 @@ class BMailtypeUpdate(object):
         p_types = self.storage['data']['p_mailtype']
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
+                course_store(self)
                 #  _eid _etype _etitle _enature _esource _c_type _key _title _active
                 if not item['_c_type'] and not item['_key']:
                     log_error(item, u'Empty match: we pass _eid {}'.format(item['_eid']), 'warning')
@@ -169,6 +176,7 @@ class DefaultContactSet(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
@@ -185,6 +193,7 @@ class DefaultContactSet(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
+            course_store(self)
             if self.is_list:
                 item[self.field] = [RelationValue(self.def_ctct_iid)]
             else:
@@ -203,6 +212,7 @@ class DOMSenderCreation(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
@@ -252,6 +262,7 @@ class DOMSenderCreation(object):
         idnormalizer = getUtility(IIDNormalizer)
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
+                course_store(self)
                 if item['_sender_id'] and item['_sender_id'] in self.e_c_s:  # we have a user id
                     e_userid = self.e_c_s[item['_sender_id']]['_uid']
                     _euidm = self.e_u_m[e_userid]
@@ -297,6 +308,7 @@ class ECategoryUpdate(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
@@ -313,6 +325,7 @@ class ECategoryUpdate(object):
         change = False
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
+                course_store(self)
                 if item['_pcode']:
                     if item['_pcode'] not in self.p_category:
                         log_error(item, u"The _pcode '{}' is not in the loaded categories. "
@@ -484,6 +497,7 @@ class L1SenderAsTextSet(object):
             if not self.condition(item):
                 yield item
                 continue
+            course_store(self)
             desc = 'description' in item and item.get('description').split('\r\n') or []
             d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
             if get_contact_info(self, item, u'Expéditeur', '_sender_id', '_sender', desc, d_t):
@@ -526,6 +540,7 @@ class M1AssignedUserHandling(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
+            course_store(self)
             if item['_contact_id'] not in self.contacts:
                 o_logger.warning("eid '%s', contact id not a user '%s'", item['_eid'], item['_contact_id'])
                 continue
@@ -573,6 +588,7 @@ class POMSenderSet(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
@@ -591,6 +607,7 @@ class POMSenderSet(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
+            course_store(self)
             if item['_sender_id']:
                 if self.e_c_s[item['_sender_id']]['_uid']:  # we have a user id
                     e_userid = self.e_c_s[item['_sender_id']]['_uid']
@@ -632,6 +649,7 @@ class ParentPathInsert(object):
             if not ptyp or '_path' in item or '_parenth' in item:
                 yield item
                 continue
+            course_store(self)
             if ptyp in ('dmsincomingmail', 'dmsincoming_email'):
                 container = create_period_folder(self.im_folder, item['creation_date'])
                 item['_parenth'] = u'/incoming-mail/{}'.format(container.id)
@@ -656,6 +674,7 @@ class PostActions(object):
         for item in self.previous:
             pa = item.get('_post_actions', [])
             if u'store_internal_person_info' in pa:
+                course_store(self)
                 eid = item[u'internal_number']
                 uid = get_obj_from_path(self.portal, item).UID()
                 self.storage['data']['p_euid_to_pers'][eid] = uid
@@ -676,6 +695,7 @@ class Q1RecipientsAsTextUpdate(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
@@ -690,6 +710,7 @@ class Q1RecipientsAsTextUpdate(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
+            course_store(self)
             omail = get_obj_from_path(self.portal, path=self.om_paths[item['_mail_id']]['path'])
             if omail is None:
                 o_logger.warning("mail %s: path '%s' not found", item['_mail_id'],
@@ -722,6 +743,7 @@ class T1DmsfileCreation(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
@@ -734,5 +756,7 @@ class T1DmsfileCreation(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
+            course_store(self)
             item2 = {'_eid': item['_eid'], '_path': '',
-                     '_type': '', '_bpk': 'e_dmsfile', '_act': 'N'}
+                     '_type': '', '_bpk': 'e_dmsfile', '_act': 'N', 'creation_date': item['creation_date'],
+                     'modification_date': item['creation_date']}

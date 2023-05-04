@@ -7,6 +7,7 @@ from imio.helpers.transmogrifier import key_val as dim
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs import T_S
+from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import is_in_part
 from Products.CMFPlone.utils import safe_unicode
@@ -67,6 +68,7 @@ class Count(object):
         counter = self.storage['count'][self.name]
         for item in self.previous:
             if self.condition(item):
+                course_store(self)
                 if self.group_key:
                     if self.group_key in item:
                         counter.setdefault(item[self.group_key], {'c': 0})['c'] += 1
@@ -92,12 +94,14 @@ class EnhancedCondition(object):
     def __init__(self, transmogrifier, name, options, previous):
         self.condition1 = Condition(options['condition1'], transmogrifier, name, options)
         self.condition2 = Condition(options['condition2'], transmogrifier, name, options)
-        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.previous = previous
+        self.name = name
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
 
     def __iter__(self):
         for item in self.previous:
             if self.condition1(item, storage=self.storage):
+                course_store(self)
                 if self.condition2(item, storage=self.storage):
                     yield item
             else:
@@ -132,6 +136,7 @@ class EnhancedInserter(object):
         for item in self.previous:
             key = self.key(item)
             if self.condition(item, key=key, storage=self.storage):
+                course_store(self)
                 value = self.value(item, key=key, storage=self.storage)
                 if self.separator and item.get(key):  # with self.separator, we append
                     if value:
@@ -152,11 +157,13 @@ class NeedOther(object):
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
+        self.name = name
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         this_part = get_related_parts(name)
         if not is_in_part(self, this_part):
             return
+        course_store(self)
         needed_parts = safe_unicode(options.get('parts') or u'')
         for needed_part in needed_parts:
             if not is_in_part(self, needed_part):
