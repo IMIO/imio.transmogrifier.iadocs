@@ -63,6 +63,21 @@ def get_categories(portal):
     return cats
 
 
+def get_file_content(section, item):
+    """Get file content following global path and item filename"""
+    (basename, ext) = os.path.splitext(item['_fs_path'])
+    if not ext:
+        ext = '.{}'.format(item['_ext'].lower())
+    path = os.path.join(section.storage['filesp'], u'{}{}'.format(basename, ext))
+    pdf_path = os.path.join(section.storage['filesp'], u'PDF_{}.pdf'.format(basename))
+    if ext.lower().startswith('.tif') and os.path.exists(pdf_path):
+        path = pdf_path
+    elif not os.path.exists(path):
+        return path, None
+    with open(path, mode='rb') as file:
+        return ext, file.read()
+
+
 def get_folders(section):
     """Get already defined classification folders"""
     portal = section.portal
