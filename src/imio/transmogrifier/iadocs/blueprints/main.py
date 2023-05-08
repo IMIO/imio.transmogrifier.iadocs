@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
+from collective.documentviewer.settings import GlobalSettings
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
@@ -212,8 +213,11 @@ class Initialization(object):
         self.storage['commit_nb'] = run_options['commit_nb']
         self.storage['batch_nb'] = run_options['batch_nb']
         self.storage['plone'] = {}
-        # store parts on transmogrifier, so it can be used with standard condition
+        # store storage on transmogrifier, so it can be used with standard condition
         transmogrifier.storage = self.storage
+        if is_in_part(self, 'tuv'):
+            gsettings = GlobalSettings(self.portal)
+            gsettings.auto_convert = False
 
         # store fullname order
         start = api.portal.get_registry_record('omail_fullname_used_form', IImioDmsMailConfig, default='firstname')
@@ -450,7 +454,11 @@ class LastSection(object):
         # end of process
         course_store(self)
         course_print(self)
-        # deactivate versioning
+        # activate dv auto convert
+        if is_in_part(self, 'tuv'):
+            gsettings = GlobalSettings(self.portal)
+            gsettings.auto_convert = True
+        # reactivate versioning
         pr_tool = api.portal.get_tool('portal_repository')
         pr_tool._versionable_content_types[:] = ()
         pr_tool._versionable_content_types.extend(self.storage['plone']['pr_vct'])
