@@ -16,6 +16,7 @@ from imio.helpers.transmogrifier import relative_path
 from imio.helpers.transmogrifier import split_text
 from imio.helpers.transmogrifier import str_to_bool
 from imio.helpers.transmogrifier import str_to_date
+from imio.pyutils.system import full_path
 from imio.pyutils.system import stop
 from imio.pyutils.utils import setup_logger
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
@@ -23,7 +24,6 @@ from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import course_print
 from imio.transmogrifier.iadocs.utils import course_store
-from imio.transmogrifier.iadocs.utils import full_path
 from imio.transmogrifier.iadocs.utils import get_categories
 from imio.transmogrifier.iadocs.utils import get_folders
 from imio.transmogrifier.iadocs.utils import get_mailtypes

@@ -9,6 +9,7 @@ from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.vocabularies import get_users_voc
 from imio.pyutils.system import dump_var
+from imio.pyutils.system import full_path
 from imio.pyutils.system import load_var
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
@@ -244,12 +245,6 @@ def full_name(firstname, lastname, fn_first=True):
             return u'{} {}'.format(lastname, firstname)
     else:
         return lastname
-
-
-def full_path(path, filename):
-    if not os.path.isabs(filename):
-        return os.path.join(path, filename)
-    return filename
 
 
 def is_in_part(section, parts):

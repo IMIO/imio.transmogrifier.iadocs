@@ -4,11 +4,11 @@ from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from collective.transmogrifier.utils import Expression
 from collective.transmogrifier.utils import openFileReference
+from imio.pyutils.system import full_path
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import encode_list
-from imio.transmogrifier.iadocs.utils import full_path
 from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
