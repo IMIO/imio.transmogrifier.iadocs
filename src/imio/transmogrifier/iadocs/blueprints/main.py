@@ -34,6 +34,7 @@ from imio.transmogrifier.iadocs.utils import get_users
 from imio.transmogrifier.iadocs.utils import get_users_groups
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
+from imio.transmogrifier.iadocs.utils import print_item  # noqa
 from plone import api
 from plone.dexterity.fti import DexterityFTIModificationDescription
 from plone.dexterity.fti import ftiModified

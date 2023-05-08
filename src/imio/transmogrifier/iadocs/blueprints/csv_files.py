@@ -12,6 +12,7 @@ from imio.transmogrifier.iadocs.utils import encode_list
 from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
+from imio.transmogrifier.iadocs.utils import print_item  # noqa
 from Products.CMFPlone.utils import safe_unicode
 from zope.annotation import IAnnotations
 from zope.interface import classProvides

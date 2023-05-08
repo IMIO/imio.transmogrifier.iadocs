@@ -10,6 +10,7 @@ from imio.transmogrifier.iadocs import T_S
 from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import is_in_part
+from imio.transmogrifier.iadocs.utils import print_item  # noqa
 from Products.CMFPlone.utils import safe_unicode
 from zope.annotation.interfaces import IAnnotations
 from zope.interface import classProvides

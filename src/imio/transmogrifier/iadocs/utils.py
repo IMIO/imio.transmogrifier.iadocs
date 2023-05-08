@@ -258,3 +258,11 @@ def is_in_part(section, parts):
 def log_error(item, msg, level='error', fld='_eid'):
     getattr(e_logger, level)(u'{}: {} {}, {}'.format(item['_bpk'], fld, item[fld], msg))
     item['_error'] = True
+
+
+def print_item(item, remove=['file']):
+    """Print item ordered by key and without big value"""
+    for k in sorted(item.keys()):
+        if k in remove:
+            continue
+        print(u"{}: {}".format(k, item[k]))
