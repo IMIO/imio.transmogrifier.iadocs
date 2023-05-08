@@ -421,7 +421,7 @@ class InsertPath(object):
                     item['_act'] = 'U'
                 else:
                     if '_id' in item:
-                        new_id = item['id']
+                        new_id = item['_id']
                     else:
                         new_id = idnormalizer.normalize(title)
                     item['_path'] = '/'.join([item['_parenth'], new_id])
