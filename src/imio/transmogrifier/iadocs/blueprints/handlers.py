@@ -24,6 +24,7 @@ from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from imio.transmogrifier.iadocs.utils import MAILTYPES
+from imio.transmogrifier.iadocs.utils import print_item  # noqa
 from plone import api
 from plone.i18n.normalizer import IIDNormalizer
 from Products.CMFPlone.utils import safe_unicode
@@ -763,8 +764,8 @@ class T1DmsfileCreation(object):
                 yield item
                 continue
             course_store(self)
-            order = item['_order'] is not None and int(item['_order']) or None
-            self.ext.setdefault(item['_ext'].lower(), {'c': 0})['c'] += 1
+            # order = item['_order'] is not None and int(item['_order']) or None
+            # self.ext.setdefault(item['_ext'].lower(), {'c': 0})['c'] += 1
             if item['_mail_id'] not in self.files:
                 typ = 'dmsmainfile'
                 # self.files[item['_mail_id']] = {'lo': order, 'ids': [item['_eid']]}
@@ -792,18 +793,21 @@ class T1DmsfileCreation(object):
                 # self.files[item['_mail_id']]['ids'].append(item['_eid'])
             if not item['_fs_path']:
                 continue
+            item2 = {'_eid': item['_eid'], '_parenth': self.storage['data']['e_mail_i'][item['_mail_id']]['path'],
+                     '_type': typ, '_bpk': self.bp_key, 'label': item['_desc'], '_id': item['_eid'],
+                     'title': item['_desc'],
+                     'creation_date': item['creation_date'], 'modification_date': item['creation_date']}
+            # get file content
             new_ext, file_content = get_file_content(self, item)
             if file_content is None:
                 e_logger.error(u"Cannot open filename '{}'".format(new_ext))
-                continue
-            filename = item['_filename']
-            (basename, ext) = os.path.splitext(filename)
-            if not ext:
-                filename = u'{}{}'.format(filename, new_ext)
-            item2 = {'_eid': item['_eid'], '_parenth': self.storage['data']['e_mail_i'][item['_mail_id']]['path'],
-                     '_type': typ, '_bpk': self.bp_key, 'label': item['_desc'], 'title': item['_eid'],
-                     'creation_date': item['creation_date'], 'modification_date': item['creation_date'],
-                     'file': {'data': file_content, 'filename': filename}}
+            else:
+                filename = item['_filename']
+                (basename, ext) = os.path.splitext(filename)
+                if not ext:
+                    filename = u'{}{}'.format(filename, new_ext)
+                item2['file'] = {'data': file_content, 'filename': filename}
+                item2['title'] = filename
             yield item2
 
-        o_logger.info(self.ext)
+        # o_logger.info(self.ext)
