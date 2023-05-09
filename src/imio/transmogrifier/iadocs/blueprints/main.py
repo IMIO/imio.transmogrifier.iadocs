@@ -515,6 +515,8 @@ class PickleData(object):
 class SetOwner(object):
     """Sets ownership on created object.
 
+    Parameters:
+        * condition = O, condition expression
     """
 
     classProvides(ISectionBlueprint)
