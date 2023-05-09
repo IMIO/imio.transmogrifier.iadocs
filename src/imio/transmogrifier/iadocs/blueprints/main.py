@@ -51,7 +51,7 @@ import csv
 import json
 import logging
 import os
-import pickle
+import cPickle
 
 # if item.get('_eid', None) in (u'162209', u''):
 #     import ipdb; ipdb.set_trace()
@@ -472,6 +472,7 @@ class PickleData(object):
         * filename = M, filename to load and dump
         * store_key = M, store key in data dicts
         * d_condition = O, dump condition expression (default: False)
+        * update = O, int for boolean to update (1) or set (0) storage. (default 0)
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -491,10 +492,14 @@ class PickleData(object):
         self.store_key = safe_unicode(options['store_key'])
         self.filename = full_path(self.storage['csvp'], self.filename)
         self.storage['data'].setdefault(self.store_key, {})
+        update = bool(int(options.get('update') or '0'))
         if os.path.exists(self.filename):
             o_logger.info(u"Loading '{}'".format(self.filename))
             with open(self.filename, 'rb') as fh:
-                self.storage['data'][self.store_key] = pickle.load(fh)
+                if update:
+                    self.storage['data'][self.store_key].update(cPickle.load(fh))
+                else:
+                    self.storage['data'][self.store_key] = cPickle.load(fh)
         self.d_condition = Condition(options.get('d_condition') or 'python:False', transmogrifier, name, options)
 
     def __iter__(self):
@@ -504,7 +509,7 @@ class PickleData(object):
             course_store(self)
             o_logger.info(u"Dumping '{}'".format(self.filename))
             with open(self.filename, 'wb') as fh:
-                pickle.dump(self.storage['data'][self.store_key], fh)
+                cPickle.dump(self.storage['data'][self.store_key], fh, -1)
 
 
 class SetOwner(object):
