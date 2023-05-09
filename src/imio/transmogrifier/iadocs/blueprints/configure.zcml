@@ -182,6 +182,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.s_1_classification_folders_update"
+    component=".handlers.S1ClassificationFoldersUpdate"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.t_1_dmsfile_creation"
     component=".handlers.T1DmsfileCreation"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

@@ -744,6 +744,43 @@ class Q1RecipientsAsTextUpdate(object):
                 yield item2
 
 
+class S1ClassificationFoldersUpdate(object):
+    """Handles classification folders assignments.
+
+    Parameters:
+        * condition = O, condition expression
+        * store_key = M, storage main key to find mail path
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        store_key = safe_unicode(options['store_key'])
+        self.paths = self.storage['data'][store_key]
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            course_store(self)
+            mail_path = self.paths[item['_eid']]['path']
+            mail = get_obj_from_path(self.portal, path=mail_path)
+            cf = mail.classifications_folders or []
+            folder_id = item['_folder_id']
+            item2 = {'_eid': item['_eid'], '_path': mail_path, '_type': mail.portal_type, '_act': 'U',
+                     '_bpk': u'classification_folders', u'classification_folders': cf}
+            yield item2
+
+
 class T1DmsfileCreation(object):
     """Create file.
 
