@@ -29,6 +29,7 @@ from plone import api
 from plone.i18n.normalizer import IIDNormalizer
 from Products.CMFPlone.utils import safe_unicode
 from z3c.relationfield import RelationValue
+from zc.relation.interfaces import ICatalog
 from zope.annotation import IAnnotations
 from zope.component import getUtility
 from zope.interface import classProvides
@@ -818,3 +819,58 @@ class T1DmsfileCreation(object):
             yield item2
 
         # o_logger.info(self.ext)
+
+
+class X1ReplyToUpdate(object):
+    """Handles mail links (reply_to field).
+
+    Parameters:
+        * condition = O, condition expression
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.intids = getUtility(IIntIds)
+        self.catalog = getUtility(ICatalog)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.paths = self.storage['data']['e_mail']
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            course_store(self)
+            source_path = self.paths[item['_eid']]['path']  # source is the om
+            target_path = self.paths[item['_target_id']]['path']  # target is the im
+            source = get_obj_from_path(self.portal, path=source_path)
+            target = get_obj_from_path(self.portal, path=target_path)
+            target_id = self.intids.getId(target)
+            reply_to = source.reply_to or []
+            reply_to_ids = [rv.to_id for rv in reply_to]
+            # imail itself
+            if target_id not in reply_to_ids:
+                reply_to.append(RelationValue(target_id))
+                reply_to_ids.append(target_id)
+            # get directly imail linked mails
+            if target.reply_to:
+                ids_to_add = [rv.to_id for rv in target.reply_to if rv.to_id not in reply_to_ids]
+                for _id in ids_to_add:
+                    reply_to.append(RelationValue(_id))
+                    reply_to_ids.append(_id)
+            # we get backrefs too
+            for ref in self.catalog.findRelations({'to_id': target_id, 'from_attribute': 'reply_to'}):
+                if ref.from_id not in reply_to_ids:
+                    reply_to.append(RelationValue(ref.from_id))
+                    reply_to_ids.append(ref.from_id)
+            item2 = {'_eid': item['_eid'], '_path': source_path, '_type': source.portal_type, '_bpk': 'reply_to',
+                     '_act': 'U', 'reply_to': reply_to}
+            yield item2

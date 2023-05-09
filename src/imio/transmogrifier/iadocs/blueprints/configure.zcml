@@ -187,4 +187,10 @@
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
+  <utility
+    name="imio.transmogrifier.iadocs.x_1_reply_to_update"
+    component=".handlers.X1ReplyToUpdate"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
 </configure>
