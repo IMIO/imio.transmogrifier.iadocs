@@ -511,7 +511,12 @@ class L1SenderAsTextSet(object):
 
 
 class M1AssignedUserHandling(object):
-    """Handles assigned user"""
+    """Handles assigned user.
+
+    Parameters:
+        * condition = O, condition expression
+        * store_key = M, storage main key to find mail path
+    """
     classProvides(ISectionBlueprint)
     implements(ISection)
 
@@ -524,7 +529,8 @@ class M1AssignedUserHandling(object):
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         if not is_in_part(self, self.parts):
             return
-        self.im_paths = self.storage['data']['e_mail_i']
+        store_key = safe_unicode(options['store_key'])
+        self.im_paths = self.storage['data'][store_key]
         self.contacts = self.storage['data']['e_contacts_sender']
         self.user_match = self.storage['data']['e_user_match']
         # self.e_user_service = self.storage['data']['e_user_service']
@@ -693,6 +699,7 @@ class Q1RecipientsAsTextUpdate(object):
 
     Parameters:
         * condition = O, condition expression
+        * store_key = M, storage main key to find mail path
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -706,7 +713,8 @@ class Q1RecipientsAsTextUpdate(object):
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
-        self.om_paths = self.storage['data']['e_mail_o']
+        store_key = safe_unicode(options['store_key'])
+        self.om_paths = self.storage['data'][store_key]
         self.e_c = self.storage['data']['e_contact']
 
     def __iter__(self):
@@ -741,7 +749,7 @@ class T1DmsfileCreation(object):
 
     Parameters:
         * bp_key = M, blueprint key
-        * parent_storage_key = M, storage main key to find mail path
+        * store_key = M, storage main key to find mail path
         * condition = O, condition expression
     """
     classProvides(ISectionBlueprint)
@@ -757,7 +765,8 @@ class T1DmsfileCreation(object):
             return
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.bp_key = safe_unicode(options['bp_key'])
-        self.ps_key = safe_unicode(options['parent_storage_key'])
+        store_key = safe_unicode(options['store_key'])
+        self.path = self.storage['data'][store_key]
         self.files = {}
         self.ext = {}
 
@@ -801,7 +810,7 @@ class T1DmsfileCreation(object):
                 self.files[item['_mail_id']]['ids'].append(item['_eid'])
             if not item['_fs_path']:
                 continue
-            item2 = {'_eid': item['_eid'], '_parenth': self.storage['data'][self.ps_key][item['_mail_id']]['path'],
+            item2 = {'_eid': item['_eid'], '_parenth': self.paths[item['_mail_id']]['path'],
                      '_type': typ, '_bpk': self.bp_key, 'label': item['_desc'], '_id': item['_eid'],
                      'title': item['_desc'],
                      'creation_date': item['creation_date'], 'modification_date': item['creation_date']}
@@ -826,6 +835,7 @@ class X1ReplyToUpdate(object):
 
     Parameters:
         * condition = O, condition expression
+        * store_key = M, storage main key to find mail path
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -841,7 +851,8 @@ class X1ReplyToUpdate(object):
         self.intids = getUtility(IIntIds)
         self.catalog = getUtility(ICatalog)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
-        self.paths = self.storage['data']['e_mail']
+        store_key = safe_unicode(options['store_key'])
+        self.paths = self.storage['data'][store_key]
 
     def __iter__(self):
         for item in self.previous:
