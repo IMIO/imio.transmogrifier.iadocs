@@ -23,7 +23,8 @@ tables = OrderedDict([
     ('eContactsAdresses', {}), ('eContactsTitres', {}), ('eContactsType', {}),
     ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'", 'o': "DateEncodage"}),
     ('eCourriersDestinataires', {}), ('eCourriersFichiers', {'o': "CourrierID, OrdreAffichage, DateUpload"}),
-    ('eCourriersDossiers', {}), ('eCourriersLiens', {}), ('eCourriersServices', {}), ('eGroupes', {}),
+    ('eCourriersDossiers', {'o': "CourrierID, Principal desc"}),
+    ('eCourriersLiens', {}), ('eCourriersServices', {}), ('eGroupes', {}),
     ('eGroupesContacts', {}), ('eGroupesMembres', {}), ('eNatures', {}), ('eRues', {}),
     ('eServices', {}), ('eTypeAction', {}), ('eUsers', {}), ('eUsersServices', {})])
 fwf_cmd = 'docker exec -u root -it {dock} /opt/mssql-tools/bin/sqlcmd -S localhost -d {db} -U SA -P "{pwd}" ' \
