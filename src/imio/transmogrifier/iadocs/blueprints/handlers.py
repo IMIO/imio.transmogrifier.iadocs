@@ -774,8 +774,8 @@ class S1ClassificationFoldersUpdate(object):
             course_store(self)
             mail_path = self.paths[item['_eid']]['path']
             mail = get_obj_from_path(self.portal, path=mail_path)
-            item2 = {'_eid': item['_eid'], '_path': mail_path, '_type': mail.portal_type, '_act': 'U',
-                     '_bpk': u'classification_folders'}
+            item2 = {'_eid': item['_eid'], '_folder_id': item['_folder_id'], '_bpk': u'classification_folders',
+                     '_path': mail_path, '_type': mail.portal_type, '_act': 'U'}
             change = False
             folder_id = item['_folder_id']
             if folder_id in self.storage['data']['p_irn_to_folder']:
