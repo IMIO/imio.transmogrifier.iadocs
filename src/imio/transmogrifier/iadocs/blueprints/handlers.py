@@ -37,6 +37,7 @@ from zope.interface import implements
 from zope.intid import IIntIds
 
 import os
+import transaction
 
 
 class AServiceUpdate(object):
@@ -691,6 +692,11 @@ class PostActions(object):
                 if uid not in self.storage['data']['p_hps']:
                     self.storage['data']['p_hps'][uid] = {'path': item['_path'], 'eid': eid, 'hps': {},
                                                           'state': 'deactivated'}
+            if self.storage['commit'] and self.storage['commit_nb'] and \
+                    self.storage['count']['commit_count']['']['c'] % self.storage['commit_nb'] == 0:
+                transaction.commit()
+                o_logger.info(u"Commit in '{}' at {}".format(item['_bpk'],
+                                                             self.storage['count']['commit_count']['']['c']))
             yield item
 
 

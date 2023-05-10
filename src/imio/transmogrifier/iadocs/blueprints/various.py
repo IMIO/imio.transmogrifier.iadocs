@@ -49,7 +49,7 @@ class Count(object):
     """Count items.
 
     Parameters:
-        * group_key = M, item key to group counting.
+        * group_key = O, item key to group counting.
         * condition = O, matching condition.
     """
     classProvides(ISectionBlueprint)
@@ -64,7 +64,7 @@ class Count(object):
         if 'count' not in self.storage:
             self.storage['count'] = {}
         self.storage['count'][name] = {}
-        self.group_key = safe_unicode(options['group_key'])
+        self.group_key = safe_unicode(options.get('group_key', u''))
 
     def __iter__(self):
         counter = self.storage['count'][self.name]
