@@ -819,7 +819,7 @@ class T1DmsfileCreation(object):
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.bp_key = safe_unicode(options['bp_key'])
         store_key = safe_unicode(options['store_key'])
-        self.path = self.storage['data'][store_key]
+        self.paths = self.storage['data'][store_key]
         self.files = {}
         self.ext = {}
 
