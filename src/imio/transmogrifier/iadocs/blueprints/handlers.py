@@ -788,9 +788,11 @@ class S1ClassificationFoldersUpdate(object):
             else:
                 log_error(item, u"Cannot find folder_id in plone '{}' => put in in description".format(folder_id))
                 desc = mail.description and mail.description.split(u'\r\n') or []
-                desc.append(u"DOSSIER: {}".format(self.storage['data']['e_folder'][folder_id]['_title']))
-                item2['decription'] = u'\r\n'.join(desc)
-                change = True
+                folder_tit = u"DOSSIER: {}".format(self.storage['data']['e_folder'][folder_id]['_title'])
+                if folder_tit not in desc:
+                    desc.append(folder_tit)
+                    item2['description'] = u'\r\n'.join(desc)
+                    change = True
             if change:
                 yield item2
 
