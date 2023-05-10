@@ -935,6 +935,6 @@ class X1ReplyToUpdate(object):
                 if ref.from_id not in reply_to_ids:
                     reply_to.append(RelationValue(ref.from_id))
                     reply_to_ids.append(ref.from_id)
-            item2 = {'_eid': item['_eid'], '_path': source_path, '_type': source.portal_type, '_bpk': 'reply_to',
-                     '_act': 'U', 'reply_to': reply_to}
+            item2 = {'_eid': item['_eid'], '_target_id': item['_target_id'], '_bpk': 'reply_to',
+                     '_path': source_path, '_type': source.portal_type, '_act': 'U', 'reply_to': reply_to}
             yield item2
