@@ -774,11 +774,25 @@ class S1ClassificationFoldersUpdate(object):
             course_store(self)
             mail_path = self.paths[item['_eid']]['path']
             mail = get_obj_from_path(self.portal, path=mail_path)
-            cf = mail.classifications_folders or []
-            folder_id = item['_folder_id']
             item2 = {'_eid': item['_eid'], '_path': mail_path, '_type': mail.portal_type, '_act': 'U',
-                     '_bpk': u'classification_folders', u'classification_folders': cf}
-            yield item2
+                     '_bpk': u'classification_folders'}
+            change = False
+            folder_id = item['_folder_id']
+            if folder_id in self.storage['data']['p_irn_to_folder']:
+                cf = mail.classification_folders or []
+                folder_uid = self.storage['data']['p_irn_to_folder'][folder_id]['uid']
+                if folder_uid not in cf:
+                    cf.append(folder_uid)
+                    item2['classification_folders'] = cf
+                    change = True
+            else:
+                log_error(item, u"Cannot find folder_id in plone '{}' => put in in description".format(folder_id))
+                desc = mail.description and mail.description.split(u'\r\n') or []
+                desc.append(u"DOSSIER: {}".format(self.storage['data']['e_folder'][folder_id]['_title']))
+                item2['decription'] = u'\r\n'.join(desc)
+                change = True
+            if change:
+                yield item2
 
 
 class T1DmsfileCreation(object):
