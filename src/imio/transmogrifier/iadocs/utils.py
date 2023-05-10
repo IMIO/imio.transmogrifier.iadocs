@@ -33,6 +33,7 @@ def course_store(section):
 
 def course_print(section):
     """Prints course"""
+    o_logger.info("COURSE:")
     for name in section.storage['course']:
         o_logger.info("> {}: {}".format(name, section.storage['course'][name]))
 
