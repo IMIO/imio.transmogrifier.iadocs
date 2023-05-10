@@ -213,6 +213,7 @@ class Initialization(object):
         self.storage['commit_nb'] = run_options['commit_nb']
         self.storage['batch_nb'] = run_options['batch_nb']
         self.storage['plone'] = {}
+        self.storage['lastsection'] = {'pkl_dump': []}
         # store storage on transmogrifier, so it can be used with standard condition
         transmogrifier.storage = self.storage
         if is_in_part(self, 'tuv'):
@@ -453,7 +454,12 @@ class LastSection(object):
             yield item
         # end of process
         course_store(self)
-        course_print(self)
+        # dump pkl
+        for filename, store_key, condition in self.storage['lastsection']['pkl_dump']:
+            if filename and condition(None, storage=self.storage):
+                o_logger.info(u"Dumping '{}'".format(filename))
+                with open(filename, 'wb') as fh:
+                    cPickle.dump(self.storage['data'][store_key], fh, -1)
         # activate dv auto convert
         if is_in_part(self, 'tuv'):
             gsettings = GlobalSettings(self.portal)
@@ -462,6 +468,7 @@ class LastSection(object):
         pr_tool = api.portal.get_tool('portal_repository')
         pr_tool._versionable_content_types[:] = ()
         pr_tool._versionable_content_types.extend(self.storage['plone']['pr_vct'])
+        course_print(self)
         # import ipdb; ipdb.set_trace()
 
 
@@ -501,15 +508,11 @@ class PickleData(object):
                 else:
                     self.storage['data'][self.store_key] = cPickle.load(fh)
         self.d_condition = Condition(options.get('d_condition') or 'python:False', transmogrifier, name, options)
+        self.storage['lastsection']['pkl_dump'].append((self.filename, self.store_key, self.d_condition))
 
     def __iter__(self):
         for item in self.previous:
             yield item
-        if self.filename and self.d_condition(None, storage=self.storage):
-            course_store(self)
-            o_logger.info(u"Dumping '{}'".format(self.filename))
-            with open(self.filename, 'wb') as fh:
-                cPickle.dump(self.storage['data'][self.store_key], fh, -1)
 
 
 class SetOwner(object):
