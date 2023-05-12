@@ -530,6 +530,7 @@ class SetOwner(object):
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.owner_id = options['owner']
         self.owner = api.portal.get_tool('acl_users').getUserById(options['owner'])
         if not self.owner:
             stop("Section name '{}': owner not found '{}' !".format(name, options['owner']), o_logger)
@@ -541,6 +542,16 @@ class SetOwner(object):
                 course_store(self)
                 obj = get_obj_from_path(self.portal, item)
                 obj.changeOwnership(self.owner)  # userid or username ?
+                for wkf in obj.workflow_history or {}:
+                    change = False
+                    wfh = []
+                    for status in obj.workflow_history[wkf]:
+                        if status['actor'] != self.owner_id:
+                            status['actor'] = self.owner_id
+                            change = True
+                        wfh.append(status)
+                    if change:
+                        obj.workflow_history[wkf] = tuple(wfh)
             yield item
 
 
