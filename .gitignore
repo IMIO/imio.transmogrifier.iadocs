@@ -23,6 +23,7 @@ pip-selfcheck.json
 .plone-version
 .plone.versioncheck.*
 port*/
+*.pyc
 python-eggs/
 pyvenv.cfg
 report.html
