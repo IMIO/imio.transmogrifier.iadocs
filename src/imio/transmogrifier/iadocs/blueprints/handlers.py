@@ -923,9 +923,15 @@ class X1ReplyToUpdate(object):
             target_path = self.paths[item['_target_id']]['path']  # target is the im
             source = get_obj_from_path(self.portal, path=source_path)
             target = get_obj_from_path(self.portal, path=target_path)
+            source_id = self.intids.getId(source)
             target_id = self.intids.getId(target)
             reply_to = source.reply_to or []
-            reply_to_ids = [rv.to_id for rv in reply_to]
+            reply_to_ids = [rv.to_id for rv in reply_to]  # existing targets
+            reply_to_ids_len = len(reply_to_ids)
+            reply_to_ids.append(source_id)  # to avoid self relation in catalog search
+            back_rels_ids = [rv.from_id for rv in self.catalog.findRelations({'from_attribute': 'reply_to',
+                                                                              'to_id': source_id})]
+            reply_to_ids.extend(back_rels_ids)  # to avoid "looping" relations causing problems
             # imail itself
             if target_id not in reply_to_ids:
                 reply_to.append(RelationValue(target_id))
@@ -941,6 +947,8 @@ class X1ReplyToUpdate(object):
                 if ref.from_id not in reply_to_ids:
                     reply_to.append(RelationValue(ref.from_id))
                     reply_to_ids.append(ref.from_id)
+            if reply_to_ids_len == len(reply_to):
+                continue
             item2 = {'_eid': item['_eid'], '_target_id': item['_target_id'], '_bpk': 'reply_to',
                      '_path': source_path, '_type': source.portal_type, '_act': 'U', 'reply_to': reply_to}
             yield item2
