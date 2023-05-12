@@ -9,9 +9,6 @@ import logging
 # types shortcuts
 T_S = {'dmsincomingmail': 'IM', 'dmsincoming_email': 'IE', 'dmsoutgoingmail': 'OM'}
 
-# logging.basicConfig(format='%(asctime)s %(name)s %(levelname).1s %(message)s',
-#                     datefmt='%y%m%d %H:%M:%S',
-#                     )
 root_logger = logging.getLogger()
 root_handler = root_logger.handlers[0]
 log_format = '%(asctime)s %(levelname).1s (%(name)s) %(message)s'
