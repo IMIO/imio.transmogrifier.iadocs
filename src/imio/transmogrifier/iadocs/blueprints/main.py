@@ -416,7 +416,7 @@ class InsertPath(object):
                 continue
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self)
-                if 'title' in item:
+                if 'title' in item and item['title']:
                     title = item['title']
                 else:
                     title = u'-'.join([item[key] for key in self.id_keys if item[key]])
