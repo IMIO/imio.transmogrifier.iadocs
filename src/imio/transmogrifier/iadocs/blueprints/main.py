@@ -5,6 +5,7 @@ from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from collective.transmogrifier.utils import Expression
+from datetime import datetime
 from DateTime.DateTime import DateTime
 from imio.dms.mail.browser.settings import IImioDmsMailConfig
 from imio.helpers.transmogrifier import clean_value
@@ -156,6 +157,9 @@ class Initialization(object):
         ofh.setLevel(logging.INFO)
         o_logger.addHandler(ofh)
         run_options = json.loads(transmogrifier.context.REQUEST.get('_transmo_options_') or '{}')
+        import ipdb; ipdb.set_trace()
+        start_msg = u"STARTING '{}' parts at {}".format(run_options['parts'].upper(),
+                                                        datetime.now().strftime('%Y%m%d-%H%M'))
         if run_options['commit']:
             ecfh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors_commit.log'), mode='a')
             ecfh.setFormatter(logging.Formatter('(%(levelname).1s) %(message)s'))
@@ -165,6 +169,7 @@ class Initialization(object):
             ocfh.setFormatter(logging.Formatter('(%(levelname).1s) %(message)s'))
             ocfh.setLevel(logging.INFO)
             o_logger.addHandler(ocfh)
+            o_logger.info(start_msg)
 
         # check package installation and configuration
         if inb_types:
