@@ -455,7 +455,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
         sender, p_sender = get_contact_name(infos, parent_infos)
         if p_sender:
             change = True
-            dest1.append(u'{} parent: {}.'.format(label, u', '.join(p_sender)))
+            dest1.append(u'{} PARENT: {}.'.format(label, u', '.join(p_sender)))
         if sender:
             change = True
             dest1.append(u'{}: {}.'.format(label, u', '.join(sender)))
@@ -464,23 +464,23 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
         address = all_of_dict_values(infos, ['_street', '_pc', '_city'])
         if address:
             change = True
-            dest2.append(u'Adresse {}: {}.'.format(label.lower(), u' '.join(address)))
+            dest2.append(u'ADRESSE {}: {}.'.format(label.lower(), u' '.join(address)))
         elif p_address:  # we add just one address
             change = True
-            dest2.append(u'Adresse {} parent: {}.'.format(label.lower(), u' '.join(p_address)))
+            dest2.append(u'ADRESSE {} PARENT: {}.'.format(label.lower(), u' '.join(p_address)))
         else:
             pass  # include _addr_id ? no!
         # phones
         phones = get_contact_phone(infos, parent_infos)
         if phones:
             change = True
-            dest2.append(u'Tél {}: {}.'.format(label.lower(), u', '.join(phones)))
+            dest2.append(u'TÉL {}: {}.'.format(label.lower(), u', '.join(phones)))
     if m_sender:
         lines = m_sender.split('\n')
         change = True
-        dest1.append(u'{} libre: {}'.format(label, lines.pop(0)))
+        dest1.append(u'{} LIBRE: {}'.format(label, lines.pop(0)))
         if lines:
-            dest2.append(u'{} libre: {}'.format(label, u', '.join(lines)))
+            dest2.append(u'{} LIBRE: {}'.format(label, u', '.join(lines)))
     return change
 
 
@@ -504,7 +504,7 @@ class L1SenderAsTextSet(object):
             course_store(self)
             desc = 'description' in item and item.get('description').split('\r\n') or []
             d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
-            if get_contact_info(self, item, u'Expéditeur', '_sender_id', '_sender', desc, d_t):
+            if get_contact_info(self, item, u'EXPÉDITEUR', '_sender_id', '_sender', desc, d_t):
                 item['description'] = u'\r\n'.join(desc)
                 item['data_transfer'] = u'\r\n'.join(d_t)
             yield item
@@ -569,7 +569,7 @@ class M1AssignedUserHandling(object):
             r_name = u' '.join(all_of_dict_values(self.user_match[e_userid], ['_nom', '_prenom']))
             r_messages = u', '.join(all_of_dict_values(item, [u'_action', u'_message', u'_response'],
                                                        labels=[u'', u'message', u'réponse']))
-            r_infos = u"Destinataire: {}, {}".format(r_name, r_messages and u', {}'.format(r_messages) or u'')
+            r_infos = u"DESTINATAIRE: {}, {}".format(r_name, r_messages and u', {}'.format(r_messages) or u'')
             if r_infos not in d_t:
                 d_t.append(r_infos)
                 item['data_transfer'] = u'\r\n'.join(d_t)
@@ -626,7 +626,7 @@ class POMSenderSet(object):
                     # add info in data_transfer
                     desc = 'description' in item and item.get('description').split('\r\n') or []
                     d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
-                    if get_contact_info(self, item, u'Expéditeur', '_sender_id', '_sender', desc, d_t):
+                    if get_contact_info(self, item, u'EXPÉDITEUR', '_sender_id', '_sender', desc, d_t):
                         item['description'] = u'\r\n'.join(desc)
                         item['data_transfer'] = u'\r\n'.join(d_t)
             else:  # we do not have a _sender_id
@@ -737,12 +737,12 @@ class Q1RecipientsAsTextUpdate(object):
                      '_type': omail.portal_type, '_bpk': 'o_recipients', '_act': 'U'}
             desc = 'description' in item and item.get('description').split('\r\n') or []
             d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
-            if get_contact_info(self, item, u'Destinataire', '_contact_id', '_comment', desc, d_t):
+            if get_contact_info(self, item, u'DESTINATAIRE', '_contact_id', '_comment', desc, d_t):
                 item2['description'] = u'\r\n'.join(desc)
                 r_messages = u', '.join(all_of_dict_values(item, [u'_action', u'_message', u'_response'],
                                                            labels=[u'', u'message', u'réponse']))
                 if r_messages:
-                    r_messages = u'{}: {}'.format(u'Complément destinataire', u', {}'.format(r_messages))
+                    r_messages = u'{}: {}'.format(u'COMPLÉMENT DESTINATAIRE', u', {}'.format(r_messages))
                     if r_messages not in d_t:
                         d_t.append(r_messages)
                 item2['data_transfer'] = u'\r\n'.join(d_t)
