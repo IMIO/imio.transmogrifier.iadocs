@@ -157,7 +157,6 @@ class Initialization(object):
         ofh.setLevel(logging.INFO)
         o_logger.addHandler(ofh)
         run_options = json.loads(transmogrifier.context.REQUEST.get('_transmo_options_') or '{}')
-        import ipdb; ipdb.set_trace()
         start_msg = u"STARTING '{}' parts at {}".format(run_options['parts'].upper(),
                                                         datetime.now().strftime('%Y%m%d-%H%M'))
         if run_options['commit']:
