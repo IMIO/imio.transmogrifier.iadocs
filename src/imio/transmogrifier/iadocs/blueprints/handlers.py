@@ -951,3 +951,40 @@ class X1ReplyToUpdate(object):
             item2 = {'_eid': item['_eid'], '_target_id': item['_target_id'], '_bpk': 'reply_to',
                      '_path': source_path, '_type': source.portal_type, '_act': 'U', 'reply_to': reply_to}
             yield item2
+
+
+class WorkflowHistoryUpdate(object):
+    """Update workflow history.
+
+    Parameters:
+        * owner = M, owner id
+        * condition = O, condition expression
+    """
+
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.owner_id = options['owner']
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+
+    def __iter__(self):
+        for item in self.previous:
+            if self.condition(item):
+                course_store(self)
+                obj = get_obj_from_path(self.portal, item)
+                for wkf in obj.workflow_history or {}:
+                    change = False
+                    wfh = []
+                    for status in obj.workflow_history[wkf]:
+                        if status['actor'] != self.owner_id:
+                            status['actor'] = self.owner_id
+                            change = True
+                        wfh.append(status)
+                    if change:
+                        obj.workflow_history[wkf] = tuple(wfh)
+            yield item

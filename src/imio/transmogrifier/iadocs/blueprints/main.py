@@ -523,6 +523,7 @@ class SetOwner(object):
     """Sets ownership on created object.
 
     Parameters:
+        * owner = M, owner id
         * condition = O, condition expression
     """
 
@@ -545,17 +546,23 @@ class SetOwner(object):
             if self.condition(item):
                 course_store(self)
                 obj = get_obj_from_path(self.portal, item)
-                obj.changeOwnership(self.owner)  # userid or username ?
-                for wkf in obj.workflow_history or {}:
-                    change = False
-                    wfh = []
-                    for status in obj.workflow_history[wkf]:
-                        if status['actor'] != self.owner_id:
-                            status['actor'] = self.owner_id
-                            change = True
-                        wfh.append(status)
-                    if change:
-                        obj.workflow_history[wkf] = tuple(wfh)
+                creators = list(obj.creators)
+                # change creator metadata
+                # if 'admin' in creators:
+                #     creators.remove('admin')
+                if self.owner_id not in creators:
+                    creators.insert(0, self.owner_id)
+                obj.setCreators(creators)
+                # change owner with acl_users user !! (otherwise getOwner() fails)
+                obj.changeOwnership(self.owner)
+                # change Owner role
+                # owners = obj.users_with_local_role('Owner')
+                # if 'admin' in owners:
+                #     obj.manage_delLocalRoles(['admin'])
+                # if self.owner_id not in owners:
+                #     roles = list(obj.get_local_roles_for_userid(self.owner_id))
+                #     roles.append('Owner')
+                #     obj.manage_setLocalRoles(self.owner_id, roles)
             yield item
 
 
