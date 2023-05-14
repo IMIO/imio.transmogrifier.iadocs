@@ -6,6 +6,7 @@ from collective.transmogrifier.utils import Expression
 from imio.helpers.transmogrifier import get_obj_from_path  # noqa
 from imio.helpers.transmogrifier import key_val as dim
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
+from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs import T_S
 from imio.transmogrifier.iadocs.utils import course_store
@@ -129,6 +130,8 @@ class EnhancedInserter(object):
         self.key = Expression(options['key'], transmogrifier, name, options)
         self.value = Expression(options['value'], transmogrifier, name, options)
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
+        self.error = Expression(options.get('error', 'python:u"error getting value"'),
+                                transmogrifier, name, options)
         if options.get('separator'):
             self.separator = Expression(options.get('separator', ''), transmogrifier, name, options)(None)
         else:
@@ -139,7 +142,12 @@ class EnhancedInserter(object):
             key = self.key(item)
             if self.condition(item, key=key, storage=self.storage):
                 course_store(self)
-                value = self.value(item, key=key, storage=self.storage)
+                try:
+                    value = self.value(item, key=key, storage=self.storage)
+                except Exception as msg:
+                    e_logger.error(u'{}: {} ({})'.format(self.name, self.error(item), msg))
+                    yield item
+                    continue
                 if self.separator and item.get(key):  # with self.separator, we append
                     if value:
                         item[key] += u'{}{}'.format(self.separator, value)
