@@ -130,7 +130,7 @@ class EnhancedInserter(object):
         self.key = Expression(options['key'], transmogrifier, name, options)
         self.value = Expression(options['value'], transmogrifier, name, options)
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
-        self.error = Expression(options.get('error', 'python:u"error getting value"'),
+        self.error = Expression(options.get('error', 'python:u"error getting value for eid {}".format(item["_eid"])'),
                                 transmogrifier, name, options)
         if options.get('separator'):
             self.separator = Expression(options.get('separator', ''), transmogrifier, name, options)(None)
