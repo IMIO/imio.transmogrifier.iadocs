@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from collective.classification.tree.utils import create_category
 from collective.classification.tree.utils import get_parents
 from collective.transmogrifier.interfaces import ISection
@@ -36,6 +37,7 @@ from zope.interface import classProvides
 from zope.interface import implements
 from zope.intid import IIntIds
 
+import cPickle
 import os
 import transaction
 
@@ -696,6 +698,11 @@ class PostActions(object):
                 transaction.commit()
                 o_logger.info(u"Commit in '{}' at {}".format(item['_bpk'],
                                                              self.storage['count']['commit_count']['']['c']))
+                for filename, store_key, condition in self.storage['lastsection']['pkl_dump']:
+                    if filename and condition(None, storage=self.storage):
+                        o_logger.info(u"Dumping '{}'".format(filename))
+                        with open(filename, 'wb') as fh:
+                            cPickle.dump(self.storage['data'][store_key], fh, -1)
             yield item
 
 
