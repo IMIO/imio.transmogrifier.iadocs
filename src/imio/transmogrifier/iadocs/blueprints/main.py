@@ -193,6 +193,7 @@ class Initialization(object):
                                                          DexterityFTIModificationDescription('behaviors', old_bav)))
                     o_logger.info('Added internalnumber behavior on type {}'.format(typ))
         if dtb_types:
+            fields_conf = {'dmsincomingmail': 'imail', 'dmsoutgoingmail': 'omail'}
             for typ in dtb_types:
                 fti = getattr(self.portal.portal_types, typ)
                 if 'imio.dms.mail.content.behaviors.IDmsMailDataTransfer' not in fti.behaviors:
@@ -202,6 +203,15 @@ class Initialization(object):
                     ftiModified(fti, ObjectModifiedEvent(fti,
                                                          DexterityFTIModificationDescription('behaviors', old_bav)))
                     o_logger.info('Added datatransfer behavior on type {}'.format(typ))
+                if typ in fields_conf:
+                    reg = 'imio.dms.mail.browser.settings.IImioDmsMailConfig.{}_fields'.format(fields_conf[typ])
+                    rec = api.portal.get_registry_record(reg)
+                    if not [dic for dic in rec if dic['field_name'] == 'IDmsMailDataTransfer.data_transfer']:
+                        lst = list(rec)
+                        lst.append({"field_name": u'IDmsMailDataTransfer.data_transfer', "read_tal_condition": None,
+                                    "write_tal_condition": None})
+                        api.portal.set_registry_record(reg, lst)
+                        o_logger.info('Added data_transfer field in type {}'.format(typ))
 
         # set global variables in annotation
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
