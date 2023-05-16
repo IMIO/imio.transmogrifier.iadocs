@@ -2,6 +2,8 @@
 
 from collective.classification.tree.utils import create_category
 from collective.classification.tree.utils import get_parents
+from collective.contact.plonegroup.config import get_registry_organizations
+from collective.contact.plonegroup.config import set_registry_organizations
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
@@ -11,6 +13,7 @@ from imio.dms.mail.utils import separate_fullname
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import clean_value
 from imio.helpers.transmogrifier import get_obj_from_path
+from imio.helpers.transmogrifier import pool_tuples
 from imio.pyutils.utils import all_of_dict_values
 from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
@@ -486,6 +489,57 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     return change
 
 
+class L1RecipientGroupsSet(object):
+    """Handles recipient_groups.
+
+    Parameters:
+        * condition = O, condition expression
+        * global_recipient_service = O, title of the global recipient group
+        * global_recipient_tg_exceptions = O, list of eid (service) for which the global recipient is not set
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.grs_title = safe_unicode(options.get('global_recipient_service', ''))
+        self.grs_uid = None
+        found = [uid for uid in self.storage['data']['p_orgs_all']
+                 if self.storage['data']['p_orgs_all'][uid]['ft'] == self.grs_title]
+        if found:
+            self.grs_uid = found[0]
+        self.gr_tg_exc = safe_unicode(options.get('global_recipient_tg_exceptions', '')).strip().split()
+        self.gr_tg_exc = [tup[0] for tup in pool_tuples(self.gr_tg_exc, 2, 'global_recipient_tg_exceptions option')]
+
+    def __iter__(self):
+        for item in self.previous:
+            if not self.condition(item):
+                yield item
+                continue
+            course_store(self)
+            # create service if necessary
+            if self.grs_uid is None and self.grs_title:
+                path = u'{}/plonegroup-organization/reprise-de-donnees'.format(self.storage['plone']['directory_path'])
+                item0 = {'_eid': item['_eid'], '_path': path, '_type': u'organization',
+                         '_bpk': 'global_recipient_service', '_act': 'N', u'title': self.grs_title}
+                yield item0
+                obj = get_obj_from_path(self.portal, path=path)
+                import ipdb; ipdb.set_trace()
+                self.grs_uid = obj.UID()
+                selected_orgs = get_registry_organizations()
+                selected_orgs.append(self.grs_uid)
+                set_registry_organizations(selected_orgs)
+                self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(
+                    self.portal)
+            if item['_service_id'] not in self.gr_tg_exc and self.grs_uid not in item.get('recipient_groups', []):
+                item['recipient_groups'] = [self.grs_uid]
+            yield item
+
+
 class L1SenderAsTextSet(object):
     """Handles contact"""
     classProvides(ISectionBlueprint)
@@ -516,8 +570,8 @@ class M1AssignedUserHandling(object):
     """Handles assigned user.
 
     Parameters:
-        * condition = O, condition expression
         * store_key = M, storage main key to find mail path
+        * condition = O, condition expression
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -533,10 +587,10 @@ class M1AssignedUserHandling(object):
             return
         store_key = safe_unicode(options['store_key'])
         self.im_paths = self.storage['data'][store_key]
-        self.contacts = self.storage['data']['e_contacts_sender']
+        self.contacts = self.storage['data']['e_contacts_sender']  # user only
         self.user_match = self.storage['data']['e_user_match']
         # self.e_user_service = self.storage['data']['e_user_service']
-        self.p_user_service = self.storage['data']['p_user_service']
+        self.p_user_service = self.storage['data']['p_user_service']  # plone user service
         # calculate once the editor services for each user
         self.p_u_s_editor = {}
         for user in self.p_user_service:

@@ -92,6 +92,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.l_1_recipient_groups_set"
+    component=".handlers.L1RecipientGroupsSet"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.l_1_sender_as_text_set"
     component=".handlers.L1SenderAsTextSet"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
