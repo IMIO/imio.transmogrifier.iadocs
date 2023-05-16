@@ -461,9 +461,11 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
         if p_sender:
             change = True
             dest1.append(u'{} PARENT: {}.'.format(label, u', '.join(p_sender)))
+            dest2.append(u'{} PARENT: {}.'.format(label, u', '.join(p_sender)))
         if sender:
             change = True
             dest1.append(u'{}: {}.'.format(label, u', '.join(sender)))
+            dest2.append(u'{}: {}.'.format(label, u', '.join(sender)))
         # address
         p_address = all_of_dict_values(parent_infos, ['_street', '_pc', '_city'])
         address = all_of_dict_values(infos, ['_street', '_pc', '_city'])
@@ -483,7 +485,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     if m_sender:
         lines = m_sender.split('\n')
         change = True
-        dest1.append(u'{} LIBRE: {}'.format(label, lines.pop(0)))
+        dest1.append(u'{} LIBRE: {}'.format(label, lines[0]))
         if lines:
             dest2.append(u'{} LIBRE: {}'.format(label, u', '.join(lines)))
     return change
@@ -528,7 +530,6 @@ class L1RecipientGroupsSet(object):
                          '_bpk': 'global_recipient_service', '_act': 'N', u'title': self.grs_title}
                 yield item0
                 obj = get_obj_from_path(self.portal, path=path)
-                import ipdb; ipdb.set_trace()
                 self.grs_uid = obj.UID()
                 selected_orgs = get_registry_organizations()
                 selected_orgs.append(self.grs_uid)
