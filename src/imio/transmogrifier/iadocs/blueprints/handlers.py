@@ -471,17 +471,17 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
         address = all_of_dict_values(infos, ['_street', '_pc', '_city'])
         if address:
             change = True
-            dest2.append(u'ADRESSE {}: {}.'.format(label.lower(), u' '.join(address)))
+            dest2.append(u'ADRESSE {}: {}.'.format(label, u' '.join(address)))
         elif p_address:  # we add just one address
             change = True
-            dest2.append(u'ADRESSE {} PARENT: {}.'.format(label.lower(), u' '.join(p_address)))
+            dest2.append(u'ADRESSE {} PARENT: {}.'.format(label, u' '.join(p_address)))
         else:
             pass  # include _addr_id ? no!
         # phones
         phones = get_contact_phone(infos, parent_infos)
         if phones:
             change = True
-            dest2.append(u'TÉL {}: {}.'.format(label.lower(), u', '.join(phones)))
+            dest2.append(u'TÉL {}: {}.'.format(label, u', '.join(phones)))
     if m_sender:
         lines = m_sender.split('\n')
         change = True
