@@ -797,8 +797,8 @@ class Q1RecipientsAsTextUpdate(object):
                 continue
             item2 = {'_eid': item['_eid'], '_path': self.om_paths[item['_mail_id']]['path'],
                      '_type': omail.portal_type, '_bpk': 'o_recipients', '_act': 'U'}
-            desc = 'description' in item and item.get('description').split('\r\n') or []
-            d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
+            desc = (omail.description or u'').split('\r\n')
+            d_t = (omail.data_transfer or u'').split('\r\n')
             if get_contact_info(self, item, u'DESTINATAIRE', '_contact_id', '_comment', desc, d_t):
                 item2['description'] = u'\r\n'.join(desc)
                 r_messages = u', '.join(all_of_dict_values(item, [u'_action', u'_message', u'_response'],
