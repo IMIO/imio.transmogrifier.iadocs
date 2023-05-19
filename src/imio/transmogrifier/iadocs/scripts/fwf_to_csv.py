@@ -33,7 +33,7 @@ def main(input_dir, output_dir, counter_col, input_filter, input_sep, only_new):
             continue
         logger.info("Reading '{}'".format(input_name))
         with codecs.open(input_name, 'r', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
-            csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC)
+            csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC, lineterminator='\n')
             rec_nb, last_rec_pos = get_records_info(ifh)
             cols = get_cols(ifh, input_sep)
             if counter_col:
@@ -111,7 +111,7 @@ def get_cols(fh, input_sep):
 
 def get_records_info(fh):
     """Get records number and last record position."""
-    fh.seek(0, 2)
+    fh.seek(0, 2)  # at the end
     file_len = fh.tell()
     offset = -16
     fh.seek(offset, 2)  # just before ' rows'
