@@ -928,8 +928,6 @@ class T1DmsfileCreation(object):
                 #         item['_eid'], item['_mail_id'], order, len(self.files[item['_mail_id']]['ids'])))
                 self.files[item['_mail_id']]['lo'] = order
                 self.files[item['_mail_id']]['ids'].append(item['_eid'])
-            if not item['_fs_path']:
-                continue
             item2 = {'_eid': item['_eid'], '_parenth': self.paths[item['_mail_id']]['path'],
                      '_type': typ, '_bpk': self.bp_key, 'label': item['_desc'], '_id': item['_eid'],
                      'title': item['_desc'],
