@@ -365,8 +365,8 @@ class CommonInputChecks(object):
                     item[fld] = clean_value(item[fld], isep, strip, patterns, osep)
                 # replace newline by hyphen on specified fields
                 for fld in self.hyphens:
-                    if '\n' in (item[fld] or ''):
-                        item[fld] = ' - '.join([part.strip() for part in item[fld].split('\n') if part.strip()])
+                    if u'\n' in (item[fld] or u''):
+                        item[fld] = u' - '.join([part.strip() for part in item[fld].split(u'\n') if part.strip()])
                 # replace invalid values on specified fields
                 for fld, values in self.invalids:
                     for value in values.split(u'|'):
