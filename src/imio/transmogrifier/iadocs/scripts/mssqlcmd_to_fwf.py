@@ -16,7 +16,8 @@ logger.setLevel(logging.INFO)
 sqlcmd_ext = '.fwf'
 tableX = ['eAdresses', 'eClassement', 'eClassementDossiers', 'eContacts', 'eContactsAdresses', 'eContactsTitres',
           'eContactsType', 'eCourriers', 'eCourriersDestinataires', 'eCourriersFichiers', 'eCourriersDossiers',
-          'eCourriersLiens', 'eCourriersServices', 'eGroupes', 'eGroupesContacts', 'eGroupesMembres', 'eNatures',
+          # 'eCourriersLiens', 'eCourriersServices', 'eGroupes', 'eGroupesContacts', 'eGroupesMembres', 'eNatures',
+          'eCourriersLiens', 'eCourriersServices', 'eNatures',
           'eRues', 'eServices', 'eTypeAction', 'eUsers']
 tables = OrderedDict([
     ('eAdresses', {}), ('eClassement', {}), ('eClassementDossiers', {}), ('eContacts', {}),
