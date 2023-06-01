@@ -185,6 +185,14 @@ class NeedOther(object):
             yield item
 
 
+def short_log(item):
+    """log in o_logger"""
+    to_print = u"{}:{},{},{},{}".format(item['_bpk'], item.get('_eid', ''), dim(item.get('_type', ''), T_S),
+                                        item.get('_act', '?'), item.get('_path', '') or item.get('title', ''))
+    o_logger.info(to_print)
+    return to_print
+
+
 class ShortLog(object):
     """Logs shortly item."""
     classProvides(ISectionBlueprint)
@@ -197,10 +205,9 @@ class ShortLog(object):
 
     def __iter__(self):
         for item in self.previous:
-            to_print = u"{}:{},{},{},{}".format(item['_bpk'], item.get('_eid', ''), dim(item.get('_type', ''), T_S),
-                                                item.get('_act', '?'), item.get('_path', '') or item.get('title', ''))
+            short_log(item)
+            # to_print = short_log(item)
             # print(to_print, file=sys.stderr)
-            o_logger.info(to_print)
             yield item
 
 
