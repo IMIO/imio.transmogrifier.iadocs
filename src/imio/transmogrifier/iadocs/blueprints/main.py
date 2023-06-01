@@ -8,6 +8,7 @@ from collective.transmogrifier.utils import Expression
 from datetime import datetime
 from DateTime.DateTime import DateTime
 from imio.dms.mail.browser.settings import IImioDmsMailConfig
+from imio.helpers.security import generate_password
 from imio.helpers.transmogrifier import clean_value
 from imio.helpers.transmogrifier import correct_path
 from imio.helpers.transmogrifier import filter_keys
@@ -145,6 +146,9 @@ class Initialization(object):
             filespath = workingpath
         inb_types = safe_unicode(transmogrifier['config'].get('internal_number_behavior_types') or '').split()
         dtb_types = safe_unicode(transmogrifier['config'].get('data_transfer_behavior_types') or '').split()
+        creator = transmogrifier['config'].get('creator')
+        if creator and not api.portal.get_tool('acl_users').getUserById(creator):
+            api.user.create(u'csv@imio.be', creator, generate_password())
         if bool(int(transmogrifier['config'].get('debug') or '0')):
             setup_logger(o_logger, level=logging.DEBUG)
         # setting logs
