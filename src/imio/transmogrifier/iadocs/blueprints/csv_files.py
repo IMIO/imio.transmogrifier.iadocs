@@ -180,9 +180,8 @@ class CSVWriter(object):
         self.filename = safe_unicode(options['filename'])
         if not os.path.isabs(self.filename):
             self.filename = os.path.join(self.storage['csvp'], self.filename)
-        self.doit = True
-        if not doit(None, filename=self.filename, storage=self.storage):
-            self.doit = False
+        self.doit = doit(None, filename=self.filename, storage=self.storage)
+        if not self.doit:
             return
         fieldnames = safe_unicode(options['fieldnames']).split()
         headers = safe_unicode(options.get('headers') or '').split()

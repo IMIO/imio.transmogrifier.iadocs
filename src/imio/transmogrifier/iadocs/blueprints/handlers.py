@@ -19,6 +19,7 @@ from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.blueprints.various import short_log
 from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import full_name
 from imio.transmogrifier.iadocs.utils import get_file_content
@@ -308,6 +309,7 @@ class ECategoryUpdate(object):
     """Update category or create a new one.
 
     Parameters:
+        * b_condition = O, blueprint condition expression
         * condition = O, condition expression
         * title_replace_slash = O, replace / by - if 1 (default 1)
         * decimal_import = O, identifier is decimal code if 1 (default 1)
@@ -324,6 +326,8 @@ class ECategoryUpdate(object):
         self.parts = get_related_parts(name)
         if not is_in_part(self, self.parts):
             return
+        b_condition = Condition(options.get('b_condition') or 'python:True', transmogrifier, name, options)
+        self.b_cond = b_condition(None, storage=self.storage)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.replace_slash = bool(int(options.get('title_replace_slash') or '1'))
         self.decimal_import = bool(int(options.get('decimal_import') or '1'))
@@ -332,11 +336,10 @@ class ECategoryUpdate(object):
         self.p_category = self.storage['data']['p_category']
 
     def __iter__(self):
-        change = False
         for item in self.previous:
-            if is_in_part(self, self.parts) and self.condition(item):
+            if is_in_part(self, self.parts) and self.b_cond and self.condition(item):
                 course_store(self)
-                if item['_pcode']:
+                if item.get('_pcode'):  # code is already in plone
                     if item['_pcode'] not in self.p_category:
                         log_error(item, u"The _pcode '{}' is not in the loaded categories. "
                                         u"We pass it".format(item['_pcode']))
@@ -347,7 +350,7 @@ class ECategoryUpdate(object):
                         node.title = self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle']
                         self.p_category[item['_pcode']]['title'] = node.title
                         item['_ptitle'] = node.title
-                        change = True
+                        item['_act'] = 'U'
                     # # when pcode is different (new matching) and title is different
                     # new_title = self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle']
                     # if item['_ecode'] != item['_pcode'] and new_title != node.title:
@@ -356,7 +359,7 @@ class ECategoryUpdate(object):
                     #     node.title = new_title
                     #     self.p_category[item['_pcode']]['title'] = node.title
                     #     item['_ptitle'] = node.title
-                    #     change = True
+                    #     item['_act'] = 'U'
                 else:  # we will create the category
                     parent = self.portal.tree
                     parts = get_parents(item['_ecode'])
@@ -366,7 +369,7 @@ class ECategoryUpdate(object):
                                                      event=False)
                             self.p_category[parent.identifier] = {'title': parent.title, 'uid': parent.UID(),
                                                                   'enabled': parent.enabled, 'obj': parent}
-                            change = True
+                            item['_act'] = 'N'
                         else:
                             parent = self.p_category[part]['obj']
                     if parts[-1] not in self.p_category:
@@ -377,12 +380,13 @@ class ECategoryUpdate(object):
                                                             'enabled': node.enabled, 'obj': node}
                         item['_pcode'], item['_ptitle'] = node.identifier, node.title
                         item['_puid'], item['_pactive'] = node.UID(), node.enabled
-                        change = True
+                        item['_act'] = 'N'
+                item['_type'] = 'ClassificationCategory'
+                item['title'] = item.get('_ptitle', '')
+                short_log(item)
                 if not self.storage['commit']:
                     continue
             yield item
-        if change:
-            o_logger.info("Part e: some categories have been created or updated.")
 
 
 def get_contact_name(dic, dic2):
