@@ -88,7 +88,6 @@ class CSVReader(object):
         reader = csv.DictReader(csv_d['fh'], dialect=self.dialect, fieldnames=fieldnames, restkey='_rest',
                                 restval='__NO_CO_LU_MN__', **self.fmtparam)
         for item in reader:
-            course_store(self)
             item['_bpk'] = self.bp_key
             item['_ln'] = reader.line_num
             # check fieldnames length on first line
@@ -112,6 +111,7 @@ class CSVReader(object):
                 # pass headers if any
                 if self.csv_headers(None):
                     continue
+            course_store(self)
             # removing useless keys as _A or _AB
             good_fieldnames = []
             for key in fieldnames:
