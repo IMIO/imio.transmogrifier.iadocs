@@ -533,6 +533,58 @@ class PickleData(object):
             yield item
 
 
+class ReadFromData(object):
+    """Read items from a dictionary.
+
+    Parameters:
+        * bp_key = M, blueprint key representing csv
+        * store_key = M, storing keys for item. The item is read from storage[{bp_key}][{store_key}]
+        * store_subkey = O, storing sub keys for item. If defined, the item is read from
+          storage[{bp_key}][{store_key}][{store_subkey}]
+        * fieldnames = O, fieldnames to get. All if nothing.
+        * condition = O, condition expression
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        # self.store_key = safe_unicode(options['store_key']).split()
+        self.store_key = safe_unicode(options['store_key'])
+        self.store_subkey = safe_unicode(options.get('store_subkey'))
+        self.bp_key = safe_unicode(options['bp_key'])
+        self.fieldnames = safe_unicode(options.get('fieldnames') or '').split()
+        if self.bp_key not in self.storage['data']:
+            self.storage['data'][self.bp_key] = {}
+
+    def __iter__(self):
+        for item in self.previous:
+            yield item
+        if not is_in_part(self, self.parts):
+            return
+        o_logger.info(u"Reading data from '{}'".format(self.bp_key))
+        data = self.storage['data'][self.bp_key]
+        for key in sorted(data.keys()):
+            course_store(self)
+            item = {'_bpk': self.bp_key, self.store_key: key}
+            if self.store_subkey:
+                for skey in sorted(data[key].keys()):
+                    item[self.store_subkey] = skey
+                    item.update(filter_keys(data[key][skey], self.fieldnames))
+            else:
+                item.update(filter_keys(data[key], self.fieldnames))
+            if not self.condition(item):
+                continue
+            yield item
+
+
 class SetOwner(object):
     """Sets ownership on created object.
 

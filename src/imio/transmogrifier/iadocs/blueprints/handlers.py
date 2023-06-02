@@ -339,6 +339,7 @@ class ECategoryUpdate(object):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.b_cond and self.condition(item):
                 course_store(self)
+                o_logger.info(u"{}, {}".format(item['_ecode'], item['_etitle']))
                 if item.get('_pcode'):  # code is already in plone
                     if item['_pcode'] not in self.p_category:
                         log_error(item, u"The _pcode '{}' is not in the loaded categories. "

@@ -164,6 +164,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.read_from_data"
+    component=".main.ReadFromData"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.short_log"
     component=".various.ShortLog"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
