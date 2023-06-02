@@ -125,6 +125,7 @@ def get_folders(section):
         # o_logger.error(u"Already found folder title '{}' ({}) on {}".format(full_title, brain.getPath(),
         #                folders_uids[folders_titles[full_title]['uid']]['path']))
         folders_titles[full_title]['uids'].append(brain.UID)
+    # TODO: check this behavior
     # dump_var(fuids_file, folders_uids)
     # dump_var(irntf_file, irn_to_folder)
     # dump_var(ft_file, folders_titles)

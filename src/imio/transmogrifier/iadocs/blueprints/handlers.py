@@ -339,7 +339,7 @@ class ECategoryUpdate(object):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.b_cond and self.condition(item):
                 course_store(self)
-                o_logger.info(u"{}, {}".format(item['_ecode'], item['_etitle']))
+                # o_logger.info(u"{}, {}".format(item['_ecode'], item['_etitle']))
                 if item.get('_pcode'):  # code is already in plone
                     if item['_pcode'] not in self.p_category:
                         log_error(item, u"The _pcode '{}' is not in the loaded categories. "
@@ -366,7 +366,10 @@ class ECategoryUpdate(object):
                     parts = get_parents(item['_ecode'])
                     for part in parts[:-1]:
                         if part not in self.p_category:  # not already in Plone
-                            parent = create_category(parent, {'identifier': part, 'title': part, 'enabled': False},
+                            title = self.storage['data']['e_category'].get(part, {}).get('_etitle', part)
+                            # if title != part:
+                            #     o_logger.info(u"P:{}, {}".format(item['_ecode'], item['_etitle']))
+                            parent = create_category(parent, {'identifier': part, 'title': title, 'enabled': False},
                                                      event=False)
                             self.p_category[parent.identifier] = {'title': parent.title, 'uid': parent.UID(),
                                                                   'enabled': parent.enabled, 'obj': parent}
