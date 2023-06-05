@@ -177,8 +177,8 @@ class NeedOther(object):
         needed_parts = safe_unicode(options.get('parts') or u'')
         for needed_part in needed_parts:
             if not is_in_part(self, needed_part):
-                raise Exception("STOPPED because '{}' part needs '{}' part to be included".format(this_part,
-                                                                                                  needed_part))
+                raise Exception("STOPPED because '{}' part needs '{}': missing '{}'".format(this_part, needed_parts,
+                                                                                            needed_part))
 
     def __iter__(self):
         for item in self.previous:
