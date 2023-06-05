@@ -89,7 +89,9 @@ class EnhancedCondition(object):
     Pass storage and item in condition.
 
     Parameters:
-        * condition = M, matching condition.
+        * condition1 = M, main matching condition.
+        * condition2 = M, matching condition to yield item.
+        * get_obj = O, flag to get object from path (default 0)
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -97,7 +99,9 @@ class EnhancedCondition(object):
     def __init__(self, transmogrifier, name, options, previous):
         self.condition1 = Condition(options['condition1'], transmogrifier, name, options)
         self.condition2 = Condition(options['condition2'], transmogrifier, name, options)
+        self.get_obj = bool(int(options.get('get_obj') or '0'))
         self.previous = previous
+        self.portal = transmogrifier.context
         self.name = name
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
 
@@ -105,7 +109,10 @@ class EnhancedCondition(object):
         for item in self.previous:
             if self.condition1(item, storage=self.storage):
                 course_store(self)
-                if self.condition2(item, storage=self.storage):
+                obj = None
+                if self.get_obj:
+                    obj = get_obj_from_path(self.portal, item)
+                if self.condition2(item, storage=self.storage, obj=obj):
                     yield item
             else:
                 yield item
