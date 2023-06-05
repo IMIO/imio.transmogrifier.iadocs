@@ -3,6 +3,7 @@ from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from collective.transmogrifier.utils import Expression
+from imio.helpers.transmogrifier import filter_keys
 from imio.helpers.transmogrifier import get_obj_from_path  # noqa
 from imio.helpers.transmogrifier import key_val as dim
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
@@ -160,6 +161,34 @@ class EnhancedInserter(object):
                         item[key] += u'{}{}'.format(self.separator, value)
                 else:
                     item[key] = value
+            yield item
+
+
+class FilterItem(object):
+    """Filter item to keep only some files. Useful when correcting...
+
+    Parameters:
+        * kept_keys = M, keys to keep
+        * condition = O, condition to filter (default True)
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.transmogrifier = transmogrifier
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
+        self.kept_keys = safe_unicode(options.get('kept_keys', '')).strip().split()
+        course_store(self)
+
+    def __iter__(self):
+        for item in self.previous:
+            if is_in_part(self, self.parts) and self.kept_keys and self.condition(item):
+                yield filter_keys(item, self.kept_keys + [fld for fld in item if fld.startswith('_')])
+                continue
             yield item
 
 

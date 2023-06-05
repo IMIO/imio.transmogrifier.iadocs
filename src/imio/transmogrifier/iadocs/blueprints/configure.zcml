@@ -80,6 +80,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.filter_item"
+    component=".various.FilterItem"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.init"
     component=".main.Initialization"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
