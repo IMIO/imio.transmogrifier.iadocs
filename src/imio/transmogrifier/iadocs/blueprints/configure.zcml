@@ -86,6 +86,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.h_contact_type_update"
+    component=".handlers.HContactTypeUpdate"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.init"
     component=".main.Initialization"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

@@ -252,10 +252,10 @@ class Initialization(object):
         for typ in ['types', 'levels']:
             key = 'p_dir_org_{}'.format(typ)
             self.storage['data'][key] = OrderedDict(
-                [(safe_unicode(t['name']), {'token': safe_unicode(t['token'])}) for t in
+                [(safe_unicode(t['token']), {'name': safe_unicode(t['name'])}) for t in
                  getattr(self.storage['plone']['directory'], 'organization_%s' % typ)])
             if not len(self.storage['data'][key]):
-                self.storage['data'][key] = OrderedDict([(u'Non défini', u'non-defini')])
+                self.storage['data'][key] = OrderedDict([(u'non-defini', u'Non défini')])
             self.storage['data']['{}_len'.format(key)] = len(self.storage['data'][key])
         # create default contact
         def_contact_params = next(csv.reader([transmogrifier['config'].get('default_contact').strip()], delimiter=' ',

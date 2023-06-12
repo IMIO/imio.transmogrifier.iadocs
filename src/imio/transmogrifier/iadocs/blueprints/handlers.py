@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from collective.classification.tree.utils import create_category
 from collective.classification.tree.utils import get_parents
 from collective.contact.plonegroup.config import get_registry_organizations
@@ -497,6 +496,54 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
         if lines:
             dest2.append(u'{} LIBRE: {}'.format(label, u', '.join(lines)))
     return change
+
+
+class HContactTypeUpdate(object):
+    """Store contact type if necessary.
+
+    Parameters:
+        * condition = O, condition expression
+        * clean_unused = O, clean unmatched plone values (default 0)
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.new_val = {}
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.clean_unused = bool(int(options.get('clean_unused') or '0'))
+
+    def __iter__(self):
+        p_types = self.storage['data']['p_dir_org_types']
+        for item in self.previous:
+            if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
+                course_store(self)
+                if not item['_pid']:
+                    log_error(item, u'Empty match: we pass _eid {}'.format(item['_eid']))
+                    continue
+                elif item['_pid'] not in p_types:
+                    p_types[item['_pid']] = {'name': item['_ptitle'], '_used': True}
+                else:
+                    p_types[item['_pid']]['_used'] = True
+                continue
+            yield item
+
+        if len(p_types) != self.storage['data']['p_dir_org_types_len']:  # modified
+            new_value = []
+            for token in p_types.keys():
+                if self.clean_unused and not p_types[token].get('_used', False) and token != 'non-defini':
+                    del p_types[token]
+                else:
+                    new_value.append({u'token': token, u'name': p_types[token]['name']})
+            o_logger.info("Part h: updating directory organization types with new value: {}".format(new_value))
+            self.storage['plone']['directory'].organization_types = new_value
 
 
 class L1RecipientGroupsSet(object):
