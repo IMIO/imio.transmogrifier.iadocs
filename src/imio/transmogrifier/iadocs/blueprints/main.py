@@ -249,16 +249,14 @@ class Initialization(object):
         else:
             raise Exception("{}: Directory not found !".format(name))
         # store directory configuration
-        dir_org_config = {}
-        dir_org_config_len = {}
         for typ in ['types', 'levels']:
-            dir_org_config[typ] = OrderedDict([(safe_unicode(t['name']), safe_unicode(t['token'])) for t in
-                                               getattr(self.storage['plone']['directory'], 'organization_%s' % typ)])
-            if not len(dir_org_config[typ]):
-                dir_org_config[typ] = OrderedDict([(u'Non défini', u'non-defini')])
-            dir_org_config_len[typ] = len(dir_org_config[typ])
-        # self.storage['data']['dir_org_config'] = dir_org_config
-        # self.storage['data']['dir_org_config_len'] = dir_org_config_len
+            key = 'p_dir_org_{}'.format(typ)
+            self.storage['data'][key] = OrderedDict(
+                [(safe_unicode(t['name']), {'token': safe_unicode(t['token'])}) for t in
+                 getattr(self.storage['plone']['directory'], 'organization_%s' % typ)])
+            if not len(self.storage['data'][key]):
+                self.storage['data'][key] = OrderedDict([(u'Non défini', u'non-defini')])
+            self.storage['data']['{}_len'.format(key)] = len(self.storage['data'][key])
         # create default contact
         def_contact_params = next(csv.reader([transmogrifier['config'].get('default_contact').strip()], delimiter=' ',
                                              quotechar='"', skipinitialspace=True))
