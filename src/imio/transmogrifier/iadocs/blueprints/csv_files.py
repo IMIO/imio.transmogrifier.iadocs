@@ -156,7 +156,7 @@ class CSVWriter(object):
         * headers = O, headers.
         * bp_key = M, blueprint key representing csv.
         * store_key = O, storing key for item. If defined, we get the item from storage[{bp_key}].
-        * store_key_sort = 0, field to sort on. Otherwise, the store key.
+        * store_key_sort = 0, field to sort on. If empty or not found, the store key. If '__no_sort__', not sorted !
         * csv_encoding = O, csv encoding. Default: utf8.
         * dialect = O, csv dialect. Default: excel.
         * fmtparam-strict = O, raises exception on row error. Default False.
@@ -195,7 +195,7 @@ class CSVWriter(object):
         self.yld = bool(int(options.get('yield') or '1'))
         self.store_key = safe_unicode(options.get('store_key'))
         self.store_subkey = safe_unicode(options.get('store_subkey'))
-        self.sort_key = safe_unicode(options.get('store_key_sort') or '_no_special_sort_key_')
+        self.sort_key = safe_unicode(options.get('store_key_sort') or '__on_store_key__')
         self.storage['csv'][self.bp_key] = {'fp': self.filename, 'fh': None, 'fn': os.path.basename(self.filename),
                                             'wh': None, 'wp': fmtparam, 'we': csv_encoding,
                                             'fd': fieldnames, 'hd': headers}
@@ -212,11 +212,15 @@ class CSVWriter(object):
                 course_store(self)
                 if self.store_key:
                     if csv_d['fh'] is None:  # only doing one time
-                        for (key, dv) in sorted(self.storage['data'][self.bp_key].items(),
-                                                key=lambda tup: tup[1].get(self.sort_key, tup[0])):
+                        items = self.storage['data'][self.bp_key].items()
+                        if self.sort_key != '__no_sort__':
+                            items = sorted(items, key=lambda tup: tup[1].get(self.sort_key, tup[0]))
+                        for (key, dv) in items:
                             if self.store_subkey:
-                                for (subkey, sdv) in sorted(dv.items(),
-                                                            key=lambda tup: tup[1].get(self.sort_key, tup[0])):
+                                s_items = dv.items()
+                                if self.sort_key != '__no_sort__':
+                                    s_items = sorted(s_items, key=lambda tup: tup[1].get(self.sort_key, tup[0]))
+                                for (subkey, sdv) in s_items:
                                     self._row(sdv, {self.store_key: key, self.store_subkey: subkey})
                             else:
                                 self._row(dv, {self.store_key: key})
