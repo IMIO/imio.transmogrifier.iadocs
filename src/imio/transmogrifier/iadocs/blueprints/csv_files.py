@@ -209,9 +209,9 @@ class CSVWriter(object):
         csv_d = self.storage['csv'].get(self.bp_key)
         for item in self.previous:
             if is_in_part(self, self.parts) and self.doit and self.condition(item, storage=self.storage):
-                course_store(self)
                 if self.store_key:
                     if csv_d['fh'] is None:  # only doing one time
+                        course_store(self)
                         items = self.storage['data'][self.bp_key].items()
                         if self.sort_key != '__no_sort__':
                             items = sorted(items, key=lambda tup: tup[1].get(self.sort_key, tup[0]))
@@ -225,6 +225,7 @@ class CSVWriter(object):
                             else:
                                 self._row(dv, {self.store_key: key})
                 else:
+                    course_store(self)
                     writerow(csv_d, item)
                 if not self.yld:
                     continue
