@@ -753,7 +753,11 @@ class POMSenderSet(object):
 
 
 class ParentPathInsert(object):
-    """Add parent path key following type"""
+    """Add parent path key following type.
+
+    Parameters:
+        * bp_key = O, blueprint key (here used to get parent path from pickle
+    """
     classProvides(ISectionBlueprint)
     implements(ISection)
 
@@ -762,6 +766,7 @@ class ParentPathInsert(object):
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.bp_key = safe_unicode(options.get('bp_key', None))
         self.im_folder = self.portal['incoming-mail']
         self.om_folder = self.portal['outgoing-mail']
 
@@ -778,6 +783,15 @@ class ParentPathInsert(object):
             elif ptyp == 'dmsoutgoingmail':
                 container = create_period_folder(self.om_folder, item['creation_date'])
                 item['_parenth'] = u'/outgoing-mail/{}'.format(container.id)
+            elif ptyp == 'person':
+                item['_parenth'] = u'/contacts'
+            elif ptyp == 'organization':
+                item['_parenth'] = u'/contacts'
+                if item['_parent_id']:
+                    if item['_parent_id'] not in self.storage['data'][self.bp_key]:
+                        log_error(item, u"Parent id not found '{}'".format(item['_parent_id']))
+                    else:
+                        item['_parenth'] = self.storage['data'][self.bp_key][item['_parent_id']]['path']
             yield item
 
 
