@@ -74,6 +74,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.dependency_sorter"
+    component=".main.DependencySorter"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.e_category_update"
     component=".handlers.ECategoryUpdate"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

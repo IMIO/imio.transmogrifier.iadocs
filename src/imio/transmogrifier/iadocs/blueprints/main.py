@@ -29,6 +29,7 @@ from imio.transmogrifier.iadocs.utils import course_print
 from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import get_categories
 from imio.transmogrifier.iadocs.utils import get_folders
+from imio.transmogrifier.iadocs.utils import get_org_level
 from imio.transmogrifier.iadocs.utils import get_mailtypes
 from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import get_personnel
@@ -391,6 +392,40 @@ class CommonInputChecks(object):
                 for fld, fmt, as_date in self.dates:
                     item[fld] = str_to_date(item, fld, log_error, fmt=fmt, as_date=bool(int(as_date)))
             yield item
+
+
+class DependencySorter(object):
+    """Handles dependencies.
+
+    Parameters:
+        * bp_key = M, blueprint key, input dictionary key
+        * store_key = M, storing key for item. If defined, the item is stored in storage[{bp_key}][{store_key}]
+        * condition = O, condition expression
+        * parent_relation = M, parent_relation dictionary (key: {'_parent_id': 'xx'}
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.bp_key = options['bp_key']
+        self.store_key = safe_unicode(options['store_key'])
+        self.parent_relation = self.storage['data'][options['parent_relation']]
+
+    def __iter__(self):
+        for item in self.previous:
+            yield item
+        orig_dic = self.storage['data'][self.bp_key]
+        for main_key in orig_dic:
+            item = orig_dic[main_key]
+            course_store(self)
+            if not self.condition(item):
+                continue
+            item['_level'] = get_org_level(self.parent_relation, main_key)
 
 
 class InsertPath(object):

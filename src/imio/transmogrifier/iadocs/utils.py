@@ -132,6 +132,16 @@ def get_folders(section):
     return folders_uids, irn_to_folder, folders_titles
 
 
+def get_org_ancestors(parent_relation, oid):
+    """"""
+    return (get_org_ancestors(parent_relation, parent_relation[oid]['_parent_id']) if oid in parent_relation else []) + [oid]
+
+
+def get_org_level(parent_relation, oid):
+    """Returns len"""
+    return len(get_org_ancestors(parent_relation, oid))
+
+
 def get_mailtypes(portal):
     """Get mail types and send_mode"""
     mailtypes = {}
