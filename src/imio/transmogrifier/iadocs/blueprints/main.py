@@ -452,7 +452,8 @@ class InsertPath(object):
         self.eids = self.storage['data'].setdefault(self.bp_key, {})
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         fieldnames = self.storage['csv'].get(self.bp_key, {}).get('fd', [])
-        self.id_keys = [key for key in safe_unicode(options.get('id_keys', '')).split() if key in fieldnames]
+        self.id_keys = [key for key in safe_unicode(options.get('id_keys', '')).split() if not fieldnames or
+                        key in fieldnames]
         self.roe = bool(int(options.get('raise_on_error', '1')))
 
     def __iter__(self):
