@@ -576,6 +576,7 @@ class ReadFromData(object):
           storage[{bp_key}][{store_key}][{store_subkey}]
         * fieldnames = O, fieldnames to get. All if nothing.
         * condition = O, condition expression
+        * sort_value = O, python expression for sort method return (default: 'k')
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -594,6 +595,8 @@ class ReadFromData(object):
         self.store_subkey = safe_unicode(options.get('store_subkey'))
         self.bp_key = safe_unicode(options['bp_key'])
         self.fieldnames = safe_unicode(options.get('fieldnames') or '').split()
+        # Using a lambda in expression is not working when a local var is used, even if given in context
+        self.sort_value = Expression(options.get('sort_value') or 'k', transmogrifier, name, options)
         if self.bp_key not in self.storage['data']:
             self.storage['data'][self.bp_key] = {}
 
@@ -604,7 +607,11 @@ class ReadFromData(object):
             return
         o_logger.info(u"Reading data from '{}'".format(self.bp_key))
         data = self.storage['data'][self.bp_key]
-        for key in sorted(data.keys()):
+
+        def sort_method(k):
+            return self.sort_value(None, k=k, data=data)
+
+        for key in sorted(data, key=sort_method):
             course_store(self)
             item = {'_bpk': self.bp_key, self.store_key: key}
             if self.store_subkey:
