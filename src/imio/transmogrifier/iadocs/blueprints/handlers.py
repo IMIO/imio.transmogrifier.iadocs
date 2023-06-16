@@ -274,15 +274,15 @@ class DOMSenderCreation(object):
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self)
                 if item['_sender_id'] and item['_sender_id'] in self.e_c_s:  # we have a user id
-                    e_userid = self.e_c_s[item['_sender_id']]['_uid']
+                    e_userid = self.e_c_s[item['_sender_id']]['_user_id']
                     _euidm = self.e_u_m[e_userid]
-                    if _euidm['_uid']:  # we have a match
-                        if _euidm['_uid'] in self.puid_to_pers:  # we already have a person for this user
-                            pid = uuidToObject(self.puid_to_pers[_euidm['_uid']]).id
+                    if _euidm['_p_userid']:  # we have a match
+                        if _euidm['_p_userid'] in self.puid_to_pers:  # we already have a person for this user
+                            pid = uuidToObject(self.puid_to_pers[_euidm['_p_userid']]).id
                             for y in self.person(e_userid, item, pid, u'Existing', transitions=()): yield y  # noqa
                             for y in self.hp(e_userid, item): yield y  # noqa
                         else:
-                            pid = _euidm['_uid']
+                            pid = _euidm['_p_userid']
                             fn, ln = separate_fullname(None, fn_first=self.storage['plone']['firstname_first'],
                                                        fullname=_euidm['_fullname'])
                             for y in self.person(e_userid, item, pid, u'Matched', firstname=fn,
@@ -453,7 +453,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     :param dest2: secondary list where to add less important infos
     :return: boolean indicating changes
     """
-    # e_contact = _uid _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb
+    # e_contact = _user_id _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb
     # _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
     change = False
     sender = []
@@ -666,8 +666,8 @@ class M1AssignedUserHandling(object):
             if item['_contact_id'] not in self.contacts:
                 o_logger.warning("eid '%s', contact id not a user '%s'", item['_eid'], item['_contact_id'])
                 continue
-            e_userid = self.contacts[item['_contact_id']]['_uid']
-            p_userid = self.user_match[e_userid]['_uid']
+            e_userid = self.contacts[item['_contact_id']]['_user_id']
+            p_userid = self.user_match[e_userid]['_p_userid']
             o_logger.debug("mail %s: euser %s, puser %s", item['_mail_id'], self.user_match[e_userid]['_nom'], p_userid)
             imail = get_obj_from_path(self.portal, path=self.im_paths[item['_mail_id']]['path'])
             if imail is None:
@@ -731,8 +731,8 @@ class POMSenderSet(object):
                 continue
             course_store(self)
             if item['_sender_id']:
-                if self.e_c_s[item['_sender_id']]['_uid']:  # we have a user id
-                    e_userid = self.e_c_s[item['_sender_id']]['_uid']
+                if self.e_c_s[item['_sender_id']]['_user_id']:  # we have a user id
+                    e_userid = self.e_c_s[item['_sender_id']]['_user_id']
                 else:  # _sender_id is not a user id
                     e_userid = u'None'
                     # add info in data_transfer
@@ -743,9 +743,9 @@ class POMSenderSet(object):
                         item['data_transfer'] = u'\r\n'.join(d_t)
             else:  # we do not have a _sender_id
                 e_userid = u'None'
-            pers_uid = self.euid_to_pers[e_userid]
+            pers_userid = self.euid_to_pers[e_userid]
             ouid = self.eid_to_orgs[item['_service_id']]['uid']
-            hp_dic = self.p_hps[pers_uid]['hps'][ouid]
+            hp_dic = self.p_hps[pers_userid]['hps'][ouid]
             item['sender'] = hp_dic['puid']
             o_logger.debug(u"OM sender info '%s'. Sender '%s', Description '%r', Data '%r'", item['_eid'],
                            item['sender'], item.get('description', u''), item.get('data_transfer', u''))
