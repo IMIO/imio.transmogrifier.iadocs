@@ -395,12 +395,12 @@ class ECategoryUpdate(object):
 def get_contact_name(dic, dic2):
     sender = []
     p_sender = []
-    p_name = u' '.join(all_of_dict_values(dic2, ['_lname', '_fname']))
+    p_name = u' '.join(all_of_dict_values(dic2, ['lastname', 'firstname']))
     if not p_name and dic2.get('_name2'):
         p_name = dic2['_name2']
     if p_name:
         p_sender.append(p_name)
-    name = u' '.join(all_of_dict_values(dic, ['_lname', '_fname']))
+    name = u' '.join(all_of_dict_values(dic, ['lastname', 'firstname']))
     if not name and dic.get('_name2'):
         name = dic['_name2']
     if name and (not p_name or name != p_name):
@@ -453,7 +453,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     :param dest2: secondary list where to add less important infos
     :return: boolean indicating changes
     """
-    # e_contact = _user_id _ctyp _lname _fname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb
+    # e_contact = _user_id _ctyp lastname firstname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb
     # _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
     change = False
     sender = []
