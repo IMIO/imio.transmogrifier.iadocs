@@ -78,7 +78,7 @@ def get_values(cols, fh, count_dic, input_sep):
             except Exception:
                 pass
         else:
-            value = value.strip(u' ')
+            value = value.strip(u' ').replace(u'\r\n', u'\n')
         values.append(safe_encode(value))
         next_char = fh.read(1)
         if next_char and next_char not in (input_sep, u'\n'):
