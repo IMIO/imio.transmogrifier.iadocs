@@ -14,20 +14,17 @@ logging.basicConfig()
 logger = logging.getLogger('sqlcmd')
 logger.setLevel(logging.INFO)
 sqlcmd_ext = '.fwf'
-tableX = ['eAdresses', 'eClassement', 'eClassementDossiers', 'eContacts', 'eContactsAdresses', 'eContactsTitres',
-          'eContactsType', 'eCourriers', 'eCourriersDestinataires', 'eCourriersFichiers', 'eCourriersDossiers',
-          # 'eCourriersLiens', 'eCourriersServices', 'eGroupes', 'eGroupesContacts', 'eGroupesMembres', 'eNatures',
-          'eCourriersLiens', 'eCourriersServices', 'eNatures',
-          'eRues', 'eServices', 'eTypeAction', 'eUsers']
 tables = OrderedDict([
-    ('eAdresses', {}), ('eClassement', {}), ('eClassementDossiers', {}), ('eContacts', {}),
+    ('XeAdresses', {}), ('eClassement', {}), ('eClassementDossiers', {}), ('eContacts', {}),
     ('eContactsAdresses', {}), ('eContactsTitres', {}), ('eContactsType', {}),
     ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'", 'o': "DateEncodage"}),
     ('eCourriersDestinataires', {}), ('eCourriersFichiers', {'o': "CourrierID, OrdreAffichage, DateUpload"}),
     ('eCourriersDossiers', {'o': "CourrierID, Principal desc"}),
-    ('eCourriersLiens', {}), ('eCourriersServices', {}), ('eGroupes', {}),
-    ('eGroupesContacts', {}), ('eGroupesMembres', {}), ('eNatures', {}), ('eRues', {}),
-    ('eServices', {}), ('eTypeAction', {}), ('eUsers', {}), ('eUsersServices', {})])
+    ('eCourriersLiens', {}), ('eCourriersServices', {}),
+    # ('eGroupes', {}), ('eGroupesContacts', {}), ('eGroupesMembres', {}),
+    ('eNatures', {}), ('XeRues', {}),
+    ('eServices', {}), ('eTypeAction', {}), ('eUsers', {}), ('eUsersServices', {}),
+    ('vwContactsAdresses', {'o': 'Id'})])
 fwf_cmd = 'docker exec -u root -it {dock} /opt/mssql-tools/bin/sqlcmd -S localhost -d {db} -U SA -P "{pwd}" ' \
           '-Q "select * from {table}{where}{order}" -o "/srv/sqlcmd.fwf" -s"{sep}"'
 cp_cmd = 'docker cp {dock}:/srv/sqlcmd.fwf "{of}"'
@@ -37,6 +34,8 @@ def main(docker, db_name, pwd, delim, input_filter, output_dir, only_new, simula
     start = datetime.now()
     logger.info("Start: {}".format(start.strftime('%Y%m%d-%H%M')))
     for table in tables:
+        if table.startswith('X'):
+            continue
         if input_filter and not re.match(input_filter, table):
             continue
         out_file = os.path.join(output_dir, '{}{}'.format(table, sqlcmd_ext))
