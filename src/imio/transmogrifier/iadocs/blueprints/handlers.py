@@ -546,6 +546,94 @@ class HContactTypeUpdate(object):
             self.storage['plone']['directory'].organization_types = new_value
 
 
+class I1ContactUpdate(object):
+    """Add contact fields.
+
+    Parameters:
+        * condition = O, condition expression
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+
+    def __iter__(self):
+        for item in self.previous:
+            if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
+                course_store(self)
+                # mainly address
+                if item['_addr_id']:
+                    a_dic = self.storage['data']['e_address'][item['_addr_id']]
+                    # _imp_addr _imp_pc _imp_city _imp_country _pc _city _box _street _number _phone _fax _cell
+                    # _website _email
+                    # has a structured address ?
+                    if a_dic['_pc'] and a_dic['_city']:
+                        item['zip_code'] = a_dic['_pc']
+                        item['city'] = a_dic['_city']
+                        if a_dic['_number']:
+                            item['number'] = a_dic['_number']
+                        if a_dic['_box']:
+                            item['number'] = (item['number'] and u'{} bte {}'.format(item['number'], a_dic['_box']) or
+                                              a_dic['_box'])
+                        if a_dic['_street']:
+                            item['street'] = a_dic['_street']
+                        elif a_dic['_imp_addr']:
+                            item['street'] = clean_value(a_dic['_imp_addr'], osep=', ')
+                    # or use only imp
+                    elif a_dic['_imp_addr']:
+                        item['street'] = clean_value(a_dic['_imp_addr'], osep=', ')
+                        if a_dic['_imp_pc']:
+                            item['zip_code'] = a_dic['_imp_pc']
+                        if a_dic['_imp_city']:
+                            item['city'] = a_dic['_imp_city']
+                    if a_dic['_imp_country'] and a_dic['_imp_country'].lower() != u'belgique':
+                        item['country'] = a_dic['_imp_country']
+                    if a_dic['_phone']:
+                        item['phone'] = a_dic['_phone']
+                    if a_dic['_cell']:
+                        item['cell_phone'] = a_dic['_cell']
+                    if a_dic['_fax']:
+                        item['fax'] = a_dic['_fax']
+                    if a_dic['_website']:
+                        item['website'] = a_dic['_website']
+                    if a_dic['_email']:
+                        item['email'] = a_dic['_email']
+                else:
+                    # _ln _type _user_id _ctyp lastname firstname _ptitle _street _pc _city _phone2 _phone2 _phone3
+                    # _email1 _email2 _email3 _function _e_nb _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
+                    if item.get('_street'):
+                        item['street'] = clean_value(item['_street'], osep=', ')
+                    if item.get('_pc'):
+                        item['zip_code'] = item['_pc']
+                    if item.get('_city'):
+                        item['city'] = item['_city']
+                    if item.get('_country') and item['_country'].lower() != u'belgique':
+                        item['country'] = item['_country']
+                # parent_address
+                if item['_parent_id'] and not (item.get('city') and item.get('zip_code') or item.get('street')):
+                    item['use_parent_address'] = True
+                else:
+                    item['use_parent_address'] = False
+                # other
+                if not item.get('phone'):
+                    item['phone'] = one_of_dict_values(item, ['_phone1', '_phone2', '_phone3'])
+                if not item.get('cell_phone'):
+                    item['cell_phone'] = one_of_dict_values(item, ['_cell1', '_cell2', '_cell3'])
+                if not item.get('email'):
+                    item['email'] = one_of_dict_values(item, ['_email1', '_email2', '_email3'])
+                if not item.get('_website'):
+                    item['website'] = item['_web']
+            yield item
+
+
 class L1RecipientGroupsSet(object):
     """Handles recipient_groups.
 

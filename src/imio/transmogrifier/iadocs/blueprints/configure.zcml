@@ -98,6 +98,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.i_1_contact_update"
+    component=".handlers.I1ContactUpdate"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.init"
     component=".main.Initialization"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
