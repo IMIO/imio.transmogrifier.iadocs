@@ -13,6 +13,7 @@ from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import clean_value
 from imio.helpers.transmogrifier import get_obj_from_path
 from imio.helpers.transmogrifier import pool_tuples
+from imio.pyutils.system import full_path
 from imio.pyutils.utils import all_of_dict_values
 from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
@@ -459,7 +460,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     sender = []
     p_sender = []
     m_sender = clean_value(item[free_fld], patterns=[r'^["\']+$'])
-    if item[c_id_fld]:
+    if c_id_fld and item[c_id_fld]:
         infos = section.storage['data']['e_contact'][item[c_id_fld]]
         parent_infos = {}
         if infos['_parent_id']:
@@ -695,6 +696,11 @@ class L1SenderAsTextSet(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        # do we use contact id field ?
+        self.contact_id_key = '_sender_id'
+        if os.path.exists(full_path(self.storage['csvp'],
+                          transmogrifier.get('h__contact_type_match_read', {}).get('filename', '_not_found_'))):
+            self.contact_id_key = ''
 
     def __iter__(self):
         for item in self.previous:
@@ -704,7 +710,7 @@ class L1SenderAsTextSet(object):
             course_store(self)
             desc = 'description' in item and item.get('description').split('\r\n') or []
             d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
-            if get_contact_info(self, item, u'EXPÉDITEUR', '_sender_id', '_sender', desc, d_t):
+            if get_contact_info(self, item, u'EXPÉDITEUR', self.contact_id_key, '_sender', desc, d_t):
                 item['description'] = u'\r\n'.join(desc)
                 item['data_transfer'] = u'\r\n'.join(d_t)
             yield item
@@ -940,6 +946,11 @@ class Q1RecipientsAsTextUpdate(object):
         store_key = safe_unicode(options['store_key'])
         self.om_paths = self.storage['data'][store_key]
         self.e_c = self.storage['data']['e_contact']
+        # do we use contact id field ?
+        self.contact_id_key = '_contact_id'
+        if os.path.exists(full_path(self.storage['csvp'],
+                          transmogrifier.get('h__contact_type_match_read', {}).get('filename', '_not_found_'))):
+            self.contact_id_key = ''
 
     def __iter__(self):
         for item in self.previous:
@@ -956,7 +967,7 @@ class Q1RecipientsAsTextUpdate(object):
                      '_type': omail.portal_type, '_bpk': 'o_recipients', '_act': 'U'}
             desc = (omail.description or u'').split('\r\n')
             d_t = (omail.data_transfer or u'').split('\r\n')
-            if get_contact_info(self, item, u'DESTINATAIRE', '_contact_id', '_comment', desc, d_t):
+            if get_contact_info(self, item, u'DESTINATAIRE', self.contact_id_key, '_comment', desc, d_t):
                 item2['description'] = u'\r\n'.join(desc)
                 r_messages = u', '.join(all_of_dict_values(item, [u'_action', u'_message', u'_response'],
                                                            labels=[u'', u'message', u'réponse']))
