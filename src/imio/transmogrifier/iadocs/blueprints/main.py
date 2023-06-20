@@ -698,8 +698,8 @@ class SetState(object):
         if not is_in_part(self, self.parts):
             return
         self.workflow_id = options['workflow_id']
-        self.state_id = options['state_id']
-        self.action_id = options['action_id']
+        self.state_id = options.get('state_id')
+        self.action_id = options.get('action_id')
         self.replace = options.get('replace')
         self.actor = options.get('actor') or api.user.get_current().getId()  # username or userid ?
         self.date_key = options.get('date_key')
@@ -725,7 +725,8 @@ class SetState(object):
                 for status in obj.workflow_history.get(self.workflow_id):
                     if self.replace:
                         if status['review_state'] == self.replace:
-                            status['review_state'] = self.state_id
+                            if self.state_id:
+                                status['review_state'] = self.state_id
                             if self.action_id:
                                 status['action'] = self.action_id
                             if self.date_key and item.get(self.date_key):
