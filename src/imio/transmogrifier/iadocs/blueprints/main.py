@@ -160,6 +160,8 @@ class Initialization(object):
         self.storage['wp'] = workingpath
         self.storage['csvp'] = csvpath
         self.storage['filesp'] = filespath
+        self.storage['creation_date'] = str_to_date(transmogrifier['config'], 'default_creation_date', log_error,
+                                                    fmt='%Y%m%d-%H%M', as_date=False)
         self.storage['csv'] = {}
         self.storage['data'] = {}
         self.storage['course'] = OrderedDict()
