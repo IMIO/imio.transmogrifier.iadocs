@@ -71,23 +71,23 @@ class AServiceUpdate(object):
     def __iter__(self):
         change = False
         for item in self.previous:
-            if is_in_part(self, self.parts) and self.condition(item):
+            if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
                 course_store(self)
-                if item['_eid'] not in self.eid_to_orgs:  # eid not yet in Plone
-                    if item['_eid'] in self.match:
-                        uid = self.match[item['_eid']]['uid']
-                        if not uid or uid not in self.all_orgs:
-                            log_error(item, u"Cannot find uid '{}' matched with service".format(uid))
-                            continue
-                        if item['_eid'] not in self.all_orgs[uid]['eids']:
-                            item['_type'] = 'organization'
-                            item['_path'] = self.all_orgs[uid]['p']
-                            self.all_orgs[uid]['eids'].append(item['_eid'])
-                            item['internal_number'] = u','.join(self.all_orgs[uid]['eids'])
-                            change = True
-                    else:
-                        log_error(item, u"Not in matching file")
-                        continue
+                if item['_eid'] in self.eid_to_orgs or not self.match:
+                    continue
+                if item['_eid'] not in self.match:
+                    log_error(item, u"Not in matching file")
+                    continue
+                uid = self.match[item['_eid']]['uid']
+                if not uid or uid not in self.all_orgs:
+                    log_error(item, u"Cannot find uid '{}' matched with service".format(uid))
+                    continue
+                if item['_eid'] not in self.all_orgs[uid]['eids']:
+                    item['_type'] = 'organization'
+                    item['_path'] = self.all_orgs[uid]['p']
+                    self.all_orgs[uid]['eids'].append(item['_eid'])
+                    item['internal_number'] = u','.join(self.all_orgs[uid]['eids'])
+                    change = True
             yield item
         # store services after plonegroup changes
         if change:
