@@ -416,12 +416,12 @@ class DependencySorter(object):
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.bp_key = options['bp_key']
         self.store_key = safe_unicode(options['store_key'])
-        self.parent_relation = self.storage['data'][options['parent_relation']]
+        self.parent_relation = self.storage['data'].get(options['parent_relation'])
 
     def __iter__(self):
         for item in self.previous:
             yield item
-        orig_dic = self.storage['data'][self.bp_key]
+        orig_dic = self.storage['data'].get(self.bp_key, {})
         for main_key in orig_dic:
             item = orig_dic[main_key]
             course_store(self)
