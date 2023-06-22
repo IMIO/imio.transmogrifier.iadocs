@@ -7,6 +7,7 @@ from collective.transmogrifier.utils import Condition
 from collective.transmogrifier.utils import Expression
 from datetime import datetime
 from DateTime.DateTime import DateTime
+from imio.dms.mail import ARCHIVE_SITE
 from imio.dms.mail.browser.settings import IImioDmsMailConfig
 from imio.helpers.security import generate_password
 from imio.helpers.transmogrifier import clean_value
@@ -154,6 +155,10 @@ class Initialization(object):
                                     "write_tal_condition": None})
                         api.portal.set_registry_record(reg, lst)
                         o_logger.info('Added data_transfer field in type {}'.format(typ))
+        cssr = self.portal.portal_css
+        if ARCHIVE_SITE and not cssr.getResource('imiodmsmail_archives.css').getEnabled():
+            cssr.updateStylesheet('imiodmsmail_archives.css', enabled=True)
+            cssr.cookResources()
 
         # set global variables in annotation
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
