@@ -153,7 +153,7 @@ class BMailtypeUpdate(object):
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
                 course_store(self)
                 #  _eid _etype _etitle _enature _esource _c_type _key _title _active
-                if not item['_c_type'] and not item['_key']:
+                if not item['_c_type'] or not item['_key']:
                     log_error(item, u'Empty match: we pass _eid {}'.format(item['_eid']), 'warning')
                     continue
                 if item['_c_type'] not in p_types or item['_key'] not in p_types[item['_c_type']]:
