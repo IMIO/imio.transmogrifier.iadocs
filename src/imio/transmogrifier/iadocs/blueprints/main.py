@@ -45,8 +45,10 @@ from plone.dexterity.fti import DexterityFTIModificationDescription
 from plone.dexterity.fti import ftiModified
 from plone.i18n.normalizer import IIDNormalizer
 from Products.CMFPlone.utils import safe_unicode
+from Products.cron4plone.browser.configlets.cron_configuration import ICronConfiguration
 from zope.annotation import IAnnotations
 from zope.component import getUtility
+from zope.component import queryUtility
 from zope.interface import classProvides
 from zope.interface import implements
 from zope.lifecycleevent import ObjectModifiedEvent
@@ -156,9 +158,13 @@ class Initialization(object):
                         api.portal.set_registry_record(reg, lst)
                         o_logger.info('Added data_transfer field in type {}'.format(typ))
         cssr = self.portal.portal_css
-        if ARCHIVE_SITE and not cssr.getResource('imiodmsmail_archives.css').getEnabled():
-            cssr.updateStylesheet('imiodmsmail_archives.css', enabled=True)
-            cssr.cookResources()
+        if ARCHIVE_SITE:
+            if not cssr.getResource('imiodmsmail_archives.css').getEnabled():
+                cssr.updateStylesheet('imiodmsmail_archives.css', enabled=True)
+                cssr.cookResources()
+            cron_configlet = queryUtility(ICronConfiguration, 'cron4plone_config')
+            if cron_configlet.cronjobs:
+                cron_configlet.cronjobs = []
 
         # set global variables in annotation
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
@@ -524,9 +530,10 @@ class LastSection(object):
             gsettings = GlobalSettings(self.portal)
             gsettings.auto_convert = True
         # reactivate versioning
-        pr_tool = api.portal.get_tool('portal_repository')
-        pr_tool._versionable_content_types[:] = ()
-        pr_tool._versionable_content_types.extend(self.storage['plone']['pr_vct'])
+        if not ARCHIVE_SITE:
+            pr_tool = api.portal.get_tool('portal_repository')
+            pr_tool._versionable_content_types[:] = ()
+            pr_tool._versionable_content_types.extend(self.storage['plone']['pr_vct'])
         course_print(self)
         # import ipdb; ipdb.set_trace()
 
@@ -719,7 +726,7 @@ class SetState(object):
                 course_store(self)
                 try:
                     obj = self.portal.unrestrictedTraverse(safe_unicode(item['_path'][1:]).encode('utf8'))
-                except AttributeError:
+                except (AttributeError, KeyError):
                     log_error(item, "The corresponding object '{}' cannot be found".format(item['_path']))
                     continue
                 if self.workflow_id not in obj.workflow_history:
