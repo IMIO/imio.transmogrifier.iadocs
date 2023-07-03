@@ -210,7 +210,7 @@ class CSVWriter(object):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.doit and self.condition(item, storage=self.storage):
                 if self.store_key:
-                    if csv_d['fh'] is None:  # only doing one time
+                    if csv_d['fh'] is None and self.storage['data'][self.bp_key]:  # only doing one time
                         course_store(self)
                         items = self.storage['data'][self.bp_key].items()
                         if self.sort_key != '__no_sort__':
