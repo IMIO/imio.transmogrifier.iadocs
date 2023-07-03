@@ -92,12 +92,14 @@ class Initialization(object):
             api.user.create(u'csv@imio.be', creator, generate_password())
         if bool(int(transmogrifier['config'].get('debug') or '0')):
             setup_logger(o_logger, level=logging.DEBUG)
+        # get site name
+        site_name = self.portal.getPhysicalPath()[-1]
         # setting logs
-        efh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors.log'), mode='w')
+        efh = logging.FileHandler(os.path.join(workingpath, '{}_dt_input_errors.log'.format(site_name)), mode='w')
         efh.setFormatter(logging.Formatter('(%(levelname).1s) %(message)s'))
         efh.setLevel(logging.INFO)
         e_logger.addHandler(efh)
-        ofh = logging.FileHandler(os.path.join(workingpath, 'dt_shortlog.log'), mode='w')
+        ofh = logging.FileHandler(os.path.join(workingpath, '{}_dt_shortlog.log'.format(site_name)), mode='w')
         ofh.setFormatter(logging.Formatter('(%(levelname).1s) %(message)s'))
         ofh.setLevel(logging.INFO)
         o_logger.addHandler(ofh)
@@ -105,11 +107,13 @@ class Initialization(object):
         start_msg = u"STARTING '{}' parts at {}".format(run_options['parts'].upper(),
                                                         datetime.now().strftime('%Y%m%d-%H%M'))
         if run_options['commit']:
-            ecfh = logging.FileHandler(os.path.join(workingpath, 'dt_input_errors_commit.log'), mode='a')
+            ecfh = logging.FileHandler(os.path.join(workingpath, '{}_dt_input_errors_commit.log'.format(site_name)),
+                                       mode='a')
             ecfh.setFormatter(logging.Formatter('(%(levelname).1s) %(message)s'))
             ecfh.setLevel(logging.INFO)
             e_logger.addHandler(ecfh)
-            ocfh = logging.FileHandler(os.path.join(workingpath, 'dt_shortlog_commit.log'), mode='a')
+            ocfh = logging.FileHandler(os.path.join(workingpath, '{}_dt_shortlog_commit.log'.format(site_name)),
+                                       mode='a')
             ocfh.setFormatter(logging.Formatter('(%(levelname).1s) %(message)s'))
             ocfh.setLevel(logging.INFO)
             o_logger.addHandler(ocfh)
