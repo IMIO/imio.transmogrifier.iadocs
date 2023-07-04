@@ -392,8 +392,8 @@ class ECategoryUpdate(object):
                 item['_type'] = 'ClassificationCategory'
                 item['title'] = item.get('_ptitle', '')
                 short_log(item)
-                if not self.storage['commit']:
-                    continue
+                # if not self.storage['commit']:  # do not remember why to do that !
+                #     continue
             yield item
 
 
