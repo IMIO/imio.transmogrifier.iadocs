@@ -864,12 +864,16 @@ class ParentPathInsert(object):
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
         self.bp_key = safe_unicode(options.get('bp_key', None))
         self.im_folder = self.portal['incoming-mail']
         self.om_folder = self.portal['outgoing-mail']
 
     def __iter__(self):
         for item in self.previous:
+            if not is_in_part(self, self.parts):
+                yield item
+                continue
             ptyp = item.get('_type')
             if not ptyp or '_path' in item or '_parenth' in item:
                 yield item
@@ -881,6 +885,13 @@ class ParentPathInsert(object):
             elif ptyp == 'dmsoutgoingmail':
                 container = create_period_folder(self.om_folder, item['creation_date'])
                 item['_parenth'] = u'/outgoing-mail/{}'.format(container.id)
+            elif ptyp == 'ClassificationFolder':
+                item['_parenth'] = u'/folders'
+            elif ptyp == 'ClassificationSubfolder':
+                if item['_parent_id'] not in self.storage['data'][self.bp_key]:
+                    log_error(item, u"Parent id not found '{}'".format(item['_parent_id']))
+                else:
+                    item['_parenth'] = self.storage['data'][self.bp_key][item['_parent_id']]['path']
             elif ptyp == 'person':
                 item['_parenth'] = u'/contacts'
             elif ptyp == 'organization':
