@@ -490,7 +490,7 @@ class InsertPath(object):
                     if self.roe:
                         raise Exception(u'No title ! See log...')
                     continue
-                if item['_eid'] in self.eids:  # already created
+                if item['_eid'] in self.eids and self.eids[item['_eid']].get('path'):  # already created
                     item['_path'] = self.eids[item['_eid']]['path']
                     item['_act'] = 'U'
                 else:
