@@ -205,6 +205,20 @@ class CSVWriter(object):
         extra_dic.update(extend)
         writerow(self.storage['csv'][self.bp_key], extra_dic)
 
+    def _from_dic(self):
+        items = self.storage['data'][self.bp_key].items()
+        if self.sort_key != '__no_sort__':
+            items = sorted(items, key=lambda tup: tup[1].get(self.sort_key, tup[0]))
+        for (key, dv) in items:
+            if self.store_subkey:
+                s_items = dv.items()
+                if self.sort_key != '__no_sort__':
+                    s_items = sorted(s_items, key=lambda tup: tup[1].get(self.sort_key, tup[0]))
+                for (subkey, sdv) in s_items:
+                    self._row(sdv, {self.store_key: key, self.store_subkey: subkey})
+            else:
+                self._row(dv, {self.store_key: key})
+
     def __iter__(self):
         csv_d = self.storage['csv'].get(self.bp_key)
         for item in self.previous:
@@ -212,24 +226,18 @@ class CSVWriter(object):
                 if self.store_key:
                     if csv_d['fh'] is None and self.storage['data'][self.bp_key]:  # only doing one time
                         course_store(self)
-                        items = self.storage['data'][self.bp_key].items()
-                        if self.sort_key != '__no_sort__':
-                            items = sorted(items, key=lambda tup: tup[1].get(self.sort_key, tup[0]))
-                        for (key, dv) in items:
-                            if self.store_subkey:
-                                s_items = dv.items()
-                                if self.sort_key != '__no_sort__':
-                                    s_items = sorted(s_items, key=lambda tup: tup[1].get(self.sort_key, tup[0]))
-                                for (subkey, sdv) in s_items:
-                                    self._row(sdv, {self.store_key: key, self.store_subkey: subkey})
-                            else:
-                                self._row(dv, {self.store_key: key})
+                        self._from_dic()
                 else:
                     course_store(self)
                     writerow(csv_d, item)
                 if not self.yld:
                     continue
             yield item
+        # if the section is located after an empty yield, we can try to write a stored dic (independent of item)
+        if (is_in_part(self, self.parts) and self.doit and self.store_key and csv_d['fh'] is None and
+                self.storage['data'][self.bp_key]):
+            course_store(self)
+            self._from_dic()
         if csv_d is not None and csv_d.get('fh') is not None:
             csv_d['fh'].close()
             csv_d['fh'] = None
