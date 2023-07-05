@@ -221,10 +221,12 @@ class NeedOther(object):
             yield item
 
 
-def short_log(item):
+def short_log(item, count=None):
     """log in o_logger"""
     to_print = u"{}:{},{},{},{}".format(item['_bpk'], item.get('_eid', ''), dim(item.get('_type', ''), T_S),
                                         item.get('_act', '?'), item.get('_path', '') or item.get('title', ''))
+    if count:
+        to_print = u"{}:{}".format(count, to_print)
     o_logger.info(to_print)
     return to_print
 
@@ -241,7 +243,7 @@ class ShortLog(object):
 
     def __iter__(self):
         for item in self.previous:
-            short_log(item)
+            short_log(item, count=self.storage.get('count', {}).get('commit_count', {}).get('', {}).get('c', 0))
             # to_print = short_log(item)
             # print(to_print, file=sys.stderr)
             yield item
