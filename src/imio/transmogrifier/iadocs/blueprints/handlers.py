@@ -1036,6 +1036,14 @@ class S1ClassificationFoldersUpdate(object):
                      '_path': mail_path, '_type': mail.portal_type, '_act': 'U'}
             change = False
             folder_id = item['_folder_id']
+            # Fill empty mail category with folder one
+            if not mail.classification_categories:
+                folder_category_id = self.storage['data']['e_folder'][item[u'_folder_id']]['_category_id']
+                cat_uid = self.storage['data']['e_category_full_match'].get(folder_category_id, {}).get('_puid')
+                if cat_uid:
+                    item2['classification_categories'] = [cat_uid]
+                    change = True
+            # Add folder to mail
             if folder_id in self.storage['data']['p_irn_to_folder']:
                 cf = mail.classification_folders or []
                 folder_uid = self.storage['data']['p_irn_to_folder'][folder_id]['uid']
