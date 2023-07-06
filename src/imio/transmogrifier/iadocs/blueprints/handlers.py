@@ -636,6 +636,10 @@ class I1ContactUpdate(object):
                     item['email'] = one_of_dict_values(item, ['_email1', '_email2', '_email3'])
                 if not item.get('_website'):
                     item['website'] = item['_web']
+                # empty lastname
+                if not item['lastname'] and item['_ptitle']:
+                    item['lastname'] = item['_ptitle']
+                    item['_ptitle'] = None
             yield item
 
 
