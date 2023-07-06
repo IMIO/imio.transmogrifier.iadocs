@@ -239,6 +239,26 @@ class Initialization(object):
         self.storage['data']['p_mail_ids'] = {}  # TODO will replace pkl file ?
         # store user groups
         self.storage['data']['p_user_service'] = get_users_groups(self.portal, self.storage['data']['p_user'])
+        # adapt im counter
+        counter = api.portal.get_registry_record('collective.dms.mailcontent.browser.settings.IDmsMailConfig.'
+                                                 'incomingmail_number')
+        if counter > 1:
+            brains = self.portal.portal_catalog.unrestrictedSearchResults(portal_type=['dmsincoming_email',
+                                                                                       'dmsincomingmail'])
+            if not len(brains):
+                api.portal.set_registry_record('collective.dms.mailcontent.browser.settings.IDmsMailConfig.'
+                                               'incomingmail_number', 1)
+        # adapt om counter
+        counter = api.portal.get_registry_record('collective.dms.mailcontent.browser.settings.IDmsMailConfig.'
+                                                 'outgoingmail_number')
+        if counter > 2:
+            brains = self.portal.portal_catalog.unrestrictedSearchResults(portal_type=['dmsoutgoingmail'])
+            if len(brains) <= 1:
+                api.portal.set_registry_record('collective.dms.mailcontent.browser.settings.IDmsMailConfig.'
+                                               'outgoingmail_number', 2)
+        # adapt folder counter
+        counter = api.portal.get_registry_record('collective.classification.folder.browser.settings.'
+                                                 'IClassificationConfig.folder_number')
 
         # deactivate versioning
         pr_tool = api.portal.get_tool('portal_repository')
