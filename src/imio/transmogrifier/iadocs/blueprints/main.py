@@ -217,9 +217,9 @@ class Initialization(object):
                                              quotechar='"', skipinitialspace=True))
         def_contact = get_obj_from_path(self.portal, path=def_contact_params[0])
         if def_contact is None:
-            def_contact = api.content.create(self.storage['plone']['directory'], 'organization',
-                                             id=def_contact_params[0].split('/')[-1],
-                                             title=def_contact_params[1].decode('utf8'))
+            def_contact = api.content.create(
+                self.portal.unrestrictedTraverse('/'.join(def_contact_params[0].split('/')[0:-1])),
+                'organization', id=def_contact_params[0].split('/')[-1], title=def_contact_params[1].decode('utf8'))
         self.storage['plone']['def_contact'] = def_contact
         # store services
         self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
