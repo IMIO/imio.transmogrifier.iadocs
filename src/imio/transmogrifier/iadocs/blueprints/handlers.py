@@ -637,9 +637,13 @@ class I1ContactUpdate(object):
                 if not item.get('_website'):
                     item['website'] = item['_web']
                 # empty lastname
-                if not item['lastname'] and item['_ptitle']:
-                    item['lastname'] = item['_ptitle']
-                    item['_ptitle'] = None
+                if not item['lastname']:
+                    if item['_ptitle']:
+                        item['lastname'] = item['_ptitle']
+                        item['_ptitle'] = None
+                    elif item['_name2']:
+                        item['lastname'] = item['_name2']
+                        item['_name2'] = None
             yield item
 
 
