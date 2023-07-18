@@ -21,7 +21,7 @@ tables = OrderedDict([
                     'o': "DateEncodage, DateEntree"}),
     ('eCourriersDestinataires', {}), ('eCourriersFichiers', {'o': "CourrierID, OrdreAffichage, DateUpload"}),
     ('eCourriersDossiers', {'o': "CourrierID, Principal desc"}),
-    ('eCourriersLiens', {}), ('eCourriersServices', {}),
+    ('eCourriersLiens', {}), ('eCourriersServices', {'o': "CourrierID, Principal desc"}),
     # ('eGroupes', {}), ('eGroupesContacts', {}), ('eGroupesMembres', {}),
     ('eNatures', {}), ('XeRues', {}),
     ('eServices', {}), ('eTypeAction', {}), ('eUsers', {}), ('eUsersServices', {}),
