@@ -165,7 +165,7 @@ class EnhancedInserter(object):
 
 
 class FilterItem(object):
-    """Filter item to keep only some files. Useful when correcting...
+    """Filter item to keep only some fields. Useful when correcting...
 
     Parameters:
         * kept_keys = M, keys to keep
