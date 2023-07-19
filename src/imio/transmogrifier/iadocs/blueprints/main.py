@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
+from collective.contact.plonegroup.config import get_registry_organizations
+from collective.contact.plonegroup.config import set_registry_organizations
 from collective.documentviewer.settings import GlobalSettings
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
@@ -213,14 +215,20 @@ class Initialization(object):
                 self.storage['data'][key] = OrderedDict([(u'non-defini', u'Non défini')])
             self.storage['data']['{}_len'.format(key)] = len(self.storage['data'][key])
         # create default contact
-        def_contact_params = next(csv.reader([transmogrifier['config'].get('default_contact').strip()], delimiter=' ',
-                                             quotechar='"', skipinitialspace=True))
-        def_contact = get_obj_from_path(self.portal, path=def_contact_params[0])
-        if def_contact is None:
-            def_contact = api.content.create(
-                self.portal.unrestrictedTraverse('/'.join(def_contact_params[0].split('/')[0:-1])),
-                'organization', id=def_contact_params[0].split('/')[-1], title=def_contact_params[1].decode('utf8'))
-        self.storage['plone']['def_contact'] = def_contact
+        for param, service in (('default_contact', False), ('generic_service', True)):
+            params = next(csv.reader([transmogrifier['config'].get(param).strip()], delimiter=' ',
+                                     quotechar='"', skipinitialspace=True))
+            obj = get_obj_from_path(self.portal, path=params[0])
+            if obj is None:
+                obj = api.content.create(self.portal.unrestrictedTraverse('/'.join(params[0].split('/')[0:-1])),
+                                         'organization', id=params[0].split('/')[-1], title=params[1].decode('utf8'))
+            if service:
+                selected_orgs = get_registry_organizations()
+                if obj.UID() not in selected_orgs:
+                    selected_orgs.append(obj.UID())
+                    set_registry_organizations(selected_orgs)
+            else:
+                self.storage['plone']['def_contact'] = obj
         # store services
         self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(self.portal)
         # store mailtypes
