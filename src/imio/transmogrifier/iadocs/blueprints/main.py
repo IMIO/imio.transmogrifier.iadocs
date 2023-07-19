@@ -456,6 +456,8 @@ class DependencySorter(object):
     def __iter__(self):
         for item in self.previous:
             yield item
+        if self.parent_relation is None:
+            return
         orig_dic = self.storage['data'].get(self.bp_key, {})
         for main_key in orig_dic:
             item = orig_dic[main_key]
