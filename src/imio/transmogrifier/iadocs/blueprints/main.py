@@ -99,7 +99,7 @@ class Initialization(object):
         efh.setFormatter(logging.Formatter('(%(levelname).1s) %(message)s'))
         efh.setLevel(logging.INFO)
         e_logger.addHandler(efh)
-        ofh = logging.FileHandler(os.path.join(workingpath, '{}_dt_shortlog.log'.format(site_name)), mode='w')
+        ofh = logging.FileHandler(os.path.join(workingpath, '{}_dt.log'.format(site_name)), mode='w')
         ofh.setFormatter(logging.Formatter('(%(levelname).1s) %(message)s'))
         ofh.setLevel(logging.INFO)
         o_logger.addHandler(ofh)
@@ -112,7 +112,7 @@ class Initialization(object):
             ecfh.setFormatter(logging.Formatter('(%(levelname).1s) %(message)s'))
             ecfh.setLevel(logging.INFO)
             e_logger.addHandler(ecfh)
-            ocfh = logging.FileHandler(os.path.join(workingpath, '{}_dt_shortlog_commit.log'.format(site_name)),
+            ocfh = logging.FileHandler(os.path.join(workingpath, '{}_dt_commit.log'.format(site_name)),
                                        mode='a')
             ocfh.setFormatter(logging.Formatter('(%(levelname).1s) %(message)s'))
             ocfh.setLevel(logging.INFO)
