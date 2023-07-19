@@ -68,6 +68,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.contact_set"
+    component=".handlers.ContactSet"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.default_contact_set"
     component=".handlers.DefaultContactSet"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

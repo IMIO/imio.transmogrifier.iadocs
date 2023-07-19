@@ -174,6 +174,57 @@ class BMailtypeUpdate(object):
             self.storage['data']['p_mailtype'] = get_mailtypes(self.portal)
 
 
+class ContactSet(object):
+    """Set default contact.
+
+    Parameters:
+        * fieldname = M, field to set
+        * is_list = M, int for boolean (1 if the field is a list)
+        * contact_key = M, item key name containing contact external id
+        * condition = O, condition expression
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.field = safe_unicode(options['fieldname'])
+        self.eid_key = safe_unicode(options['contact_key'])
+        self.is_list = bool(int(options.get('is_list') or '1'))
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.intids = getUtility(IIntIds)
+        self.def_ctct_iid = self.intids.getId(self.storage['plone']['def_contact'])
+        self.eids = self.storage['data']['e_contact_path']
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            course_store(self)
+            ctct_iid = self.def_ctct_iid  # default contact
+            if item[self.eid_key] and item[self.eid_key] in self.eids:
+                path = self.eids[item[self.eid_key]]['path']
+                obj = get_obj_from_path(self.portal, path=path)
+                if obj:
+                    ctct_iid = self.intids.getId(obj)
+            if self.is_list:
+                # if item[self.field]:
+                #     if ctct_iid not in [rel.to_id for rel in item[self.field]]:
+                #         item[self.field].append(RelationValue(ctct_iid))
+                # else:
+                item[self.field] = [RelationValue(ctct_iid)]
+            else:
+                item[self.field] = RelationValue(ctct_iid)
+            yield item
+
+
 class DefaultContactSet(object):
     """Set default contact.
 
