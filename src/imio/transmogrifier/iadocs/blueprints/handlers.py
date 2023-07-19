@@ -549,7 +549,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
         lines = m_sender.split('\n')
         change = True
         dest1.append(u'{} LIBRE: {}'.format(label, lines[0]))
-        if lines:
+        if len(lines) > 1:
             dest2.append(u'{} LIBRE: {}'.format(label, u', '.join(lines)))
     return change
 
@@ -719,8 +719,10 @@ class L1RecipientGroupsSet(object):
         self.grs_uid = None
         found = [uid for uid in self.storage['data']['p_orgs_all']
                  if self.storage['data']['p_orgs_all'][uid]['ft'] == self.grs_title]
-        if found:
-            self.grs_uid = found[0]
+        if not found:
+            log_error({}, u"Cannot get the plonegroup org named '{}'".format(self.grs_title))
+            return
+        self.grs_uid = found[0]
         self.gr_tg_exc = safe_unicode(options.get('global_recipient_tg_exceptions', '')).strip().split()
         self.gr_tg_exc = [tup[0] for tup in pool_tuples(self.gr_tg_exc, 2, 'global_recipient_tg_exceptions option')]
 
@@ -730,21 +732,11 @@ class L1RecipientGroupsSet(object):
                 yield item
                 continue
             course_store(self)
-            # create service if necessary
-            if self.grs_uid is None and self.grs_title:
-                path = u'{}/plonegroup-organization/reprise-de-donnees'.format(self.storage['plone']['directory_path'])
-                item0 = {'_eid': item['_eid'], '_path': path, '_type': u'organization',
-                         '_bpk': 'global_recipient_service', '_act': 'N', u'title': self.grs_title}
-                yield item0
-                obj = get_obj_from_path(self.portal, path=path)
-                self.grs_uid = obj.UID()
-                selected_orgs = get_registry_organizations()
-                selected_orgs.append(self.grs_uid)
-                set_registry_organizations(selected_orgs)
-                self.storage['data']['p_orgs_all'], self.storage['data']['p_eid_to_orgs'] = get_plonegroup_orgs(
-                    self.portal)
             if item['_service_id'] not in self.gr_tg_exc and self.grs_uid not in item.get('recipient_groups', []):
-                item['recipient_groups'] = [self.grs_uid]
+                if item['recipient_groups']:
+                    item['recipient_groups'].append(self.grs_uid)
+                else:
+                    item['recipient_groups'] = [self.grs_uid]
             yield item
 
 
@@ -760,10 +752,8 @@ class L1SenderAsTextSet(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         # do we use contact id field ?
-        self.contact_id_key = '_sender_id'
-        if os.path.exists(full_path(self.storage['csvp'],
-                          transmogrifier.get('h__contact_type_match_read', {}).get('filename', '_not_found_'))):
-            self.contact_id_key = ''
+        self.eid_key = '_sender_id'
+        self.eids = self.storage['data']['e_contact_path']
 
     def __iter__(self):
         for item in self.previous:
@@ -773,7 +763,8 @@ class L1SenderAsTextSet(object):
             course_store(self)
             desc = 'description' in item and item.get('description').split('\r\n') or []
             d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
-            if get_contact_info(self, item, u'EXPÉDITEUR', self.contact_id_key, '_sender', desc, d_t):
+            get_contact = (not item[self.eid_key] or item[self.eid_key] not in self.eids) and self.eid_key or ''
+            if get_contact_info(self, item, u'EXPÉDITEUR', get_contact, '_sender', desc, d_t):
                 item['description'] = u'\r\n'.join(desc)
                 item['data_transfer'] = u'\r\n'.join(d_t)
             yield item
