@@ -215,11 +215,11 @@ class ContactSet(object):
                 if obj:
                     ctct_iid = self.intids.getId(obj)
             if self.is_list:
-                # if item[self.field]:
-                #     if ctct_iid not in [rel.to_id for rel in item[self.field]]:
-                #         item[self.field].append(RelationValue(ctct_iid))
-                # else:
-                item[self.field] = [RelationValue(ctct_iid)]
+                if item.get(self.field):
+                    if ctct_iid not in [rel.to_id for rel in item[self.field]]:
+                        item[self.field].append(RelationValue(ctct_iid))
+                else:
+                    item[self.field] = [RelationValue(ctct_iid)]
             else:
                 item[self.field] = RelationValue(ctct_iid)
             yield item
@@ -514,7 +514,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     change = False
     sender = []
     p_sender = []
-    m_sender = clean_value(item[free_fld], patterns=[r'^["\']+$'])
+    m_sender = clean_value(item[free_fld], patterns=[(r'^["\']+$', u'')])
     if c_id_fld and item[c_id_fld]:
         infos = section.storage['data']['e_contact'][item[c_id_fld]]
         parent_infos = {}
@@ -733,8 +733,9 @@ class L1RecipientGroupsSet(object):
                 continue
             course_store(self)
             if item['_service_id'] not in self.gr_tg_exc and self.grs_uid not in item.get('recipient_groups', []):
-                if item['recipient_groups']:
-                    item['recipient_groups'].append(self.grs_uid)
+                if item.get('recipient_groups'):
+                    if self.grs_uid not in item['recipient_groups']:
+                        item['recipient_groups'].append(self.grs_uid)
                 else:
                     item['recipient_groups'] = [self.grs_uid]
             yield item
