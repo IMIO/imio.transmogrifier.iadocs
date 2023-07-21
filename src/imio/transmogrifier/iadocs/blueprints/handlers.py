@@ -1045,6 +1045,53 @@ class Q1RecipientsAsTextUpdate(object):
                 yield item2
 
 
+class R1RecipientGroupsUpdate(object):
+    """Handles recipient_groups assignments.
+
+    Parameters:
+        * condition = O, condition expression
+        * store_key = M, storage main key to find mail path
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        store_key = safe_unicode(options['store_key'])
+        self.paths = self.storage['data'].get(store_key)
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            course_store(self)
+            mail_path = self.paths[item['_mail_id']]['path']
+            mail = get_obj_from_path(self.portal, path=mail_path)
+            if mail is None:
+                o_logger.warning("mail %s: path '%s' not found", item['_mail_id'], mail_path)
+                continue
+            item2 = {'_eid': item['_eid'], '_mail_id': item['_mail_id'], '_service_id': item['_service_id'],
+                     '_bpk': u'recipient_groups', '_path': mail_path, '_type': mail.portal_type, '_act': 'U'}
+            s_uid = self.storage['data']['e_service_match'][item['_service_id']]['uid']
+            if s_uid in mail.treating_groups or []:
+                continue
+            if mail.recipient_groups:
+                if s_uid not in mail.recipient_groups:
+                    item2['recipient_groups'] = mail.recipient_groups + [s_uid]
+            else:
+                item2['recipient_groups'] = [s_uid]
+            if 'recipient_groups' in item2:
+                yield item2
+
+
 class S1ClassificationFoldersUpdate(object):
     """Handles classification folders assignments.
 
