@@ -754,7 +754,7 @@ class L1SenderAsTextSet(object):
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         # do we use contact id field ?
         self.eid_key = '_sender_id'
-        self.eids = self.storage['data']['e_contact_path']
+        self.eids = self.storage['data'].get('e_contact_path')
 
     def __iter__(self):
         for item in self.previous:
