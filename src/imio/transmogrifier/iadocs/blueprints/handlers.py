@@ -1228,6 +1228,7 @@ class T1DmsfileCreation(object):
         self.bp_key = safe_unicode(options['bp_key'])
         store_key = safe_unicode(options['store_key'])
         self.paths = self.storage['data'][store_key]
+        self.browsed_files = self.storage['data'].get('e_files')
         self.files = {}
         self.ext = {}
 
