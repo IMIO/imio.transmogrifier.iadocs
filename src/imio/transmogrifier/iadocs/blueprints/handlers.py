@@ -1109,10 +1109,10 @@ class RsyncFileWrite(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
+        self.fh = None
         if not is_in_part(self, self.parts):
             return
         doit = Condition(options.get('b_condition') or 'python:True', transmogrifier, name, options)
-        self.fh = None
         self.filename = safe_unicode(options['filename'])
         if not os.path.isabs(self.filename):
             self.filename = os.path.join(self.storage['csvp'], self.filename)
