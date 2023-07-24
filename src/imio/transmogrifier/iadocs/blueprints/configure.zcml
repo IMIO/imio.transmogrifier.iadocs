@@ -92,6 +92,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.files_list"
+    component=".main.FilesList"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.filter_item"
     component=".various.FilterItem"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

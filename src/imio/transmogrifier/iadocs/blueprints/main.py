@@ -23,6 +23,7 @@ from imio.helpers.transmogrifier import split_text
 from imio.helpers.transmogrifier import str_to_bool
 from imio.helpers.transmogrifier import str_to_date
 from imio.pyutils.system import full_path
+from imio.pyutils.system import read_recursive_dir
 from imio.pyutils.system import stop
 from imio.pyutils.utils import setup_logger
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
@@ -473,6 +474,43 @@ class DependencySorter(object):
             if not self.condition(item):
                 continue
             item['_level'] = get_org_level(self.parent_relation, main_key)
+
+
+class FilesList(object):
+    """Files list.
+
+    Parameters:
+        * bp_key = M, blueprint key
+        * condition = O, condition expression
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.bp_key = safe_unicode(options['bp_key'])
+        self.files = self.storage['data'].setdefault(self.bp_key, {})
+        if self.condition({}, storage=self.storage):
+            course_store(self)
+            for fp in sorted(read_recursive_dir(self.storage['filesp'], u'')):
+                filename = os.path.basename(fp)
+                basename, ext = os.path.splitext(filename)
+                if basename not in self.files:
+                    self.files[basename] = {'f': [(ext, os.path.dirname(fp))]}
+                elif (ext, os.path.dirname(fp)) not in self.files[basename]['f']:
+                    self.files[basename]['f'].append((ext, os.path.dirname(fp)))
+            o_logger.info("Stored {} files info".format(len(self.files)))
+
+    def __iter__(self):
+        for item in self.previous:
+            yield item
 
 
 class InsertPath(object):
