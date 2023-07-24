@@ -242,8 +242,9 @@ class Initialization(object):
         # store categories
         self.storage['data']['p_category'] = get_categories(self.portal)
         # store classification folders
-        (self.storage['data']['p_folder_uid'], self.storage['data']['p_irn_to_folder'],
-         self.storage['data']['p_folder_full_title']) = get_folders(self)
+        if 's' in self.storage['parts']:
+            (self.storage['data']['p_folder_uid'], self.storage['data']['p_irn_to_folder'],
+             self.storage['data']['p_folder_full_title']) = get_folders(self)
         # store already imported mails
         self.storage['data']['p_mail_ids'] = {}  # TODO will replace pkl file ?
         # store user groups
