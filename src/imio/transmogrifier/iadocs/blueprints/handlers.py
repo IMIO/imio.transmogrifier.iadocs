@@ -1092,6 +1092,58 @@ class R1RecipientGroupsUpdate(object):
                 yield item2
 
 
+class RsyncFileWrite(object):
+    """Writes rsync file containing used files.
+
+    Parameters:
+        * b_condition = O, blueprint condition expression (available: storage)
+        * filename = M, filename to write
+        * bp_key = data key to get files info
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        doit = Condition(options.get('b_condition') or 'python:True', transmogrifier, name, options)
+        self.fh = None
+        self.filename = safe_unicode(options['filename'])
+        if not os.path.isabs(self.filename):
+            self.filename = os.path.join(self.storage['csvp'], self.filename)
+        self.doit = doit(None, filename=self.filename, storage=self.storage)
+        if not self.doit:
+            return
+        self.bp_key = safe_unicode(options['bp_key'])
+        self.files = self.storage['data'].get(self.bp_key)
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.doit:
+                yield item
+                continue
+            if self.fh is None and self.files:  # only doing one time
+                try:
+                    self.fh = open(self.filename, mode='w')
+                except IOError as m:
+                    raise Exception("Cannot create file '{}': {}".format(self.filename, m))
+                o_logger.info(u"Writing '{}'".format(self.filename))
+            course_store(self)
+            if item['_eid'] not in self.files:
+                log_error(item, u"Cannot find '{}' eid in browsed files".format(item['_eid']))
+                continue
+            for ext, path in self.files[item['_eid']]['f']:
+                self.fh.write('{}/{}{}\n'.format(path, item['_eid'], ext))
+        if self.fh is not None:
+            self.fh.close()
+            self.fh = None
+
+
 class S1ClassificationFoldersUpdate(object):
     """Handles classification folders assignments.
 
