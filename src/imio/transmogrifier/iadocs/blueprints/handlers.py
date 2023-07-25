@@ -1281,6 +1281,7 @@ class T1DmsfileCreation(object):
                 continue
             elif file_content is None:
                 log_error(item, u"Cannot open filename '{}'".format(new_ext))
+                self.storage['data']['e_dmsfile_unfound'][item['_eid']] = {}
                 continue
             else:
                 filename = item['_filename']
