@@ -1228,7 +1228,6 @@ class T1DmsfileCreation(object):
         self.bp_key = safe_unicode(options['bp_key'])
         store_key = safe_unicode(options['store_key'])
         self.paths = self.storage['data'][store_key]
-        self.browsed_files = self.storage['data'].get('e_files')
         self.files = {}
         self.ext = {}
 
@@ -1276,8 +1275,12 @@ class T1DmsfileCreation(object):
                      'creation_date': item['creation_date'], 'modification_date': item['creation_date']}
             # get file content
             new_ext, file_content = get_file_content(self, item)
-            if file_content is None:
-                e_logger.error(u"Cannot open filename '{}'".format(new_ext))
+            if new_ext is None:
+                log_error(item, u'Empty file path for mail {}'.format(item['_mail_id']))
+                continue
+            elif file_content is None:
+                log_error(item, u"Cannot open filename '{}'".format(new_ext))
+                continue
             else:
                 filename = item['_filename']
                 (basename, ext) = os.path.splitext(filename)

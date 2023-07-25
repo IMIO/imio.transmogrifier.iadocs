@@ -67,10 +67,9 @@ def get_categories(portal):
 
 def get_file_content(section, item):
     """Get file content following global path and item filename"""
-    if item['_fs_path']:
-        (basename, ext) = os.path.splitext(item['_fs_path'])
-    elif item['_eid'] in section.browsed_files:
-        (basename, ext) = item['_eid'], section.browsed_files[item['_eid']]["f"][0][0]
+    if not item['_fs_path']:
+        return None, None
+    (basename, ext) = os.path.splitext(item['_fs_path'])
     if not ext:
         ext = '.{}'.format(item['_ext'].lower())
     path = os.path.join(section.storage['filesp'], u'{}{}'.format(basename, ext))
