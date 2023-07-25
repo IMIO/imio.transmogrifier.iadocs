@@ -1277,6 +1277,7 @@ class T1DmsfileCreation(object):
             new_ext, file_content = get_file_content(self, item)
             if new_ext is None:
                 log_error(item, u'Empty file path for mail {}'.format(item['_mail_id']))
+                self.storage['data']['e_dmsfile_unfound'][item['_eid']] = {}
                 continue
             elif file_content is None:
                 log_error(item, u"Cannot open filename '{}'".format(new_ext))
