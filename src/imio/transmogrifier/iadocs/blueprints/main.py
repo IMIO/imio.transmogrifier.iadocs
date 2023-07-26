@@ -242,7 +242,7 @@ class Initialization(object):
         # store categories
         self.storage['data']['p_category'] = get_categories(self.portal)
         # store classification folders
-        if 's' in self.storage['parts']:
+        if 'f' in self.storage['parts'] or 's' in self.storage['parts']:
             (self.storage['data']['p_folder_uid'], self.storage['data']['p_irn_to_folder'],
              self.storage['data']['p_folder_full_title']) = get_folders(self)
         # store already imported mails
@@ -867,7 +867,7 @@ class StoreInData(object):
 
     def __iter__(self):
         for item in self.previous:
-            if is_in_part(self, self.parts) and self.condition(item):
+            if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
                 course_store(self)
                 # if not self.fieldnames and item['_bpk'] == self.bp_key:
                 #     del item['_bpk']
