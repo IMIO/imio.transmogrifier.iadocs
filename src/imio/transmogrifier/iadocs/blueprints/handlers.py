@@ -297,8 +297,8 @@ class DOMSenderCreation(object):
             pdic = {'_type': 'person', '_path': path, u'internal_number': e_userid, 'use_parent_address': False,
                     u'_bpk': u'person_sender', u'_eid': item['_eid'], u'_deactivate': 'deactivate' in transitions,
                     u'creation_date': self.storage['creation_date'],
-                    u'modification_date': self.storage['creation_date'],
-                    u'_post_actions': (u'store_internal_person_info',), u'title': title}
+                    u'modification_date': self.storage['creation_date'], u'title': title}
+            pdic.setdefault(u'_post_actions', {})[u'store_internal_person_info'] = ''
             if firstname is not None:
                 pdic[u'firstname'] = firstname
             if lastname is not None:
@@ -968,15 +968,15 @@ class PostActions(object):
 
     def __iter__(self):
         for item in self.previous:
-            pa = item.get('_post_actions', [])
-            if u'store_internal_person_info' in pa:
+            for pa in item.get('_post_actions', {}):
                 course_store(self)
-                eid = item[u'internal_number']
-                uid = get_obj_from_path(self.portal, item).UID()
-                self.storage['data']['p_euid_to_pers'][eid] = uid
-                if uid not in self.storage['data']['p_hps']:
-                    self.storage['data']['p_hps'][uid] = {'path': item['_path'], 'eid': eid, 'hps': {},
-                                                          'state': 'deactivated'}
+                if pa == u'store_internal_person_info':
+                    eid = item[u'internal_number']
+                    uid = get_obj_from_path(self.portal, item).UID()
+                    self.storage['data']['p_euid_to_pers'][eid] = uid
+                    if uid not in self.storage['data']['p_hps']:
+                        self.storage['data']['p_hps'][uid] = {'path': item['_path'], 'eid': eid, 'hps': {},
+                                                              'state': 'deactivated'}
             if self.storage['commit'] and self.storage['commit_nb'] and \
                     self.storage['count']['commit_count']['']['c'] % self.storage['commit_nb'] == 0:
                 transaction.commit()
