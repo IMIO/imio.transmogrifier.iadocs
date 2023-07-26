@@ -142,7 +142,7 @@ def writerow(csv_d, item):
         csv_d['wh'] = csv.writer(csv_d['fh'], **csv_d['wp'])
         if csv_d['hd']:
             csv_d['wh'].writerow(encode_list(csv_d['hd'], csv_d['we']))
-    csv_d['wh'].writerow(encode_list([item[fd] for fd in csv_d['fd']], csv_d['we']))
+    csv_d['wh'].writerow(encode_list([item.get(fd, u'') for fd in csv_d['fd']], csv_d['we']))
 
 
 class CSVWriter(object):
