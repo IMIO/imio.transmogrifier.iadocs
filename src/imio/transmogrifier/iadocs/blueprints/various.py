@@ -127,6 +127,7 @@ class EnhancedInserter(object):
         * value = M, value expression
         * condition = O, matching condition
         * separator = O, separator expression: if specified, the value is appended after the separator
+        * get_obj = O, flag to get object from path (default 0)
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -134,12 +135,14 @@ class EnhancedInserter(object):
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
+        self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.key = Expression(options['key'], transmogrifier, name, options)
         self.value = Expression(options['value'], transmogrifier, name, options)
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
         self.error = Expression(options.get('error', 'python:u"error getting value for eid {}".format(item["_eid"])'),
                                 transmogrifier, name, options)
+        self.get_obj = bool(int(options.get('get_obj') or '0'))
         if options.get('separator'):
             self.separator = Expression(options.get('separator', ''), transmogrifier, name, options)(None)
         else:
@@ -150,8 +153,11 @@ class EnhancedInserter(object):
             key = self.key(item)
             if self.condition(item, key=key, storage=self.storage):
                 course_store(self)
+                obj = None
+                if self.get_obj:
+                    obj = get_obj_from_path(self.portal, item)
                 try:
-                    value = self.value(item, key=key, storage=self.storage)
+                    value = self.value(item, key=key, storage=self.storage, obj=obj)
                 except Exception as msg:
                     e_logger.error(u'{}: {} ({})'.format(self.name, self.error(item), msg))
                     yield item
