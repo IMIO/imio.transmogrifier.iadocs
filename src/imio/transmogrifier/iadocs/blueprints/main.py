@@ -359,6 +359,7 @@ class CommonInputChecks(object):
           for which fieldname is split at length and remainder is put in remainder field
         * booleans = O, list of fields to transform in booleans
         * dates = O, list of triplets (fieldname format as_date) to transform in date
+        * evals = O, list of fields that will be evaluated
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
     """
     classProvides(ISectionBlueprint)
@@ -400,6 +401,7 @@ class CommonInputChecks(object):
                                      skipinitialspace=True))
         self.dates = [cell.decode('utf8') for cell in self.dates]
         self.dates = [tup for tup in pool_tuples(self.dates, 3, 'dates option') if tup[0] in fieldnames]
+        self.evals = [key for key in safe_unicode(options.get('evals', '')).split() if key in fieldnames]
 
     def __iter__(self):
         for item in self.previous:
@@ -438,6 +440,9 @@ class CommonInputChecks(object):
                 # to dates
                 for fld, fmt, as_date in self.dates:
                     item[fld] = str_to_date(item, fld, log_error, fmt=fmt, as_date=bool(int(as_date)))
+                # evals
+                for fld in self.evals:
+                    item[fld] = eval(item[fld])
             yield item
 
 
