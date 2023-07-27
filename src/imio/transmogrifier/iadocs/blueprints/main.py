@@ -550,11 +550,19 @@ class InsertPath(object):
     def __iter__(self):
         idnormalizer = getUtility(IIDNormalizer)
         for item in self.previous:
-            if '_path' in item:  # _path is already set
-                yield item
-                continue
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self)
+                if '_path' in item:  # _path is already set
+                    if '_act' not in item:
+                        item['_act'] = 'N'
+                    if item['_eid'] in self.eids:
+                        item['_act'] = 'U'
+                        if self.eids[item['_eid']].get('path') and item['_path'] != self.eids[item['_eid']]['path']:
+                            log_error(item, u"2 differents path: new '{} <> existing '{}'".format(item['_path'],
+                                      self.eids[item['_eid']]['path']))
+                    self.eids.setdefault(item['_eid'], {})['path'] = item['_path']
+                    yield item
+                    continue
                 if 'title' in item and item['title']:
                     title = item['title']
                 else:
