@@ -55,15 +55,13 @@ from zope.component import queryUtility
 from zope.interface import classProvides
 from zope.interface import implements
 from zope.lifecycleevent import ObjectModifiedEvent
+from zope.schema.interfaces import IVocabularyFactory
 
 import csv
 import json
 import logging
 import os
 import cPickle
-
-# if item.get('_eid', None) in (u'162209', u''):
-#     import ipdb; ipdb.set_trace()
 
 
 class Initialization(object):
@@ -242,6 +240,10 @@ class Initialization(object):
          self.storage['data']['p_hps']) = get_personnel(self.portal)
         # store categories
         self.storage['data']['p_category'] = get_categories(self.portal)
+        if ('f' in self.storage['parts'] and
+                'f__to_correct_only' in transmogrifier['transmogrifier']['pipeline'].split('\n')):
+            self.storage['data']['p_categories'] = \
+                getUtility(IVocabularyFactory, 'collective.classification.vocabularies:fulltree')(self.portal)
         # store classification folders
         if 'f' in self.storage['parts'] or 's' in self.storage['parts']:
             (self.storage['data']['p_folder_uid'], self.storage['data']['p_irn_to_folder'],
