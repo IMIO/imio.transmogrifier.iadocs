@@ -860,8 +860,8 @@ class StoreInData(object):
           storage[{bp_key}][{store_key}][{store_subkey}]
         * fieldnames = O, fieldnames to store. All if nothing.
         * condition = O, condition expression
-        * check_key_uniqueness = 0, flag (0 or 1: default 1)
-        * check_subkey_uniqueness = 0, flag (0 or 1: default 1)
+        * check_key_uniqueness = O, flag (0 or 1: default 1)
+        * check_subkey_uniqueness = O, flag (0 or 1: default 1)
         * yield = O, flag to know if a yield must be done (0 or 1: default 0)
     """
     classProvides(ISectionBlueprint)

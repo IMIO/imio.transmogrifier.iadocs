@@ -35,6 +35,7 @@ class Breakpoint(object):
         condition = options.get('condition') or 'python:False'
         self.condition = Condition(condition, transmogrifier, name, options)
         self.previous = previous
+        self.name = name
         self.transmogrifier = transmogrifier
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
