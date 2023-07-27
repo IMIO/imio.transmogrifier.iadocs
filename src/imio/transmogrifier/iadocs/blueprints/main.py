@@ -175,6 +175,7 @@ class Initialization(object):
 
         # set global variables in annotation
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
+        self.storage['o_logger'] = o_logger
         self.storage['wp'] = workingpath
         self.storage['csvp'] = csvpath
         self.storage['filesp'] = filespath

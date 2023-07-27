@@ -233,7 +233,6 @@ def short_log(item, count=None):
                                         item.get('_act', '?'), item.get('_path', '') or item.get('title', ''))
     if count:
         to_print = u"{}:{}".format(count, to_print)
-    o_logger.info(to_print)
     return to_print
 
 
@@ -249,7 +248,8 @@ class ShortLog(object):
 
     def __iter__(self):
         for item in self.previous:
-            short_log(item, count=self.storage.get('count', {}).get('commit_count', {}).get('', {}).get('c', 0))
+            o_logger.info(short_log(item,
+                          count=self.storage.get('count', {}).get('commit_count', {}).get('', {}).get('c', 0)))
             # to_print = short_log(item)
             # print(to_print, file=sys.stderr)
             yield item

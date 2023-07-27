@@ -442,7 +442,7 @@ class ECategoryUpdate(object):
                         item['_act'] = 'N'
                 item['_type'] = 'ClassificationCategory'
                 item['title'] = item.get('_ptitle', '')
-                short_log(item)
+                o_logger.info(short_log(item))
                 # if not self.storage['commit']:  # do not remember why to do that !
                 #     continue
             yield item
