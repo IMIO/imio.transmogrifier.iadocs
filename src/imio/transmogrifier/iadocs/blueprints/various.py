@@ -188,11 +188,11 @@ class FilterItem(object):
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
         self.kept_keys = safe_unicode(options.get('kept_keys', '')).strip().split()
-        course_store(self)
 
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.kept_keys and self.condition(item):
+                course_store(self)
                 yield filter_keys(item, self.kept_keys + [fld for fld in item if fld.startswith('_')])
                 continue
             yield item
