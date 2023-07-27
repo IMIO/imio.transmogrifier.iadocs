@@ -848,6 +848,8 @@ class StoreInData(object):
           storage[{bp_key}][{store_key}][{store_subkey}]
         * fieldnames = O, fieldnames to store. All if nothing.
         * condition = O, condition expression
+        * check_key_uniqueness = 0, flag (0 or 1: default 1)
+        * check_subkey_uniqueness = 0, flag (0 or 1: default 1)
         * yield = O, flag to know if a yield must be done (0 or 1: default 0)
     """
     classProvides(ISectionBlueprint)
@@ -867,6 +869,8 @@ class StoreInData(object):
         self.store_subkey = safe_unicode(options.get('store_subkey'))
         self.bp_key = safe_unicode(options['bp_key'])
         self.fieldnames = safe_unicode(options.get('fieldnames') or '').split()
+        self.cku = bool(int(options.get('check_key_uniqueness') or '1'))
+        self.csku = bool(int(options.get('check_subkey_uniqueness') or '1'))
         self.yld = bool(int(options.get('yield') or '0'))
         if self.bp_key not in self.storage['data']:
             self.storage['data'][self.bp_key] = {}
@@ -881,8 +885,13 @@ class StoreInData(object):
                 key = item[self.store_key]
                 if self.store_subkey:
                     subkey = item.get(self.store_subkey)
+                    if self.csku and subkey in self.storage['data'][self.bp_key].get(key, {}):
+                        log_error(item, u"Subkey '{}' of key '{}' already in '{}' data dict".format(subkey, key,
+                                                                                                    self.bp_key))
                     self.storage['data'][self.bp_key].setdefault(key, {})[subkey] = filter_keys(item, self.fieldnames)
                 else:
+                    if self.cku and key in self.storage['data'][self.bp_key]:
+                        log_error(item, u"Key '{}' already in '{}' data dict".format(key, self.bp_key))
                     self.storage['data'][self.bp_key][key] = filter_keys(item, self.fieldnames)
                 if not self.yld:
                     continue
