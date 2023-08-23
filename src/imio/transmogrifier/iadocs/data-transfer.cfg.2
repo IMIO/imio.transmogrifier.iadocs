@@ -17,7 +17,7 @@ default_o_mail_type = courrier
 default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
-default_creation_date = 20090922-1200
+default_creation_date = 20130911-1200
 default_tg = 3
 to_treat = 10
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
@@ -30,7 +30,7 @@ pipeline =
 # aa services
     a__service_match_read
     a__service_match_store
-    a__1_service_read
+    a__2_service_read
 #    a__1_service_check
     a__plone_service_write
     a__service_match_write
@@ -408,19 +408,13 @@ store_key = eid
 fieldnames = etitle uid title
 yield = 0
 
-[a__1_service_read]
+[a__2_service_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
               or transmogrifier.storage['parts'] == 'a'
-filename = eServices.csv
-fieldnames = _A _eid _title _pid _E _F _G _H _I _J _code _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS
+filename = 11_Liste_Services.csv
+fieldnames = _eid _title
 bp_key = e_service
-
-[a__1_service_check]
-blueprint = imio.transmogrifier.iadocs.common_input_checks
-bp_key = e_service
-condition = python: item.get('_bpk') == u'e_service'
-raise_on_error = ${config:raise_on_error}
 
 [a__plone_service_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
@@ -438,7 +432,7 @@ blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_service'
 filename = 0_service_match.csv
-fieldnames = _eid _pid _title
+fieldnames = _eid _empty _title
 headers = eid parent_eid etitle uid full_title
 bp_key = 0_service_match
 
@@ -583,14 +577,14 @@ yield = 0
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
 filename = eUsers.csv
-fieldnames = _A _eid _elogin _D _active _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _nom _prenom
+fieldnames = _A _eid _elogin _D _active _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _nom _prenom _W _X _Y _Z
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
              _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR _BS _BT _BU _BV _BW _BX _BY _BZ
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
              _DA _DB _DC _DD _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _DQ _DR _DS _DT _DU _DV _DW _DX _DY _DZ
              _EA _EB _EC _ED _EE _EF _EG _EH _EI _EJ _EK _EL _EM _EN _EO _EP _EQ _ER _ES _ET _EU _EV _EW _EX _EY _EZ
              _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU _FV _FW _FX _FY _FZ
-             _GA _GB _GC _GD _GE _GF _GG _GH
+             _GA _GB _GC _GD
 bp_key = e_user
 
 [c__plone_user_write]
