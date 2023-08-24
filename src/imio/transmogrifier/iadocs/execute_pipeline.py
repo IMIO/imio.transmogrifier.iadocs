@@ -59,14 +59,17 @@ def main():
         user = user.__of__(acl_users)
         newSecurityManager(None, user)
     else:
-        logger.error("Cannot find admin user ")
+        stop("Cannot find admin user", logger=logger)
 
     try:
         configuration_registry.getConfiguration(PIPELINE_ID)
     except KeyError:
         configuration_registry.registerConfiguration(PIPELINE_ID, u'', u'', ns.pipeline)
     #     try:
-    options['parts'] = auto_parts(ns, func_part)
+    options['parts'], unpermitted = auto_parts(ns, func_part)
+    if unpermitted:
+        stop("The following parts are not permitted: {}".format(unpermitted))
+
     o_logger.info(options)
     portal.REQUEST.set('_transmo_options_', json.dumps(options))
     transmogrifier = Transmogrifier(portal)
@@ -82,19 +85,31 @@ def main():
 
 
 def auto_parts(ns, func_part):
-    """Get linked parts following main part and pipeline"""
-    if not func_part:
-        return ns.parts
+    """Get linked parts following main part and pipeline. Check also if given sections are permitted (if defined).
+
+    :param ns: main parsed arguments
+    :param func_part: FUNC_PART env variable content
+    :return: (all parts string, unpermitted list)
+    """
     config = _load_config(PIPELINE_ID, seen=None)
     sections = [sec for sec in config['transmogrifier']['pipeline'].splitlines() if sec]
     needed = ''
-    for section in sections:
-        # we consider sections starting with func_part __
-        if config[section]['blueprint'] == 'imio.transmogrifier.iadocs.need_other' and \
-                func_part in get_related_parts(section) or []:
-            needed = config[section]['parts']
-            break
-    return ''.join(sorted(set(needed + ns.parts + func_part)))
+    all_parts = ns.parts
+    # get needed sections for func_part
+    if func_part:
+        for section in sections:
+            # we consider sections starting with func_part __
+            if config[section]['blueprint'] == 'imio.transmogrifier.iadocs.need_other' and \
+                    func_part in get_related_parts(section) or []:
+                needed = config[section]['parts']
+                break
+        all_parts = ''.join(sorted(set(needed + ns.parts + func_part)))
+    # check permitted
+    permitted = config['config'].get('permitted_sections')
+    if not permitted:
+        return all_parts, []
+    unpermitted = [part for part in all_parts if part not in permitted]
+    return all_parts, unpermitted
 
 
 if __name__ == '__main__':
