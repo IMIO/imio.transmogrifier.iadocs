@@ -209,7 +209,7 @@ class ContactSet(object):
                 continue
             course_store(self)
             ctct_iid = self.def_ctct_iid  # default contact
-            if item[self.eid_key] and item[self.eid_key] in self.eids:
+            if item.get(self.eid_key) and item[self.eid_key] in self.eids:
                 path = self.eids[item[self.eid_key]]['path']
                 obj = get_obj_from_path(self.portal, path=path)
                 if obj:

@@ -1434,7 +1434,7 @@ value = python:item['creation_date'].date()
 
 [l__1_internal_number_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and 'internal_number' not in item
 key = string:internal_number
 value = python:item['_eid']
 
@@ -1480,28 +1480,28 @@ condition = python: item.get('_bpk') == u'e_mail_i'
 
 [l__mail_type_nature_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_nature_id'] and 'mail_type' not in item
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_nature_id') and 'mail_type' not in item
             and storage['data']['e_mailtype_match'][item['_nature_id']]['E']['_key']
 key = string:mail_type
 value = python:storage['data']['e_mailtype_match'][item['_nature_id']]['E']['_key']
 
 [l__1_nature_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_nature_id']
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_nature_id')
 key = string:data_transfer
 value = python:u'NATURE: {}.'.format(storage['data']['e_mailtype_match'][item['_nature_id']]['E']['_etitle'])
 separator = python:u'\r\n'
 
 [l__mail_type_source_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_source_id'] and 'mail_type' not in item
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_source_id') and 'mail_type' not in item
             and storage['data']['e_mailtype_match'][item['_source_id']]['E']['_key']
 key = string:mail_type
 value = python: storage['data']['e_mailtype_match'][item['_source_id']]['E']['_key']
 
 [l__1_source_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_source_id']
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_source_id')
 key = string:data_transfer
 value = python:u'SOURCE: {}.'.format(storage['data']['e_mailtype_match'][item['_source_id']]['E']['_etitle'])
 separator = python:u'\r\n'
