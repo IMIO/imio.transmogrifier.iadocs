@@ -200,7 +200,7 @@ class ContactSet(object):
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.intids = getUtility(IIntIds)
         self.def_ctct_iid = self.intids.getId(self.storage['plone']['def_contact'])
-        self.eids = self.storage['data']['e_contact_path']
+        self.eids = self.storage['data'].setdefault('e_contact_path', {})
 
     def __iter__(self):
         for item in self.previous:
