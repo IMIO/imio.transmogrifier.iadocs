@@ -180,7 +180,7 @@ pipeline =
     l__reception_date_insert
     l__original_mail_date_insert
     l__1_internal_number_insert
-;    l__1_comblain_service_id_correct
+;    l__custom_service_id_correct
     l__treating_groups_insert
 ;    l__1_recipient_groups_set
     l__1_category_id_insert
@@ -1438,7 +1438,7 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:internal_number
 value = python:item['_eid']
 
-[l__1_comblain_service_id_correct]
+[l__custom_service_id_correct]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
             and item['_category_id'] not in (None, u'0') and item['_service_id'] != u'333'
