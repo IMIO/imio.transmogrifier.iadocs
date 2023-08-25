@@ -7,6 +7,7 @@ from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from collective.transmogrifier.utils import Expression
+from datetime import date
 from datetime import datetime
 from DateTime.DateTime import DateTime
 from imio.dms.mail import ARCHIVE_SITE
@@ -442,7 +443,8 @@ class CommonInputChecks(object):
                     item[fld] = str_to_bool(item, fld, log_error)
                 # to dates
                 for fld, fmt, as_date in self.dates:
-                    item[fld] = str_to_date(item, fld, log_error, fmt=fmt, as_date=bool(int(as_date)))
+                    item[fld] = str_to_date(item, fld, log_error, fmt=fmt, as_date=bool(int(as_date)),
+                                            min_val=bool(int(as_date)) and date(1900, 1, 1) or datetime(1900, 1, 1))
                 # evals
                 for fld in self.evals:
                     item[fld] = eval(item[fld])
