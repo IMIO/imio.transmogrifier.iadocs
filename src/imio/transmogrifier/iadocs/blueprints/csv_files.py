@@ -33,6 +33,7 @@ class CSVReader(object):
         * filename = M, relative filename considering csvpath.
         * fieldnames = M, fieldnames.
         * bp_key = M, blueprint key representing csv
+        * csv_key = O, csv key (default to bp_key)
         * csv_headers = O, csv header line bool. Default: True
         * csv_encoding = O, csv encoding. Default: utf8
         * dialect = O, csv dialect. Default: excel
@@ -74,15 +75,16 @@ class CSVReader(object):
         if file_ is None:
             raise Exception("Cannot open file '{}'".format(self.filename))
         self.bp_key = safe_unicode(options['bp_key'])
-        self.storage['csv'][self.bp_key] = {'fp': self.filename, 'fh': file_, 'fn': os.path.basename(self.filename),
-                                            'fd': fieldnames}
+        self.csv_key = safe_unicode(options.get('csv_key', self.bp_key))
+        self.storage['csv'][self.csv_key] = {'fp': self.filename, 'fh': file_, 'fn': os.path.basename(self.filename),
+                                             'fd': fieldnames}
 
     def __iter__(self):
         for item in self.previous:
             yield item
         if not is_in_part(self, self.parts) or not self.filename:
             return
-        csv_d = self.storage['csv'][self.bp_key]
+        csv_d = self.storage['csv'][self.csv_key]
         fieldnames = csv_d['fd']
         o_logger.info(u"Reading '{}'".format(csv_d['fp']))
         reader = csv.DictReader(csv_d['fh'], dialect=self.dialect, fieldnames=fieldnames, restkey='_rest',
@@ -155,6 +157,7 @@ class CSVWriter(object):
         * fieldnames = M, fieldnames.
         * headers = O, headers.
         * bp_key = M, blueprint key representing csv.
+        * csv_key = O, csv key (default to bp_key)
         * store_key = O, storing key for item. If defined, we get the item from storage[{bp_key}].
         * store_key_sort = 0, field to sort on. If empty or not found, the store key. If '__no_sort__', not sorted !
         * csv_encoding = O, csv encoding. Default: utf8.
@@ -172,6 +175,7 @@ class CSVWriter(object):
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.bp_key = safe_unicode(options['bp_key'])
+        self.csv_key = safe_unicode(options.get('csv_key', self.bp_key))
         self.parts = get_related_parts(name)
         if not is_in_part(self, self.parts):
             return
@@ -196,14 +200,14 @@ class CSVWriter(object):
         self.store_key = safe_unicode(options.get('store_key'))
         self.store_subkey = safe_unicode(options.get('store_subkey'))
         self.sort_key = safe_unicode(options.get('store_key_sort') or '__on_store_key__')
-        self.storage['csv'][self.bp_key] = {'fp': self.filename, 'fh': None, 'fn': os.path.basename(self.filename),
-                                            'wh': None, 'wp': fmtparam, 'we': csv_encoding,
-                                            'fd': fieldnames, 'hd': headers}
+        self.storage['csv'][self.csv_key] = {'fp': self.filename, 'fh': None, 'fn': os.path.basename(self.filename),
+                                             'wh': None, 'wp': fmtparam, 'we': csv_encoding,
+                                             'fd': fieldnames, 'hd': headers}
 
     def _row(self, dicv, extend):
         extra_dic = dict(dicv)
         extra_dic.update(extend)
-        writerow(self.storage['csv'][self.bp_key], extra_dic)
+        writerow(self.storage['csv'][self.csv_key], extra_dic)
 
     def _from_dic(self):
         items = self.storage['data'][self.bp_key].items()
@@ -220,7 +224,7 @@ class CSVWriter(object):
                 self._row(dv, {self.store_key: key})
 
     def __iter__(self):
-        csv_d = self.storage['csv'].get(self.bp_key)
+        csv_d = self.storage['csv'].get(self.csv_key)
         for item in self.previous:
             if is_in_part(self, self.parts) and self.doit and self.condition(item, storage=self.storage):
                 if self.store_key:

@@ -353,6 +353,7 @@ class CommonInputChecks(object):
     Parameters:
         * bp_key = M, blueprint key corresponding to csv
         * condition = O, condition expression
+        * csv_key = O, csv key (default to bp_key)
         * strip_chars = O, list of pairs (fieldname chars) on which a strip must be done
         * clean_value = 0, list of quintets (fieldname isep_expr strip patterns osep_expr)
           for which field multilines content will be cleaned
@@ -374,10 +375,11 @@ class CommonInputChecks(object):
         self.name = name
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.bp_key = safe_unicode(options['bp_key'])
+        self.csv_key = safe_unicode(options.get('csv_key', self.bp_key))
         self.parts = get_related_parts(name)
         if not is_in_part(self, self.parts):
             return
-        fieldnames = self.storage['csv'].get(self.bp_key, {}).get('fd', [])
+        fieldnames = self.storage['csv'].get(self.csv_key, {}).get('fd', [])
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.strips = safe_unicode(options.get('strip_chars', '')).strip().split()
         self.strips = [tup for tup in pool_tuples(self.strips, 2, 'strip_chars option') if tup[0] in fieldnames]
@@ -530,6 +532,7 @@ class InsertPath(object):
     Parameters:
         * bp_key = M, blueprint key representing csv
         * id_keys = M, fieldnames to use to create id.
+        * csv_key = O, csv key (default to bp_key)
         * condition = O, condition expression
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
     """
@@ -543,11 +546,12 @@ class InsertPath(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
         self.bp_key = safe_unicode(options['bp_key'])
+        self.csv_key = safe_unicode(options.get('csv_key', self.bp_key))
         if not is_in_part(self, self.parts):
             return
         self.eids = self.storage['data'].setdefault(self.bp_key, {})
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
-        fieldnames = self.storage['csv'].get(self.bp_key, {}).get('fd', [])
+        fieldnames = self.storage['csv'].get(self.csv_key, {}).get('fd', [])
         self.id_keys = [key for key in safe_unicode(options.get('id_keys', '')).split() if not fieldnames or
                         key in fieldnames]
         self.roe = bool(int(options.get('raise_on_error', '1')))

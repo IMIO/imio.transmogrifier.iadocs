@@ -170,11 +170,14 @@ pipeline =
 ;    l__pickle_c_r  2
 ;    lpq__1_contacts_check  2
     l__2_archives_mail_read
+    l__2_archives_eid_update
+    l__2_mail_read
     l__pickle_i_w
 ;    l__1_E_only  2
     l__batched
     l__count
     l__2_archives_mail_check
+    l__2_mail_check
     l__creation_date_insert
     l__modification_date_insert
     l__reception_date_insert
@@ -188,8 +191,8 @@ pipeline =
 ;    l__1_sender_as_text_set  2
     l__mail_type_source_insert
     l__1_source_insert
-    l__mail_type_nature_insert
-    l__1_nature_insert
+;    l__mail_type_nature_insert
+;    l__1_nature_insert
     l__mail_type_default_insert
 ;    l__1_meetingitem_link_insert  2
 ;    l__1_confidential_insert  2
@@ -198,6 +201,7 @@ pipeline =
     l__1_type_insert
     l__1_parent_insert
     l__1_path_insert
+    short_log
     continue
 #     l__to_correct_only
 #     l__filter_item
@@ -1368,6 +1372,21 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 filename = 08_Archivage_Courriers_E.csv
 fieldnames = _etype _eid original_mail_date _category_id internal_reference_no _F _G _source_id creation_date title _K _L reception_date _N _O external_reference_no _Q
 bp_key = e_mail_i
+csv_key = e_mail_i_a
+
+[l__2_archives_eid_update]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and '_service_id' not in item
+key = string:_eid
+value = python:u'A{}'.format(item['_eid'])
+
+[l__2_mail_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+#b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
+;filename = eCourriers_E_test.csv
+filename = 01_Courriers_E.csv
+fieldnames = _etype _eid original_mail_date _category_id internal_reference_no _F _G creation_date  title _source_id _service_id _L _M _N reception_date _P external_reference_no
+bp_key = e_mail_i
 
 [l__pickle_i_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -1393,10 +1412,22 @@ condition = python: item.get('_bpk') == u'e_mail_i'
 [l__2_archives_mail_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_i
-condition = python: item.get('_bpk') == u'e_mail_i'
-clean_value =
+csv_key = e_mail_i_a
+condition = python: item.get('_bpk') == u'e_mail_i' and '_service_id' not in item
+clean_value = title python:u'\n' " " "python:[(r'^-+$', u'')]" python:u'\n'
 hyphen_newline =
-invalids =
+invalids = _category_id ?
+split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
+booleans =
+dates = reception_date "%Y-%m-%d %H:%M:%S" 0 original_mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
+
+[l__2_mail_check]
+blueprint = imio.transmogrifier.iadocs.common_input_checks
+bp_key = e_mail_i
+condition = python: item.get('_bpk') == u'e_mail_i' and '_service_id' in item
+clean_value = title python:u'\n' " " "python:[(r'^-+$', u'')]" python:u'\n'
+hyphen_newline =
+invalids = _category_id ?
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans =
 dates = reception_date "%Y-%m-%d %H:%M:%S" 0 original_mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
@@ -2401,7 +2432,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [breakpoint]
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
-condition = python:item.get('_eid', None) in (u'32268', u'48400')
+condition = python:item.get('_eid', None) in (u'457', u'48400')
 ;condition = python:True
 # condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
 
