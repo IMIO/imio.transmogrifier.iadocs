@@ -286,8 +286,8 @@ class DOMSenderCreation(object):
         self.euid_to_pers = self.storage['data']['p_euid_to_pers']
         self.p_hps = self.storage['data']['p_hps']
         self.eid_to_orgs = self.storage['data']['p_eid_to_orgs']
-        self.e_c_s = self.storage['data']['e_contacts_sender']
-        self.e_u_m = self.storage['data']['e_user_match']
+        self.e_c_s = self.storage['data'].get('e_contacts_sender', {})
+        self.e_u_m = self.storage['data'].get('e_user_match', {})
         self.intids = getUtility(IIntIds)
 
     def person(self, e_userid, item, pid, title, firstname=None, lastname=None, transitions=('deactivate',)):
@@ -329,7 +329,7 @@ class DOMSenderCreation(object):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self)
-                if item['_sender_id'] and item['_sender_id'] in self.e_c_s:  # we have a user id
+                if item.get('_sender_id') and item['_sender_id'] in self.e_c_s:  # we have a user id
                     e_userid = self.e_c_s[item['_sender_id']]['_user_id']
                     _euidm = self.e_u_m[e_userid]
                     if _euidm['_p_userid']:  # we have a match
@@ -879,7 +879,7 @@ class POMSenderSet(object):
                 yield item
                 continue
             course_store(self)
-            if item['_sender_id']:
+            if item.get('_sender_id'):
                 if self.e_c_s[item['_sender_id']]['_user_id']:  # we have a user id
                     e_userid = self.e_c_s[item['_sender_id']]['_user_id']
                 else:  # _sender_id is not a user id
