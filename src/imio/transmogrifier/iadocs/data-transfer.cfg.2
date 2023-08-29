@@ -237,17 +237,18 @@ pipeline =
     p__treating_groups_insert
 ;    p__1_recipient_groups_set
 #    p__assigned_user ?
-;    continue
     p__1_sender_set
 ;    p__default_contact_set
-    p__1_category_id_insert
+;    p__1_category_id_insert
     p__mail_type_insert
     p__1_nature_insert
     p__send_modes_insert
     p__1_source_insert
-    p__1_meetingitem_link_insert
-    p__1_confidential_insert
-    p__1_remark_insert
+    breakpoint
+    continue
+;    p__1_meetingitem_link_insert
+;    p__1_confidential_insert
+;    p__1_remark_insert
     p__1_id_insert
     p__1_type_insert
     p__1_parent_insert
@@ -1680,7 +1681,7 @@ parts = ab
 [p__2_archives_mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename =
+filename = 09_Archivage_Courriers_S.csv
 fieldnames = _etype _eid mail_date _category_id internal_reference_no _F _G _source_id creation_date title _nature_id _L outgoing_date _N _O external_reference_no _Q
 bp_key = e_mail_o
 csv_key = e_mail_o_a
@@ -2445,7 +2446,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [breakpoint]
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
-condition = python:item.get('_eid', None) in (u'457', u'48400')
+condition = python:item.get('_eid', None) in (u'32310', u'37632')
 ;condition = python:True
 # condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
 
