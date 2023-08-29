@@ -65,6 +65,8 @@ pipeline =
 ;    dm__1_contacts_store
 ;    d__1_mail_read
 ;    d__1_S_only
+    d__2_service_read
+    d__2_service_insert
     d__om_sender_creation
 # ee  classification categories
     e__category_full_match_read
@@ -235,7 +237,7 @@ pipeline =
     p__treating_groups_insert
 ;    p__1_recipient_groups_set
 #    p__assigned_user ?
-    continue
+;    continue
     p__1_sender_set
 ;    p__default_contact_set
     p__1_category_id_insert
@@ -658,6 +660,18 @@ bp_key = e_mail_sender
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'd') and item.get('_bpk') == u'e_mail_sender'
 condition2 = python: item.get('_etype') == 'S'
+
+[d__2_service_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+filename = 11_Liste_Services.csv
+fieldnames = _eid _title
+bp_key = e_mail_sender
+
+[d__2_service_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'd') and item.get('_bpk') == u'e_mail_sender'
+key = string:_service
+value = python:item['_eid']
 
 [d__om_sender_creation]
 blueprint = imio.transmogrifier.iadocs.d_om_sender_creation
