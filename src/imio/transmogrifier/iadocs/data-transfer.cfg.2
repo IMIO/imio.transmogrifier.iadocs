@@ -223,6 +223,7 @@ pipeline =
     p__need
 #     lp__1_contacts_read
     p__2_archives_mail_read
+    p__2_archives_eid_update
     p__pickle_o_w
 ;    p__1_S_only  2
     p__batched
@@ -244,8 +245,6 @@ pipeline =
     p__1_nature_insert
     p__send_modes_insert
     p__1_source_insert
-    breakpoint
-    continue
 ;    p__1_meetingitem_link_insert
 ;    p__1_confidential_insert
 ;    p__1_remark_insert
@@ -253,6 +252,8 @@ pipeline =
     p__1_type_insert
     p__1_parent_insert
     p__1_path_insert
+    breakpoint
+    continue
 #    p__to_correct_only
 #    p__filter_item
 
@@ -1686,6 +1687,12 @@ fieldnames = _etype _eid mail_date _category_id internal_reference_no _F _G _sou
 bp_key = e_mail_o
 csv_key = e_mail_o_a
 
+[p__2_archives_eid_update]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and '_service_id' not in item
+key = string:_eid
+value = python:u'A{}'.format(item['_eid'])
+
 [p__pickle_o_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_o.pkl
@@ -2446,7 +2453,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [breakpoint]
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
-condition = python:item.get('_eid', None) in (u'32310', u'37632')
+condition = python:item.get('_eid', None) in (u'A32310', u'37632')
 ;condition = python:True
 # condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
 
