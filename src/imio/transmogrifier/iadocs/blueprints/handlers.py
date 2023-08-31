@@ -470,10 +470,11 @@ def get_contact_name(dic, dic2):
         sender.append(eml)
     if dic.get('_function'):
         sender.append(dic['_function'])
-    if dic2.get('_e_nb'):
-        p_sender.append(u'NE:{}'.format(dic2['_e_nb']))
-    if dic.get('_e_nb') and (not dic2.get('_e_nb') or dic.get('_e_nb') != dic2.get('_e_nb')):
-        sender.append(u'NE:{}'.format(dic['_e_nb']))
+    if dic2.get('enterprise_number'):
+        p_sender.append(u'NE:{}'.format(dic2['enterprise_number']))
+    if dic.get('enterprise_number') and (not dic2.get('enterprise_number') or
+                                         dic.get('enterprise_number') != dic2.get('enterprise_number')):
+        sender.append(u'NE:{}'.format(dic['enterprise_number']))
     # TODO add ctyp
     return sender, p_sender
 
@@ -509,8 +510,8 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     :param dest2: secondary list where to add less important infos
     :return: boolean indicating changes
     """
-    # e_contact = _user_id _ctyp lastname firstname _ptitle _street _pc _city _email1 _email2 _email3 _function _e_nb
-    # _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
+    # e_contact = _user_id _ctyp lastname firstname _ptitle _street _pc _city _email1 _email2 _email3 _function
+    # enterprise_number _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
     change = False
     sender = []
     p_sender = []
@@ -664,7 +665,8 @@ class I1ContactUpdate(object):
                         item['email'] = a_dic['_email']
                 else:
                     # _ln _type _user_id _ctyp lastname firstname _ptitle _street _pc _city _phone2 _phone2 _phone3
-                    # _email1 _email2 _email3 _function _e_nb _cell1 _cell2 _cell3 _web _org _name2 _parent_id _addr_id
+                    # _email1 _email2 _email3 _function enterprise_number _cell1 _cell2 _cell3 _web _org _name2
+                    # _parent_id _addr_id
                     if item.get('_street'):
                         item['street'] = clean_value(item['_street'], osep=', ')
                     if item.get('_pc'):
