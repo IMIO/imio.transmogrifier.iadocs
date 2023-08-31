@@ -20,7 +20,7 @@ generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise d
 default_creation_date = 20130911-1200
 default_tg = 3
 to_treat = 10
-permitted_sections = 0abdlp
+permitted_sections = 0abdlmp
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -206,18 +206,22 @@ pipeline =
 #     l__to_correct_only
 #     l__filter_item
 
-# mm  IM & IEM recipients
-    m__need
+# mm  IM & IEM recipients (or exp for client 2)
+;    m__need
 #     m__user_service_read
 #     m__user_service_store
     mt__pickle_i_r
-    m__1_mail_recipient_read
-    m__1_already_only
-    m__1_mail_recipient_check
+    m__2_archives_mail_sender_read
+    m__2_archives_eid_update
+;    m__already_only
+;    m__1_mail_recipient_check
 #    m__1_principal_only
 #     m__batched
     m__count
-    m__1_assigned_user
+;    m__1_assigned_user
+    m__2_archives_xml_contact_store
+    breakpoint
+    continue
 
 # pp  OM handling
     p__need
@@ -1640,14 +1644,20 @@ filename = 2_e_mail_i.pkl
 store_key = e_mail_i
 d_condition = python:False
 
-[m__1_mail_recipient_read]
+[m__2_archives_mail_sender_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = eCourriersDestinataires.csv
-fieldnames = _A _eid _mail_id _contact_id _action _due_date _trm_date _H _trm_user_id _message _response _L _trt_date _N _O _P _principal _comment _S _T _U _V _W
+filename = 10_Archivage_Infos_exp_dest.csv
+fieldnames = _mail_id _xml_a
 bp_key = e_mail_recip_i
 
-[m__1_already_only]
+[m__2_archives_eid_update]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i' and '_xml_a' in item
+key = string:_mail_id
+value = python:u'A{}'.format(item['_mail_id'])
+
+[m__already_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
 condition2 = python: item['_mail_id'] in storage['data']['e_mail_i']
@@ -1675,6 +1685,16 @@ condition = python: item.get('_bpk') == u'e_mail_recip_i'
 blueprint = imio.transmogrifier.iadocs.m_1_assigned_user
 condition = python: item.get('_bpk') == u'e_mail_recip_i'
 store_key = e_mail_i
+
+[m__2_archives_xml_contact_store]
+blueprint = imio.transmogrifier.iadocs.xml_contact_store
+bp_key = e_contact
+condition = python: item.get('_bpk') == u'e_mail_recip_i' and '_xml_a' in item
+source_key = _xml_a
+xml_contact_key = Expediteur
+xml_contact_cols = Organisme _organization Service _service Division _division Nom lastname Adresse _street Communication _other Email _email1
+xml_store_key_col = K2ID
+empty_store = 1
 
 # = = = = = = =  pp  = = = = = = = #
 
@@ -2477,7 +2497,8 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [breakpoint]
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
-condition = python:item.get('_eid', None) in (u'2654', u'25287')
+;condition = python:item.get('_eid', None) in (u'A56732', u'25287')
+condition = python:item.get('_mail_id', None) in (u'A56732', u'25287')
 ;condition = python:True
 # condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
 

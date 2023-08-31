@@ -265,4 +265,10 @@
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 
+  <utility
+    name="imio.transmogrifier.iadocs.xml_contact_store"
+    component=".handlers.XmlContactHandling"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
 </configure>

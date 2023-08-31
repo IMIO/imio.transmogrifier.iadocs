@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from bs4 import BeautifulSoup as Soup
 from collective.classification.tree.utils import create_category
 from collective.classification.tree.utils import get_parents
 from collective.contact.plonegroup.config import get_registry_organizations
@@ -1396,4 +1397,61 @@ class WorkflowHistoryUpdate(object):
                         wfh.append(status)
                     if change:
                         obj.workflow_history[wkf] = tuple(wfh)
+            yield item
+
+
+class XmlContactHandling(object):
+    """Handles xml contact column.
+
+    Parameters:
+        * bp_key = M, blueprint key used as main storage key
+        * condition = O, condition expression
+        * source_key = M, item key name with xml
+        * xml_contact_key = M, xml tag name containing contact info
+        * xml_contact_cols = M, list of pairs (xml_tag dic_col)
+        * xml_store_key_col = M, xml tag name containing the contact key that will be stored
+        * check_key_uniqueness = O, flag (0 or 1: default 1)
+        * empty_store = O, flag to know if the storage must be initially emptied (0 or 1: default 0)
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.bp_key = safe_unicode(options['bp_key'])
+        if not is_in_part(self, self.parts):
+            return
+        self.source_key = safe_unicode(options['source_key'])
+        self.xml_contact_key = safe_unicode(options['xml_contact_key'])
+        self.xml_ct_cols = safe_unicode(options['xml_contact_cols']).strip().split()
+        self.xml_ct_cols = [tup for tup in pool_tuples(self.xml_ct_cols, 2, 'xml_contact_cols option')]
+        self.xml_store_key_col = safe_unicode(options['xml_store_key_col'])
+        self.empty_store = bool(int(options.get('empty_store') or '0'))
+        self.cku = bool(int(options.get('check_key_uniqueness') or '1'))
+        if self.bp_key not in self.storage['data']:
+            self.storage['data'][self.bp_key] = {}
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            course_store(self)
+            if self.empty_store:
+                self.storage['data'][self.bp_key] = {}
+            xml = Soup(item[self.source_key], 'lxml-xml')
+            contacts_tags = xml.find_all(self.xml_contact_key)
+            for contact_tag in contacts_tags:
+                dic = {}
+                for c_tag, c_key in self.xml_ct_cols:
+                    dic[c_key] = contact_tag.find(c_tag).text
+                key = contact_tag.find(self.xml_store_key_col).text
+                if self.cku and key in self.storage['data'][self.bp_key]:
+                    log_error(item, u"Key '{}' already in '{}' data dict".format(key, self.bp_key))
+                self.storage['data'][self.bp_key][key] = dic
             yield item
