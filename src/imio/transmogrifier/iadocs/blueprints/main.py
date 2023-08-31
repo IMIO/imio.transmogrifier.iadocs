@@ -860,7 +860,7 @@ class StoreInData(object):
     """Store items in a dictionary.
 
     Parameters:
-        * bp_key = M, blueprint key representing csv
+        * bp_key = M, blueprint key used as main storage key
         * store_key = M, storing keys for item. If defined, the item is stored in storage[{bp_key}][{store_key}]
         * store_subkey = O, storing sub keys for item. If defined, the item is stored in
           storage[{bp_key}][{store_key}][{store_subkey}]

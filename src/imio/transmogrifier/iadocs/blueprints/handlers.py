@@ -175,6 +175,84 @@ class BMailtypeUpdate(object):
             self.storage['data']['p_mailtype'] = get_mailtypes(self.portal)
 
 
+class ContactAsTextUpdate(object):
+    """Handles im sender or om recipient.
+
+    Parameters:
+        * bp_key = M, blueprint key used on new item if not yield
+        * condition = O, condition expression
+        * mail_store_key = M, storage main key to find mail path
+        * contact_store_key = M, storage main key to find contact
+        * mail_id_key = M, mail id item key name
+        * contact_id_key = M, contact id item key name
+        * contact_label = M, contact label
+        * contact_free_key = M, contact free item key name
+        * yield_original = M, flag to know if a yield must be done (0 or 1) (mail is item or not)
+        * pass_real_contact = M, flag to pass a real contact (if contact_store contains created contacts) (0 or 1)
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.bp_key = safe_unicode(options['bp_key'])
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.mail_id_key = safe_unicode(options['mail_id_key'])
+        self.contact_id_key = safe_unicode(options['contact_id_key'])
+        self.contact_label = safe_unicode(options['contact_label'])
+        self.contact_free_key = safe_unicode(options['contact_free_key'])
+        self.yield_original = bool(int(options['yield_original']))
+        self.pass_real_contact = bool(int(options['pass_real_contact']))
+        self.mail_paths = self.storage['data'].get(safe_unicode(options['mail_store_key']), {})
+        self.e_c = self.storage['data'][options['contact_store_key']]
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            course_store(self)
+            if self.yield_original:
+                desc = 'description' in item and item.get('description').split('\r\n') or []
+                d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
+            else:
+                mail = get_obj_from_path(self.portal, path=self.mail_paths[item[self.mail_id_key]]['path'])
+                if mail is None:
+                    o_logger.warning("mail %s: path '%s' not found", item[self.mail_id_key],
+                                     self.mail_paths[item[self.mail_id_key]]['path'])
+                    continue
+                desc = (mail.description or u'').split('\r\n')
+                d_t = (mail.data_transfer or u'').split('\r\n')
+            # we pass a contact considered as already created as object if found in contact_store
+            if self.pass_real_contact and item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
+                self.contact_id_key = ''
+            if get_contact_info(self, item, self.contact_label, self.contact_id_key, self.contact_free_key, desc, d_t):
+                additional = u''
+                # for customer 1 om recipients
+                if '_action' in item:
+                    additional = u', '.join(all_of_dict_values(item, [u'_action', u'_message', u'_response'],
+                                                               labels=[u'', u'message', u'réponse']))
+                if additional:
+                    additional = u'{}: {}'.format(u'COMPLÉMENT {}'.format(self.contact_label), additional)
+                    if additional not in d_t:
+                        d_t.append(additional)
+                if self.yield_original:
+                    item['description'] = u'\r\n'.join(desc)
+                    item['data_transfer'] = u'\r\n'.join(d_t)
+                    yield item
+                else:
+                    item2 = {'_eid': item['_eid'], '_path': self.mail_paths[item[self.mail_id_key]]['path'],
+                             '_type': mail.portal_type, '_bpk': self.bp_key, '_act': 'U',
+                             'description': u'\r\n'.join(desc), 'data_transfer': u'\r\n'.join(d_t)}
+                    yield item2
+
+
 class ContactSet(object):
     """Set default contact.
 
@@ -457,7 +535,16 @@ def get_contact_name(dic, dic2):
         p_name = dic2['_name2']
     if p_name:
         p_sender.append(p_name)
-    name = u' '.join(all_of_dict_values(dic, ['lastname', 'firstname']))
+    name = u''
+    # customer 2
+    # xml_contact_cols = Organisme _organization Service _service Division _division Nom lastname Adresse _street
+    # Communication _none Email _email1
+    if '_division' in dic:
+        org = all_of_dict_values(dic, ['_organization', '_division', '_service'], [u'', u'Division', u'Service'], ': ')
+        org.extend(all_of_dict_values(dic, ['lastname', 'firstname']))
+        name = u', '.join(org)
+    else:
+        name = u' '.join(all_of_dict_values(dic, ['lastname', 'firstname']))
     if not name and dic.get('_name2'):
         name = dic['_name2']
     if name and (not p_name or name != p_name):
@@ -516,11 +603,11 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     change = False
     sender = []
     p_sender = []
-    m_sender = clean_value(item[free_fld], patterns=[(r'^["\']+$', u'')])
+    m_sender = free_fld and clean_value(item[free_fld], patterns=[(r'^["\']+$', u'')]) or u''
     if c_id_fld and item[c_id_fld]:
         infos = section.storage['data']['e_contact'][item[c_id_fld]]
         parent_infos = {}
-        if infos['_parent_id']:
+        if infos.get('_parent_id'):
             parent_infos = section.storage['data']['e_contact'].get(infos['_parent_id'], {})
         sender, p_sender = get_contact_name(infos, parent_infos)
         if p_sender:
@@ -547,6 +634,12 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
         if phones:
             change = True
             dest2.append(u'TÉL {}: {}.'.format(label, u', '.join(phones)))
+        # additional customer 2
+        if infos.get('_other'):
+            additional = u'{}: {}'.format(u'COMPLÉMENT {}'.format(label), infos['_other'])
+            if additional not in dest2:
+                dest2.append(additional)
+
     if m_sender:
         lines = m_sender.split('\n')
         change = True
@@ -1410,6 +1503,7 @@ class XmlContactHandling(object):
         * xml_contact_key = M, xml tag name containing contact info
         * xml_contact_cols = M, list of pairs (xml_tag dic_col)
         * xml_store_key_col = M, xml tag name containing the contact key that will be stored
+        * contact_id_key = M, item contact key name
         * check_key_uniqueness = O, flag (0 or 1: default 1)
         * empty_store = O, flag to know if the storage must be initially emptied (0 or 1: default 0)
     """
@@ -1432,6 +1526,7 @@ class XmlContactHandling(object):
         self.xml_ct_cols = [tup for tup in pool_tuples(self.xml_ct_cols, 2, 'xml_contact_cols option')]
         self.xml_store_key_col = safe_unicode(options['xml_store_key_col'])
         self.empty_store = bool(int(options.get('empty_store') or '0'))
+        self.contact_id_key = safe_unicode(options['contact_id_key'])
         self.cku = bool(int(options.get('check_key_uniqueness') or '1'))
         if self.bp_key not in self.storage['data']:
             self.storage['data'][self.bp_key] = {}
@@ -1451,6 +1546,8 @@ class XmlContactHandling(object):
                 for c_tag, c_key in self.xml_ct_cols:
                     dic[c_key] = contact_tag.find(c_tag).text
                 key = contact_tag.find(self.xml_store_key_col).text
+                if self.contact_id_key:
+                    item[self.contact_id_key] = key
                 if self.cku and key in self.storage['data'][self.bp_key]:
                     log_error(item, u"Key '{}' already in '{}' data dict".format(key, self.bp_key))
                 self.storage['data'][self.bp_key][key] = dic

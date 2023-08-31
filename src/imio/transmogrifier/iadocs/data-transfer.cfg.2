@@ -212,16 +212,16 @@ pipeline =
 #     m__user_service_store
     mt__pickle_i_r
     m__2_archives_mail_sender_read
-    m__2_archives_eid_update
-;    m__already_only
+    m__2_archives_mail_id_update
+    m__2_eid_update
+    m__already_only
 ;    m__1_mail_recipient_check
 #    m__1_principal_only
 #     m__batched
     m__count
 ;    m__1_assigned_user
     m__2_archives_xml_contact_store
-    breakpoint
-    continue
+    m__2_sender_as_text
 
 # pp  OM handling
     p__need
@@ -1651,11 +1651,17 @@ filename = 10_Archivage_Infos_exp_dest.csv
 fieldnames = _mail_id _xml_a
 bp_key = e_mail_recip_i
 
-[m__2_archives_eid_update]
+[m__2_archives_mail_id_update]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i' and '_xml_a' in item
 key = string:_mail_id
 value = python:u'A{}'.format(item['_mail_id'])
+
+[m__2_eid_update]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i' and '_eid' not in item
+key = string:_eid
+value = python:item['_mail_id']
 
 [m__already_only]
 blueprint = imio.transmogrifier.iadocs.condition
@@ -1694,7 +1700,21 @@ source_key = _xml_a
 xml_contact_key = Expediteur
 xml_contact_cols = Organisme _organization Service _service Division _division Nom lastname Adresse _street Communication _other Email _email1
 xml_store_key_col = K2ID
+contact_id_key = _sender_id
 empty_store = 1
+
+[m__2_sender_as_text]
+blueprint = imio.transmogrifier.iadocs.contact_as_text_update
+bp_key = e_sender_text
+condition = python: item.get('_bpk') == u'e_mail_recip_i'
+mail_store_key = e_mail_i
+contact_store_key = e_contact
+mail_id_key = _mail_id
+contact_id_key = _sender_id
+contact_label = EXPÉDITEUR
+contact_free_key =
+yield_original = 0
+pass_real_contact = 0
 
 # = = = = = = =  pp  = = = = = = = #
 
@@ -2497,8 +2517,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [breakpoint]
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
-;condition = python:item.get('_eid', None) in (u'A56732', u'25287')
-condition = python:item.get('_mail_id', None) in (u'A56732', u'25287')
+condition = python:item.get('_eid', None) in (u'A56732', u'25287')
 ;condition = python:True
 # condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
 
