@@ -258,8 +258,6 @@ pipeline =
     p__1_type_insert
     p__1_parent_insert
     p__1_path_insert
-    breakpoint
-    continue
 #    p__to_correct_only
 #    p__filter_item
 
@@ -1443,7 +1441,7 @@ hyphen_newline =
 invalids = _category_id ?
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans =
-dates = reception_date "%Y-%m-%d %H:%M:%S" 0 original_mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
+dates = reception_date "%Y-%m-%d %H:%M:%S" 0 original_mail_date "%Y-%m-%d %H:%M:%S" 0 creation_date "%Y-%m-%d %H:%M:%S" 0
 
 [l__2_mail_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -1454,7 +1452,7 @@ hyphen_newline =
 invalids = _category_id ?
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans =
-dates = reception_date "%Y-%m-%d %H:%M:%S" 0 original_mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
+dates = reception_date "%Y-%m-%d %H:%M:%S" 0 original_mail_date "%Y-%m-%d %H:%M:%S" 0 creation_date "%Y-%m-%d %H:%M:%S" 0
 
 [l__creation_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1477,9 +1475,9 @@ value = python:item['creation_date']
 
 [l__original_mail_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['original_mail_date'] is None
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:original_mail_date
-value = python:item['creation_date'].date()
+value = python: item['original_mail_date'] and item['original_mail_date'].date() or item['creation_date'].date()
 
 [l__1_internal_number_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
