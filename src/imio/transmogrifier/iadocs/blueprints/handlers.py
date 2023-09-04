@@ -218,11 +218,13 @@ class ContactAsTextUpdate(object):
                 yield item
                 continue
             course_store(self)
+            # path = 'incoming-mail/202334/010452000045293'
             if self.yield_original:
                 desc = 'description' in item and item.get('description').split('\r\n') or []
                 d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
             else:
                 mail = get_obj_from_path(self.portal, path=self.mail_paths[item[self.mail_id_key]]['path'])
+                # mail = get_obj_from_path(self.portal, path=path)
                 if mail is None:
                     o_logger.warning("mail %s: path '%s' not found", item[self.mail_id_key],
                                      self.mail_paths[item[self.mail_id_key]]['path'])
@@ -248,6 +250,7 @@ class ContactAsTextUpdate(object):
                     yield item
                 else:
                     item2 = {'_eid': item['_eid'], '_path': self.mail_paths[item[self.mail_id_key]]['path'],
+                    # item2 = {'_eid': item['_eid'], '_path': path,
                              '_type': mail.portal_type, '_bpk': self.bp_key, '_act': 'U',
                              'description': u'\r\n'.join(desc), 'data_transfer': u'\r\n'.join(d_t)}
                     yield item2
@@ -530,17 +533,24 @@ class ECategoryUpdate(object):
 def get_contact_name(dic, dic2):
     sender = []
     p_sender = []
-    p_name = u' '.join(all_of_dict_values(dic2, ['lastname', 'firstname']))
+    # parent
+    # customer 2
+    if '_division' in dic2:
+        org = all_of_dict_values(dic2, ['_organization', '_division', '_service', '_level3', '_level4', '_level5'],
+                                 [u'', u'Division', u'Service', u'', u'', u''], ': ')
+        org.extend(all_of_dict_values(dic2, ['lastname', 'firstname']))
+        p_name = u', '.join(org)
+    else:
+        p_name = u' '.join(all_of_dict_values(dic2, ['lastname', 'firstname']))
     if not p_name and dic2.get('_name2'):
         p_name = dic2['_name2']
     if p_name:
         p_sender.append(p_name)
     name = u''
-    # customer 2
-    # xml_contact_cols = Organisme _organization Service _service Division _division Nom lastname Adresse _street
-    # Communication _none Email _email1
+    # main contact
     if '_division' in dic:
-        org = all_of_dict_values(dic, ['_organization', '_division', '_service'], [u'', u'Division', u'Service'], ': ')
+        org = all_of_dict_values(dic, ['_organization', '_division', '_service', '_level3', '_level4', '_level5'],
+                                 [u'', u'Division', u'Service', u'', u'', u''], ': ')
         org.extend(all_of_dict_values(dic, ['lastname', 'firstname']))
         name = u', '.join(org)
     else:
@@ -604,7 +614,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     sender = []
     p_sender = []
     m_sender = free_fld and clean_value(item[free_fld], patterns=[(r'^["\']+$', u'')]) or u''
-    if c_id_fld and item[c_id_fld]:
+    if c_id_fld and item.get(c_id_fld):
         infos = section.storage['data']['e_contact'][item[c_id_fld]]
         parent_infos = {}
         if infos.get('_parent_id'):
@@ -1501,8 +1511,10 @@ class XmlContactHandling(object):
         * condition = O, condition expression
         * source_key = M, item key name with xml
         * xml_contact_key = M, xml tag name containing contact info
-        * xml_contact_cols = M, list of pairs (xml_tag dic_col)
-        * xml_store_key_col = M, xml tag name containing the contact key that will be stored
+        * xml_contact_cols = M, list of sequances separated by "|". Each sequence contains a first parameter and
+        a list of pairs (xml_tag dic_col).
+        The first parameter contains a triplet separated by ":"; level1 tag name (optional), id tag name,
+        item key name (optional)
         * contact_id_key = M, item contact key name
         * check_key_uniqueness = O, flag (0 or 1: default 1)
         * empty_store = O, flag to know if the storage must be initially emptied (0 or 1: default 0)
@@ -1522,9 +1534,16 @@ class XmlContactHandling(object):
             return
         self.source_key = safe_unicode(options['source_key'])
         self.xml_contact_key = safe_unicode(options['xml_contact_key'])
-        self.xml_ct_cols = safe_unicode(options['xml_contact_cols']).strip().split()
-        self.xml_ct_cols = [tup for tup in pool_tuples(self.xml_ct_cols, 2, 'xml_contact_cols option')]
-        self.xml_store_key_col = safe_unicode(options['xml_store_key_col'])
+        # separate first levels
+        self.xml_ct_cols = safe_unicode(options['xml_contact_cols']).strip().split(u'|')
+        res = {}
+        for c_str in self.xml_ct_cols:
+            values = c_str.strip().split()
+            if u':' not in values[0]:
+                raise(u"The 'xml_contact_cols' option of '{}' section is not well formatted: ':' missing in fist "
+                      u"parameter '{}'".format(name, self.xml_ct_cols))
+            res[values[0]] = [tup for tup in pool_tuples(values[1:], 2, 'xml_contact_cols option')]
+        self.xml_ct_cols = res
         self.empty_store = bool(int(options.get('empty_store') or '0'))
         self.contact_id_key = safe_unicode(options['contact_id_key'])
         self.cku = bool(int(options.get('check_key_uniqueness') or '1'))
@@ -1537,18 +1556,43 @@ class XmlContactHandling(object):
                 yield item
                 continue
             course_store(self)
-            if self.empty_store:
-                self.storage['data'][self.bp_key] = {}
             xml = Soup(item[self.source_key], 'lxml-xml')
             contacts_tags = xml.find_all(self.xml_contact_key)
+            if not contacts_tags:
+                yield item
+                continue
             for contact_tag in contacts_tags:
-                dic = {}
-                for c_tag, c_key in self.xml_ct_cols:
-                    dic[c_key] = contact_tag.find(c_tag).text
-                key = contact_tag.find(self.xml_store_key_col).text
-                if self.contact_id_key:
-                    item[self.contact_id_key] = key
-                if self.cku and key in self.storage['data'][self.bp_key]:
-                    log_error(item, u"Key '{}' already in '{}' data dict".format(key, self.bp_key))
-                self.storage['data'][self.bp_key][key] = dic
-            yield item
+                if self.empty_store:
+                    self.storage['data'][self.bp_key] = {}
+                current_tag = contact_tag
+                links = {}
+                for key in self.xml_ct_cols:
+                    level1, skey, link = key.split(u':')
+                    if level1:
+                        current_tag = contact_tag.find(level1)
+                    dic = {}
+                    has_val = False
+                    for c_tag, c_key in self.xml_ct_cols[key]:
+                        found = current_tag.find(c_tag)
+                        if found and found.text.strip():
+                            dic[c_key] = found.text.strip()
+                            has_val = True
+                        else:
+                            dic[c_key] = u''
+                    if has_val:  # we consider only if walue in
+                        skey_val = current_tag.find(skey).text
+                        # we save link if defined
+                        if link:
+                            links[link] = skey_val
+                        else:  # we store link on main contact
+                            dic.update(links)
+                        if self.cku and skey_val in self.storage['data'][self.bp_key]:
+                            if skey_val == u'0':  # customer 2
+                                skey_val = u'1'
+                            else:
+                                log_error(item, u"Key '{}' already in '{}' data dict".format(skey_val, self.bp_key))
+                        # we store id key on item
+                        if self.contact_id_key:
+                            item[self.contact_id_key] = skey_val
+                        self.storage['data'][self.bp_key][skey_val] = dic
+                yield item

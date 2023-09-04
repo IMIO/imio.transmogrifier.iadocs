@@ -213,6 +213,7 @@ pipeline =
     mt__pickle_i_r
     m__2_archives_mail_sender_read
     m__2_archives_mail_id_update
+    m__2_mail_sender_read
     m__2_eid_update
     m__already_only
 ;    m__1_mail_recipient_check
@@ -221,6 +222,7 @@ pipeline =
     m__count
 ;    m__1_assigned_user
     m__2_archives_xml_contact_store
+    m__2_xml_contact_store
     m__2_sender_as_text
 
 # pp  OM handling
@@ -1390,7 +1392,6 @@ raise_on_error = ${config:raise_on_error}
 [l__2_archives_mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-;filename = eCourriers_E_test.csv
 filename = 08_Archivage_Courriers_E.csv
 fieldnames = _etype _eid original_mail_date _category_id internal_reference_no _F _G _source_id creation_date title _K _L reception_date _N _O external_reference_no _Q
 bp_key = e_mail_i
@@ -1656,6 +1657,13 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:_mail_id
 value = python:u'A{}'.format(item['_mail_id'])
 
+[m__2_mail_sender_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+#b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
+filename = 05_Infos_exp_dest.csv
+fieldnames = _mail_id _xml
+bp_key = e_mail_recip_i
+
 [m__2_eid_update]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i' and '_eid' not in item
@@ -1697,8 +1705,18 @@ bp_key = e_contact
 condition = python: item.get('_bpk') == u'e_mail_recip_i' and '_xml_a' in item
 source_key = _xml_a
 xml_contact_key = Expediteur
-xml_contact_cols = Organisme _organization Service _service Division _division Nom lastname Adresse _street Communication _other Email _email1
-xml_store_key_col = K2ID
+xml_contact_cols = :K2ID: Organisme _organization Service _service Division _division Nom lastname Adresse _street Communication _other Email _email1
+contact_id_key = _sender_id
+empty_store = 1
+
+[m__2_xml_contact_store]
+blueprint = imio.transmogrifier.iadocs.xml_contact_store
+bp_key = e_contact
+condition = python: item.get('_bpk') == u'e_mail_recip_i' and '_xml' in item
+source_key = _xml
+xml_contact_key = Sender
+xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _division Level2 _service Level3 _level3 Level4 _level4 Level4 _level5 Address _street ZipCode _pc City _city PhoneNumber _phone1 FaxNumber _phone2 Email _email1 |
+                   Contact:PersId: FirstName firstname LastName lastname PhoneNumber _phone1 FaxNumber _phone2 Email _email1 Gsm _cell1
 contact_id_key = _sender_id
 empty_store = 1
 
@@ -2516,7 +2534,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [breakpoint]
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
-condition = python:item.get('_eid', None) in (u'A56732', u'25287')
+condition = python:item.get('_eidd', None) in ('49309', '14654', '29905', 'A58646')
 ;condition = python:True
 # condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
 
