@@ -208,6 +208,7 @@ pipeline =
 
 # mm  IM & IEM recipients (or exp for client 2)
 ;    m__need
+    m__pickle_imail_sender_w
 #     m__user_service_read
 #     m__user_service_store
     mt__pickle_i_r
@@ -218,12 +219,13 @@ pipeline =
     m__already_only
 ;    m__1_mail_recipient_check
 #    m__1_principal_only
-#     m__batched
+    m__batched
     m__count
 ;    m__1_assigned_user
     m__2_archives_xml_contact_store
     m__2_xml_contact_store
     m__2_sender_as_text
+    m__2_batch_store
 
 # pp  OM handling
     p__need
@@ -1619,6 +1621,12 @@ kept_keys = modification_date original_mail_date reception_date
 blueprint = imio.transmogrifier.iadocs.need_other
 parts = ac
 
+[m__pickle_imail_sender_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_mail_i_sender.pkl
+store_key = e_sender_text
+d_condition = python:storage['commit'] is True
+
 [m__user_service_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: modules['os'].path.exists(filename)
@@ -1689,6 +1697,11 @@ blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
 condition2 = python: item['_principal']
 
+[m__batched]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_sender_text'] and storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) < storage['batch_nb'])
+
 [m__count]
 blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
@@ -1732,6 +1745,15 @@ contact_label = EXPÉDITEUR
 contact_free_key =
 yield_original = 0
 pass_real_contact = 0
+
+[m__2_batch_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_sender_text'
+bp_key = e_sender_text
+store_key = _eid
+store_subkey =
+fieldnames = _path
+yield = 1
 
 # = = = = = = =  pp  = = = = = = = #
 
