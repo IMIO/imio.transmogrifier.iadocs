@@ -1775,7 +1775,7 @@ invalids = external_reference_no -
 clean_value =
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans =
-dates = outgoing_date "%Y-%m-%d %H:%M:%S" 0 mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
+dates = outgoing_date "%Y-%m-%d %H:%M:%S" 0 mail_date "%Y-%m-%d %H:%M:%S" 0 creation_date "%Y-%m-%d %H:%M:%S" 0
 
 [p__2_mail_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -1786,7 +1786,7 @@ invalids = external_reference_no -
 clean_value =
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans =
-dates = outgoing_date "%Y-%m-%d %H:%M:%S" 0 mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
+dates = outgoing_date "%Y-%m-%d %H:%M:%S" 0 mail_date "%Y-%m-%d %H:%M:%S" 0 creation_date "%Y-%m-%d %H:%M:%S" 0
 
 [p__creation_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1808,9 +1808,9 @@ value = python:item['creation_date']
 
 [p__mail_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item['mail_date'] is None
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o'
 key = string:mail_date
-value = python:item['creation_date'].date()
+value = python:item['mail_date'] and item['mail_date'].date() or item['creation_date'].date()
 
 [p__1_internal_number_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
