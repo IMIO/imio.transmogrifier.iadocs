@@ -249,8 +249,8 @@ class ContactAsTextUpdate(object):
                     item['data_transfer'] = u'\r\n'.join(d_t)
                     yield item
                 else:
-                    item2 = {'_eid': item['_eid'], '_path': self.mail_paths[item[self.mail_id_key]]['path'],
                     # item2 = {'_eid': item['_eid'], '_path': path,
+                    item2 = {'_eid': item['_eid'], '_path': self.mail_paths[item[self.mail_id_key]]['path'],
                              '_type': mail.portal_type, '_bpk': self.bp_key, '_act': 'U',
                              'description': u'\r\n'.join(desc), 'data_transfer': u'\r\n'.join(d_t)}
                     yield item2
@@ -1512,9 +1512,9 @@ class XmlContactHandling(object):
         * source_key = M, item key name with xml
         * xml_contact_key = M, xml tag name containing contact info
         * xml_contact_cols = M, list of sequances separated by "|". Each sequence contains a first parameter and
-        a list of pairs (xml_tag dic_col).
-        The first parameter contains a triplet separated by ":"; level1 tag name (optional), id tag name,
-        item key name (optional)
+          a list of pairs (xml_tag dic_col).
+          The first parameter contains a triplet separated by ":"; level1 tag name (optional), id tag name,
+          item key name (optional)
         * contact_id_key = M, item contact key name
         * check_key_uniqueness = O, flag (0 or 1: default 1)
         * empty_store = O, flag to know if the storage must be initially emptied (0 or 1: default 0)
