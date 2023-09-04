@@ -1648,6 +1648,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 filename = 10_Archivage_Infos_exp_dest.csv
 fieldnames = _mail_id _xml_a
 bp_key = e_mail_recip_i
+csv_key = e_mail_recip_i_a
 
 [m__2_archives_mail_id_update]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1802,7 +1803,7 @@ value = python:item['creation_date']
 
 [p__outgoing_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item.get('outgoing_date')
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and not item.get('outgoing_date')
 key = string:outgoing_date
 value = python:item['creation_date']
 
