@@ -186,6 +186,7 @@ class ContactAsTextUpdate(object):
         * mail_id_key = M, mail id item key name
         * contact_id_key = M, contact id item key name
         * contact_label = M, contact label
+        * related_label = M, related label
         * contact_free_key = M, contact free item key name
         * yield_original = M, flag to know if a yield must be done (0 or 1) (mail is item or not)
         * pass_real_contact = M, flag to pass a real contact (if contact_store contains created contacts) (0 or 1)
@@ -206,6 +207,7 @@ class ContactAsTextUpdate(object):
         self.mail_id_key = safe_unicode(options['mail_id_key'])
         self.contact_id_key = safe_unicode(options['contact_id_key'])
         self.contact_label = safe_unicode(options['contact_label'])
+        self.related_label = safe_unicode(options['related_label'])
         self.contact_free_key = safe_unicode(options['contact_free_key'])
         self.yield_original = bool(int(options['yield_original']))
         self.pass_real_contact = bool(int(options['pass_real_contact']))
@@ -234,7 +236,8 @@ class ContactAsTextUpdate(object):
             # we pass a contact considered as already created as object if found in contact_store
             if self.pass_real_contact and item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
                 self.contact_id_key = ''
-            if get_contact_info(self, item, self.contact_label, self.contact_id_key, self.contact_free_key, desc, d_t):
+            if get_contact_info(self, item, self.contact_label, self.contact_id_key, self.contact_free_key, desc, d_t,
+                                related_label=self.related_label):
                 additional = u''
                 # for customer 1 om recipients
                 if '_action' in item:
@@ -596,7 +599,7 @@ def get_contact_phone(dic1, dic2):
     return phones
 
 
-def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
+def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, related_label=u'PARENT'):
     """Get contact infos
 
     :param section: section object
@@ -606,6 +609,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
     :param free_fld: field name containing free contact text
     :param dest1: main list where to add main infos
     :param dest2: secondary list where to add less important infos
+    :param related_label: related label (default 'PARENT')
     :return: boolean indicating changes
     """
     # e_contact = _user_id _ctyp lastname firstname _ptitle _street _pc _city _email1 _email2 _email3 _function
@@ -622,8 +626,8 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
         sender, p_sender = get_contact_name(infos, parent_infos)
         if p_sender:
             change = True
-            dest1.append(u'{} PARENT: {}.'.format(label, u', '.join(p_sender)))
-            dest2.append(u'{} PARENT: {}.'.format(label, u', '.join(p_sender)))
+            dest1.append(u'{} {}: {}.'.format(label, related_label, u', '.join(p_sender)))
+            dest2.append(u'{} {}: {}.'.format(label, related_label, u', '.join(p_sender)))
         if sender:
             change = True
             dest1.append(u'{}: {}.'.format(label, u', '.join(sender)))
@@ -636,7 +640,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2):
             dest2.append(u'ADRESSE {}: {}.'.format(label, u' '.join(address)))
         elif p_address:  # we add just one address
             change = True
-            dest2.append(u'ADRESSE {} PARENT: {}.'.format(label, u' '.join(p_address)))
+            dest2.append(u'ADRESSE {} {}: {}.'.format(label, related_label, u' '.join(p_address)))
         else:
             pass  # include _addr_id ? no!
         # phones
