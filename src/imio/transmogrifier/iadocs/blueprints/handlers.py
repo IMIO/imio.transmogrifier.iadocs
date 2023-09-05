@@ -186,7 +186,7 @@ class ContactAsTextUpdate(object):
         * mail_id_key = M, mail id item key name
         * contact_id_key = M, contact id item key name
         * contact_label = M, contact label
-        * related_label = M, related label
+        * related_label = O, related label
         * contact_free_key = M, contact free item key name
         * yield_original = M, flag to know if a yield must be done (0 or 1) (mail is item or not)
         * pass_real_contact = M, flag to pass a real contact (if contact_store contains created contacts) (0 or 1)
@@ -207,12 +207,15 @@ class ContactAsTextUpdate(object):
         self.mail_id_key = safe_unicode(options['mail_id_key'])
         self.contact_id_key = safe_unicode(options['contact_id_key'])
         self.contact_label = safe_unicode(options['contact_label'])
-        self.related_label = safe_unicode(options['related_label'])
+        self.related_label = safe_unicode(options.get('related_label', ''))
+        if self.related_label:
+            self.related_label = u' {}'.format(self.related_label)
         self.contact_free_key = safe_unicode(options['contact_free_key'])
         self.yield_original = bool(int(options['yield_original']))
         self.pass_real_contact = bool(int(options['pass_real_contact']))
         self.mail_paths = self.storage['data'].get(safe_unicode(options['mail_store_key']), {})
         self.e_c = self.storage['data'][options['contact_store_key']]
+        self.batch_store = self.storage['data'].setdefault(self.bp_key, {})
 
     def __iter__(self):
         for item in self.previous:
@@ -225,6 +228,7 @@ class ContactAsTextUpdate(object):
                 desc = 'description' in item and item.get('description').split('\r\n') or []
                 d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
             else:
+                self.batch_store[item['_eid']] = 0
                 mail = get_obj_from_path(self.portal, path=self.mail_paths[item[self.mail_id_key]]['path'])
                 # mail = get_obj_from_path(self.portal, path=path)
                 if mail is None:
@@ -599,7 +603,7 @@ def get_contact_phone(dic1, dic2):
     return phones
 
 
-def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, related_label=u'PARENT'):
+def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, related_label=u' PARENT'):
     """Get contact infos
 
     :param section: section object
@@ -609,7 +613,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
     :param free_fld: field name containing free contact text
     :param dest1: main list where to add main infos
     :param dest2: secondary list where to add less important infos
-    :param related_label: related label (default 'PARENT')
+    :param related_label: related label (default ' PARENT')
     :return: boolean indicating changes
     """
     # e_contact = _user_id _ctyp lastname firstname _ptitle _street _pc _city _email1 _email2 _email3 _function
@@ -626,8 +630,8 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
         sender, p_sender = get_contact_name(infos, parent_infos)
         if p_sender:
             change = True
-            dest1.append(u'{} {}: {}.'.format(label, related_label, u', '.join(p_sender)))
-            dest2.append(u'{} {}: {}.'.format(label, related_label, u', '.join(p_sender)))
+            dest1.append(u'{}{}: {}.'.format(label, related_label, u', '.join(p_sender)))
+            dest2.append(u'{}{}: {}.'.format(label, related_label, u', '.join(p_sender)))
         if sender:
             change = True
             dest1.append(u'{}: {}.'.format(label, u', '.join(sender)))
@@ -640,7 +644,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
             dest2.append(u'ADRESSE {}: {}.'.format(label, u' '.join(address)))
         elif p_address:  # we add just one address
             change = True
-            dest2.append(u'ADRESSE {} {}: {}.'.format(label, related_label, u' '.join(p_address)))
+            dest2.append(u'ADRESSE {}{}: {}.'.format(label, related_label, u' '.join(p_address)))
         else:
             pass  # include _addr_id ? no!
         # phones
