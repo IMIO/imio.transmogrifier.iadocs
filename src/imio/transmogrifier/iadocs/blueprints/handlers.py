@@ -479,6 +479,20 @@ class ECategoryUpdate(object):
             raise 'Code is only handling decimal import'
         self.p_category = self.storage['data']['p_category']
 
+    def correct_id(self, obj, oid):
+        """ Modify an id already existing in obj.
+
+        :param obj: plone obj or dict
+        :param oid: id to check
+        :return: unique id
+        """
+        original = oid
+        i = 1
+        while oid in obj:
+            oid = u'{}-{:d}'.format(original, i)
+            i += 1
+        return oid
+
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.b_cond and self.condition(item):
@@ -520,20 +534,26 @@ class ECategoryUpdate(object):
                             item['_act'] = 'N'
                         else:
                             parent = self.p_category[part]['obj']
-                    if parts[-1] not in self.p_category:
-                        node = create_category(parent, {'identifier': parts[-1], 'title': self.replace_slash and
-                                               item['_etitle'].replace('/', '-') or item['_etitle'],
-                                               'enabled': item['_eactive']}, event=True)
-                        self.p_category[node.identifier] = {'title': node.title, 'uid': node.UID(),
-                                                            'enabled': node.enabled, 'obj': node}
-                        item['_pcode'], item['_ptitle'] = node.identifier, node.title
-                        item['_puid'], item['_pactive'] = node.UID(), node.enabled
-                        item['_act'] = 'N'
+                    # we check if code has already been created (duplicated code)
+                    code = parts[-1]
+                    if code in self.p_category:
+                        log_error(item, u"Same code '{}' with title '{}' previously created with title '{}'".format(
+                            code, self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle'],
+                            self.p_category[code]['title']))
+                        code = self.correct_id(self.p_category, code)
+                    node = create_category(parent, {'identifier': code, 'title': self.replace_slash and
+                                           item['_etitle'].replace('/', '-') or item['_etitle'],
+                                           'enabled': item['_eactive']}, event=True)
+                    self.p_category[node.identifier] = {'title': node.title, 'uid': node.UID(),
+                                                        'enabled': node.enabled, 'obj': node}
+                    item['_pcode'], item['_ptitle'] = node.identifier, node.title
+                    item['_puid'], item['_pactive'] = node.UID(), node.enabled
+                    item['_act'] = 'N'
                 item['_type'] = 'ClassificationCategory'
                 item['title'] = item.get('_ptitle', '')
-                o_logger.info(short_log(item))
-                # if not self.storage['commit']:  # do not remember why to do that !
-                #     continue
+                if '_act' in item:
+                    o_logger.info(short_log(item))
+                    continue
             yield item
 
 
@@ -944,6 +964,7 @@ class M1AssignedUserHandling(object):
             r_name = u' '.join(all_of_dict_values(self.user_match[e_userid], ['_nom', '_prenom']))
             r_messages = u', '.join(all_of_dict_values(item, [u'_action', u'_message', u'_response'],
                                                        labels=[u'', u'message', u'réponse']))
+            # TODO info destinataire principal ?
             r_infos = u"DESTINATAIRE: {}, {}".format(r_name, r_messages and u', {}'.format(r_messages) or u'')
             if r_infos not in d_t:
                 d_t.append(r_infos)
