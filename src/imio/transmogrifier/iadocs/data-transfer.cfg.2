@@ -812,7 +812,7 @@ fieldnames = _etitle _eactive
 [e__category_used_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'e') and item.get('_bpk') == u'e_category'
-condition2 = python: item.get('_eid') in storage['data'].get('e_used_category', [])
+condition2 = python: item['_ecode'] and item.get('_eid') in storage['data'].get('e_used_category', [])
 
 [e__category_not_in_plone]
 blueprint = imio.transmogrifier.iadocs.condition
