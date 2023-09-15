@@ -555,9 +555,7 @@ class ECategoryUpdate(object):
                     item['_act'] = 'N'
                 item['_type'] = 'ClassificationCategory'
                 item['title'] = item.get('_ptitle', '')
-                if '_act' in item:
-                    o_logger.info(short_log(item))
-                    continue
+                o_logger.info(short_log(item))
             yield item
 
 
