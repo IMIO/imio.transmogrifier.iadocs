@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import OrderedDict
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from plone.app.testing import FunctionalTesting
 from plone.app.testing import IntegrationTesting
@@ -28,7 +29,7 @@ class ImioTransmogrifierIadocsLayer(PloneSandboxLayer):
 
 def get_storage(portal):
     annot = IAnnotations(portal)
-    return annot.setdefault(ANNOTATION_KEY, {})
+    return annot.setdefault(ANNOTATION_KEY, {'course': OrderedDict()})
 
 
 IMIO_TRANSMOGRIFIER_IADOCS_FIXTURE = ImioTransmogrifierIadocsLayer()

@@ -29,8 +29,8 @@ class TestBluePrintMain(unittest.TestCase):
         self.assertDictEqual(next(iter(bp)), {u'1': u'aa', u'2': u'bb'})
         # check clean_value
         bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'clean_value':
-                               '1 python:"\\n" " " "python:[r\'^["" ]+$\']" python:"\\r\\n"'}, None)
-        self.assertListEqual(bp.cleans, [(u'1', u'\n', u' ', ['^[" ]+$'], u'\r\n')])
+                               '1 python:"\\n" " " "python:[(r\'^["" ]+$\', u\'\')]" python:"\\r\\n"'}, None)
+        self.assertListEqual(bp.cleans, [(u'1', u'\n', u' ', [('^[" ]+$', u'')], u'\r\n')])
         bp.previous = [{u'1': u'aa\n" "\nbb', u'2': None}]
         self.assertDictEqual(next(iter(bp)), {u'1': u'aa\r\nbb', u'2': None})
         # check hyphen_newline
