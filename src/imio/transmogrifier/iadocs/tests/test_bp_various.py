@@ -14,6 +14,7 @@ class TestBluePrintVarious(unittest.TestCase):
 
     def setUp(self):
         self.portal = self.layer['portal']
+        self.portal.context = self.portal
         self.storage = get_storage(self.portal)
 
     def test_enhanced_condition(self):
@@ -45,6 +46,20 @@ class TestBluePrintVarious(unittest.TestCase):
                                                 'condition': "python:key not in item"}, None)
         bp.previous = [{}]
         self.assertDictEqual(next(iter(bp)), {'aa': u'bb'})
+        # without error_value
+        bp = EnhancedInserter(self.portal, '', {'key': 'string:aa', 'value': "python: unknown"}, None)
+        bp.previous = [{}]
+        self.assertDictEqual(next(iter(bp)), {})
+        # with error_value
+        bp = EnhancedInserter(self.portal, '', {'key': 'string:aa', 'value': "python: unknown",
+                                                'error_value': "python: u'ok'"}, None)
+        bp.previous = [{}]
+        self.assertDictEqual(next(iter(bp)), {'aa': u'ok'})
+        # with bad error_value
+        bp = EnhancedInserter(self.portal, '', {'key': 'string:aa', 'value': "python: unknown",
+                                                'error_value': "python: nok"}, None)
+        bp.previous = [{}]
+        self.assertDictEqual(next(iter(bp)), {})
         # with separator, without initial value
         bp = EnhancedInserter(self.portal, '', {'key': 'string:aa', 'value': "python:u'bb'",
                                                 'separator': "python:u'\\r\\n'"}, None)

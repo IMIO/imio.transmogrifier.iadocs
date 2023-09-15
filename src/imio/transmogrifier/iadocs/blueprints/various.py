@@ -129,6 +129,8 @@ class EnhancedInserter(object):
         * condition = O, matching condition
         * separator = O, separator expression: if specified, the value is appended after the separator
         * get_obj = O, flag to get object from path (default 0)
+        * error = O, error message to display
+        * error_value = O, value to set when error occurs
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -141,9 +143,12 @@ class EnhancedInserter(object):
         self.key = Expression(options['key'], transmogrifier, name, options)
         self.value = Expression(options['value'], transmogrifier, name, options)
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
-        self.error = Expression(options.get('error', 'python:u"error getting value for eid {}".format(item["_eid"])'),
-                                transmogrifier, name, options)
+        self.error = Expression(options.get('error', 'python:u"error getting value for eid {}".format('
+                                'item.get("_eid"))'), transmogrifier, name, options)
         self.get_obj = bool(int(options.get('get_obj') or '0'))
+        self.error_value = safe_unicode(options.get('error_value') or u'')
+        if self.error_value:
+            self.error_value = Expression(self.error_value, transmogrifier, name, options)
         if options.get('separator'):
             self.separator = Expression(options.get('separator', ''), transmogrifier, name, options)(None)
         else:
@@ -161,8 +166,16 @@ class EnhancedInserter(object):
                     value = self.value(item, key=key, storage=self.storage, obj=obj)
                 except Exception as msg:
                     e_logger.error(u'{}: {} ({})'.format(self.name, self.error(item), msg))
-                    yield item
-                    continue
+                    if self.error_value:
+                        try:
+                            value = self.error_value(item, key=key, storage=self.storage, obj=obj)
+                        except Exception as msg:
+                            e_logger.error(u'{}: {} ({})'.format(self.name, self.error(item), msg))
+                            yield item
+                            continue
+                    else:
+                        yield item
+                        continue
                 if self.separator and item.get(key):  # with self.separator, we append
                     if value:
                         item[key] += u'{}{}'.format(self.separator, value)
