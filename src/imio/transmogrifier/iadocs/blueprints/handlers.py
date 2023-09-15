@@ -479,18 +479,22 @@ class ECategoryUpdate(object):
             raise 'Code is only handling decimal import'
         self.p_category = self.storage['data']['p_category']
 
-    def correct_id(self, obj, oid):
+    def correct_id(self, obj, oid, with_letter=False):
         """ Modify an id already existing in obj.
 
         :param obj: plone obj or dict
         :param oid: id to check
+        :param with_letter: add a letter prefix
         :return: unique id
         """
+        letters = 'abcdefghijklmnopqrstuvwxyz'
         original = oid
-        i = 1
+        i = 0
+        pfx = with_letter and letters[i] or i
         while oid in obj:
-            oid = u'{}-{:d}'.format(original, i)
+            oid = u'{}-{}'.format(original, pfx)
             i += 1
+            pfx = with_letter and letters[i] or i
         return oid
 
     def __iter__(self):
@@ -540,7 +544,7 @@ class ECategoryUpdate(object):
                         log_error(item, u"Same code '{}' with title '{}' previously created with title '{}'".format(
                             code, self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle'],
                             self.p_category[code]['title']))
-                        code = self.correct_id(self.p_category, code)
+                        code = self.correct_id(self.p_category, code, with_letter=True)
                     node = create_category(parent, {'identifier': code, 'title': self.replace_slash and
                                            item['_etitle'].replace('/', '-') or item['_etitle'],
                                            'enabled': item['_eactive']}, event=True)
