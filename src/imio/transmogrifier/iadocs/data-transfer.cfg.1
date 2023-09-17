@@ -161,6 +161,7 @@ pipeline =
     i__internal_number_insert
     i__1_ctyp_insert
     i__org_title_insert
+    i__1_empty_org_title_insert
     i__1_alias_insert
     i__1_title_insert
     i__1_id_insert
@@ -1326,6 +1327,13 @@ keys = lastname
 delete = lastname
          firstname
 destination = string:title
+
+[i__1_empty_org_title_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact' and item['_type'] == u'organization'
+            and not item.get('title')
+key = string:title
+value = python: u'Sans titre'
 
 [i__1_alias_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
