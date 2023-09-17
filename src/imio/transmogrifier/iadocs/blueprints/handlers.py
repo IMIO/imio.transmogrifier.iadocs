@@ -723,6 +723,7 @@ class HContactTypeUpdate(object):
                     p_types[item['_pid']] = {'name': item['_ptitle'], '_used': True}
                 else:
                     p_types[item['_pid']]['_used'] = True
+                    # p_types[item['_pid']]['_ptitle'] = item['_ptitle']
                 continue
             yield item
 
@@ -959,30 +960,31 @@ class M1AssignedUserHandling(object):
                 o_logger.warning("mail %s: path '%s' not found", item['_mail_id'],
                                  self.im_paths[item['_mail_id']]['path'])
                 continue
-            item = {'_eid': item['_eid'], '_path': self.im_paths[item['_mail_id']]['path'],
-                    '_type': imail.portal_type, '_bpk': 'i_assigned_user', '_act': 'U'}
+            item2 = {'_eid': item['_eid'], '_path': self.im_paths[item['_mail_id']]['path'],
+                     '_type': imail.portal_type, '_bpk': 'i_assigned_user', '_act': 'U'}
             # store info in data_transfer
             d_t = (imail.data_transfer or u'').split('\r\n')
             r_name = u' '.join(all_of_dict_values(self.user_match[e_userid], ['_nom', '_prenom']))
             r_messages = u', '.join(all_of_dict_values(item, [u'_action', u'_message', u'_response'],
                                                        labels=[u'', u'message', u'réponse']))
-            # TODO info destinataire principal ?
-            r_infos = u"DESTINATAIRE: {}, {}".format(r_name, r_messages and u', {}'.format(r_messages) or u'')
+            r_infos = u"DESTINATAIRE{}: {}{}".format(item['_principal'] and u' PRINCIPAL' or u'', r_name,
+                                                     r_messages and u', {}'.format(r_messages) or u'')
             if r_infos not in d_t:
                 d_t.append(r_infos)
-                item['data_transfer'] = u'\r\n'.join(d_t)
+                item2['data_transfer'] = u'\r\n'.join(d_t)
             # plone user is in the treating_group
             if p_userid and imail.treating_groups and imail.treating_groups in self.p_u_s_editor[p_userid]:
-                item['assigned_user'] = p_userid
+                if item['_principal'] or not imail.assigned_user:
+                    item2['assigned_user'] = p_userid
             elif p_userid:
                 # comblain: cannot put user service in copy because most users have more than one service
                 pass
             else:
                 # comblain: cannot put user service in copy because most users have more than one service
                 pass
-            if 'data_transfer' in item or 'assigned_user' in item:
+            if 'data_transfer' in item2 or 'assigned_user' in item2:
                 # o_logger.debug(item)
-                yield item
+                yield item2
 
 
 class POMSenderSet(object):

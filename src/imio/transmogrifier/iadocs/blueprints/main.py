@@ -654,6 +654,8 @@ class PickleData(object):
         if not is_in_part(self, self.parts):
             self.filename = None
             return
+        # import cPickle; fh = open('dt_csv_dir/2_e_mail_ass_user.pkl', 'rb')
+        # dic = cPickle.load(fh); fh.close()
         self.filename = safe_unicode(options['filename'])
         if not self.filename:
             return
