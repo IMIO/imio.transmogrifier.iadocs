@@ -209,13 +209,15 @@ pipeline =
 #     m__user_service_read
 #     m__user_service_store
     mt__pickle_i_r
+    m__pickle_mail_assigned_user_w
     m__1_mail_recipient_read
     m__1_already_only
+    m__batched
     m__1_mail_recipient_check
 #    m__1_principal_only
-#     m__batched
     m__count
     m__1_assigned_user
+    m__1_batch_store
 
 # pp  OM handling
     p__need
@@ -1618,6 +1620,12 @@ filename = 2_e_mail_i.pkl
 store_key = e_mail_i
 d_condition = python:False
 
+[m__pickle_mail_assigned_user_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_mail_ass_user.pkl
+store_key = assigned_users
+d_condition = python:storage['commit'] is True
+
 [m__1_mail_recipient_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
@@ -1629,6 +1637,12 @@ bp_key = e_mail_recip_i
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
 condition2 = python: item['_mail_id'] in storage['data']['e_mail_i']
+
+[m__batched]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
+condition2 = python:not storage['batch_nb'] and True or ((item['_mail_id'] not in storage['data']['assigned_users'] or item['_contact_id'] not in storage['data']['assigned_users'][item['_mail_id']])
+             and storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) < storage['batch_nb'])
 
 [m__1_mail_recipient_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -1653,6 +1667,15 @@ condition = python: item.get('_bpk') == u'e_mail_recip_i'
 blueprint = imio.transmogrifier.iadocs.m_1_assigned_user
 condition = python: item.get('_bpk') == u'e_mail_recip_i'
 store_key = e_mail_i
+
+[m__1_batch_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_mail_recip_i'
+bp_key = assigned_users
+store_key = _mail_id
+store_subkey = _contact_id
+fieldnames = _eid
+yield = 1
 
 # = = = = = = =  pp  = = = = = = = #
 
