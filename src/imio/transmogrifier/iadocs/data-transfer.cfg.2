@@ -116,6 +116,7 @@ pipeline =
     f__creation_date_insert
     f__modification_date_insert
     f__1_category_id_insert
+    f__1_empty_title_insert
     f__1_localisation_insert
     f__1_remark_insert
     f__1_comment_insert
@@ -162,6 +163,7 @@ pipeline =
     i__internal_number_insert
     i__1_ctyp_insert
     i__org_title_insert
+    i__1_empty_org_title_insert
     i__1_alias_insert
     i__1_title_insert
     i__1_id_insert
@@ -1060,6 +1062,13 @@ key = string:classification_categories
 value = python:[storage['data']['e_category_full_match'][item['_category_id']]['_puid']]
 error = python:u"category '{}' not found for eid '{}'".format(item['_category_id'], item['_eid'])
 
+[f__1_empty_title_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
+            and not item['title']
+key = string:title
+value = python:item['_category_id'] and storage['data']['e_category_full_match'].get(item['_category_id'], {}).get('_etitle') or u'Sans titre'
+
 [f__1_localisation_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder' and item.get('_localisation')
@@ -1093,6 +1102,7 @@ blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 key = string:treating_groups
 value = python:item['_service_id'] and storage['data']['e_service_match'][item['_service_id']]['uid'] or storage['data']['e_service_match']['${config:default_tg}']['uid']
+error_value = python: storage['data']['e_service_match']['${config:default_tg}']['uid']
 
 [fF__deactivate_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1344,6 +1354,13 @@ keys = lastname
 delete = lastname
          firstname
 destination = string:title
+
+[i__1_empty_org_title_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact' and item['_type'] == u'organization'
+            and not item.get('title')
+key = string:title
+value = python: u'Sans titre'
 
 [i__1_alias_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
