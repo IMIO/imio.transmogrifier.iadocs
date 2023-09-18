@@ -188,7 +188,7 @@ class ContactAsTextUpdate(object):
         * contact_label = M, contact label
         * related_label = O, related label
         * contact_free_key = M, contact free item key name
-        * yield_original = M, flag to know if a yield must be done (0 or 1) (mail is item or not)
+        * original_item = M, flag to know if mail is item or not (0 or 1)
         * pass_real_contact = M, flag to pass a real contact (if contact_store contains created contacts) (0 or 1)
     """
     classProvides(ISectionBlueprint)
@@ -211,7 +211,7 @@ class ContactAsTextUpdate(object):
         if self.related_label:
             self.related_label = u' {}'.format(self.related_label)
         self.contact_free_key = safe_unicode(options['contact_free_key'])
-        self.yield_original = bool(int(options['yield_original']))
+        self.original_item = bool(int(options['original_item']))
         self.pass_real_contact = bool(int(options['pass_real_contact']))
         self.mail_paths = self.storage['data'].get(safe_unicode(options['mail_store_key']), {})
         self.e_c = self.storage['data'][options['contact_store_key']]
@@ -224,7 +224,7 @@ class ContactAsTextUpdate(object):
                 continue
             course_store(self)
             # path = 'incoming-mail/202334/010452000045293'
-            if self.yield_original:
+            if self.original_item:
                 desc = 'description' in item and item.get('description').split('\r\n') or []
                 d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
             else:
@@ -251,7 +251,7 @@ class ContactAsTextUpdate(object):
                     additional = u'{}: {}'.format(u'COMPLÉMENT {}'.format(self.contact_label), additional)
                     if additional not in d_t:
                         d_t.append(additional)
-                if self.yield_original:
+                if self.original_item:
                     item['description'] = u'\r\n'.join(desc)
                     item['data_transfer'] = u'\r\n'.join(d_t)
                     yield item
@@ -264,12 +264,19 @@ class ContactAsTextUpdate(object):
 
 
 class ContactSet(object):
-    """Set default contact.
+    """Set contact.
 
     Parameters:
+        * bp_key = M, blueprint key used on new item if not yield
         * fieldname = M, field to set
         * is_list = M, int for boolean (1 if the field is a list)
-        * contact_key = M, item key name containing contact external id
+        * mail_id_key = O, mail id item key name
+        * mail_store_key = O, storage main key to find mail path
+        * contact_id_key = M, item key name containing contact external id
+        * contact_store_key = M, storage main key to find contact
+        * default_contact = O, default contact path
+        * original_item = M, flag to know if mail is item or not)
+        * yield = M, flag to know if a item yield must be done when original item is 0 (0 or 1, default 0)
         * condition = O, condition expression
     """
     classProvides(ISectionBlueprint)
@@ -281,15 +288,24 @@ class ContactSet(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
+        self.bp_key = safe_unicode(options['bp_key'])
         if not is_in_part(self, self.parts):
             return
-        self.field = safe_unicode(options['fieldname'])
-        self.eid_key = safe_unicode(options['contact_key'])
+        self.fieldname = safe_unicode(options['fieldname'])
+        self.mail_id_key = safe_unicode(options.get('mail_id_key', u''))
+        self.contact_id_key = safe_unicode(options['contact_id_key'])
         self.is_list = bool(int(options.get('is_list') or '1'))
+        self.original_item = bool(int(options['original_item']))
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.intids = getUtility(IIntIds)
-        self.def_ctct_iid = self.intids.getId(self.storage['plone']['def_contact'])
-        self.eids = self.storage['data'].setdefault('e_contact_path', {})
+        default_contact = options.get('default_contact')
+        self.def_ctct_iid = None
+        if default_contact:
+            self.def_ctct_iid = self.intids.getId(get_obj_from_path(self.portal, path=default_contact))
+        self.yld = bool(int(options.get('yield') or '0'))
+        self.mail_paths = self.storage['data'].get(safe_unicode(options.get('mail_store_key', u'')), {})
+        self.e_c = self.storage['data'].setdefault(options['contact_store_key'], {})
+        self.batch_store = self.storage['data'].setdefault(self.bp_key, {})
 
     def __iter__(self):
         for item in self.previous:
@@ -298,20 +314,47 @@ class ContactSet(object):
                 continue
             course_store(self)
             ctct_iid = self.def_ctct_iid  # default contact
-            if item.get(self.eid_key) and item[self.eid_key] in self.eids:
-                path = self.eids[item[self.eid_key]]['path']
-                obj = get_obj_from_path(self.portal, path=path)
-                if obj:
-                    ctct_iid = self.intids.getId(obj)
-            if self.is_list:
-                if item.get(self.field):
-                    if ctct_iid not in [rel.to_id for rel in item[self.field]]:
-                        item[self.field].append(RelationValue(ctct_iid))
-                else:
-                    item[self.field] = [RelationValue(ctct_iid)]
+            if item.get(self.contact_id_key) and item[self.contact_id_key] in self.e_c:
+                path = self.e_c[item[self.contact_id_key]]['path']
+                contact = get_obj_from_path(self.portal, path=path)
+                if contact:
+                    ctct_iid = self.intids.getId(contact)
+            if self.original_item:
+                value = item.get(self.fieldname)
+                if not ctct_iid:  # contact not found and no default contact
+                    yield item
             else:
-                item[self.field] = RelationValue(ctct_iid)
-            yield item
+                self.batch_store[item['_eid']] = 0
+                if not ctct_iid:
+                    if self.yld:
+                        yield item
+                    continue
+                mail = get_obj_from_path(self.portal, path=self.mail_paths[item[self.mail_id_key]]['path'])
+                if mail is None:
+                    o_logger.warning("mail %s: path '%s' not found", item[self.mail_id_key],
+                                     self.mail_paths[item[self.mail_id_key]]['path'])
+                    continue
+                value = getattr(mail, self.fieldname)
+            if self.is_list:
+                if value:
+                    if ctct_iid not in [rel.to_id for rel in value]:
+                        value.append(RelationValue(ctct_iid))
+                    if self.def_ctct_iid in [rel.to_id for rel in value]:
+                        value = [rel for rel in value if rel.to_id != self.def_ctct_iid]
+                    # value.remove(del_rem) error from_object when removing (without commit, rel not ok ?)
+                else:
+                    value = [RelationValue(ctct_iid)]
+            else:
+                value = RelationValue(ctct_iid)
+            if self.original_item:
+                item[self.fieldname] = value
+                yield item
+            else:
+                item2 = {'_eid': item['_eid'], '_path': self.mail_paths[item[self.mail_id_key]]['path'],
+                         '_type': mail.portal_type, '_bpk': self.bp_key, '_act': 'U', self.fieldname: value}
+                yield item2
+                if self.yld:
+                    yield item
 
 
 class DefaultContactSet(object):
@@ -333,7 +376,7 @@ class DefaultContactSet(object):
         self.parts = get_related_parts(name)
         if not is_in_part(self, self.parts):
             return
-        self.field = safe_unicode(options['fieldname'])
+        self.fieldname = safe_unicode(options['fieldname'])
         self.is_list = bool(int(options.get('is_list') or '1'))
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         intids = getUtility(IIntIds)
@@ -346,9 +389,9 @@ class DefaultContactSet(object):
                 continue
             course_store(self)
             if self.is_list:
-                item[self.field] = [RelationValue(self.def_ctct_iid)]
+                item[self.fieldname] = [RelationValue(self.def_ctct_iid)]
             else:
-                item[self.field] = RelationValue(self.def_ctct_iid)
+                item[self.fieldname] = RelationValue(self.def_ctct_iid)
             yield item
 
 
@@ -470,7 +513,6 @@ class ECategoryUpdate(object):
         * condition = O, condition expression
         * title_replace_slash = O, replace / by - if 1 (default 1)
         * decimal_import = O, identifier is decimal code if 1 (default 1)
-        * yield = O,
     """
     classProvides(ISectionBlueprint)
     implements(ISection)

@@ -2124,7 +2124,7 @@ condition2 = python: item['_principal']
 [q__batched]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'q') and item.get('_bpk') == u'e_mail_recip_o'
-condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_mail_recipient_text'] and storage.get('count', {}).get('m__count', {}).get('e_mail_recip_o', {}).get('c', 0) < storage['batch_nb'])
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_mail_recipient_text'] and storage.get('count', {}).get('q__count', {}).get('e_mail_recip_o', {}).get('c', 0) < storage['batch_nb'])
 
 [q__count]
 blueprint = imio.transmogrifier.iadocs.count

@@ -170,7 +170,7 @@ pipeline =
 
 # ll  IM & IEM handling
     l__need
-    l__pickle_c_r
+    lq__pickle_c_r
     lpq__1_contacts_check
     l__1_mail_read
     l__pickle_i_w
@@ -269,13 +269,14 @@ pipeline =
 # qq  OM recipients
 #    q__need
     qu__pickle_o_r
+    q__pickle_omail_recipient_w
     q__1_mail_recipient_read
     q__1_already_only
     q__1_mail_recipient_check
-#     q__1_principal_only
-#     q__batched
+    q__batched
     q__count
     q__1_recipients
+#    q__1_recipients_as_text
 
 # rr  IM/OM recipient_groups
     r__need
@@ -1377,7 +1378,7 @@ id_keys = _eid
 blueprint = imio.transmogrifier.iadocs.need_other
 parts = abce
 
-[l__pickle_c_r]
+[lq__pickle_c_r]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_contact.pkl
 store_key = e_contact_path
@@ -1495,10 +1496,13 @@ error = python:u"category '{}' not found for eid '{}'".format(item['_category_id
 
 [l__contact_set]
 blueprint = imio.transmogrifier.iadocs.contact_set
+bp_key = e_mail_recipient
 fieldname = sender
 is_list = 1
-contact_key = _sender_id
+contact_id_key = _sender_id
 condition = python: item.get('_bpk') == u'e_mail_i'
+contact_store_key = e_contact_path
+original_item = 1
 
 [l__1_sender_as_text_set]
 blueprint = imio.transmogrifier.iadocs.l_1_sender_as_text_set
@@ -1946,6 +1950,12 @@ filename = 2_e_mail_o.pkl
 store_key = e_mail_o
 d_condition = python:False
 
+[q__pickle_omail_recipient_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_mail_o_recipient.pkl
+store_key = e_mail_recipient
+d_condition = python:storage['commit'] is True
+
 [q__1_mail_recipient_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
@@ -1964,14 +1974,14 @@ blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_recip_o
 condition = python: item.get('_bpk') == u'e_mail_recip_o'
 hyphen_newline = _action _message _response _comment
-invalids = _due_date 0
+invalids = _due_date 0 _trm_date 0
 booleans = _principal
 dates = _due_date %Y%m%d 1 _trm_date %Y%m%d 1
 
-[q__1_principal_only]
+[q__batched]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'q') and item.get('_bpk') == u'e_mail_recip_o'
-condition2 = python: item['_principal']
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_mail_recipient'] and storage.get('count', {}).get('q__count', {}).get('e_mail_recip_o', {}).get('c', 0) < storage['batch_nb'])
 
 [q__count]
 blueprint = imio.transmogrifier.iadocs.count
@@ -1979,9 +1989,32 @@ group_key = _bpk
 condition = python: item.get('_bpk') == u'e_mail_recip_o'
 
 [q__1_recipients]
-blueprint = imio.transmogrifier.iadocs.q_1_recipients_as_text_update
+blueprint = imio.transmogrifier.iadocs.contact_set
+bp_key = e_mail_recipient
 condition = python: item.get('_bpk') == u'e_mail_recip_o'
-store_key = e_mail_o
+fieldname = recipients
+is_list = 1
+mail_id_key = _mail_id
+mail_store_key = e_mail_o
+contact_id_key = _contact_id
+contact_store_key = e_contact_path
+default_contact =
+original_item = 0
+yield = 0
+
+[q__1_recipients_as_text]
+blueprint = imio.transmogrifier.iadocs.contact_as_text_update
+bp_key = e_mail_recipient
+condition = python: item.get('_bpk') == u'e_mail_recip_o'
+mail_store_key = e_mail_o
+contact_store_key = e_contact_path
+mail_id_key = _mail_id
+contact_id_key = _contact_id
+contact_label = DESTINATAIRE
+related_label =
+contact_free_key =
+original_item = 0
+pass_real_contact = 0
 
 # = = = = = = =  rr  = = = = = = = #
 
