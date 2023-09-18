@@ -197,6 +197,7 @@ pipeline =
     l__1_meetingitem_link_insert
     l__1_confidential_insert
     l__1_remark_insert
+    l__empty_title_insert
     l__1_id_insert
     l__1_type_insert
     l__1_parent_insert
@@ -233,7 +234,7 @@ pipeline =
     p__outgoing_date_insert
     p__mail_date_insert
     p__1_internal_number_insert
-;    p__1_comblain_service_id_correct
+;    p__custom_service_id_correct
     p__treating_groups_insert
 ;    p__1_recipient_groups_set
 #    p__assigned_user ?
@@ -247,6 +248,7 @@ pipeline =
     p__1_meetingitem_link_insert
     p__1_confidential_insert
     p__1_remark_insert
+    p__empty_title_insert
     p__1_id_insert
     p__1_type_insert
     p__1_parent_insert
@@ -1557,6 +1559,12 @@ key = string:description
 value = python: u'REMARQUES: {}.'.format(item['_remark'])
 separator = python:u'\r\n'
 
+[l__empty_title_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and not item['title']
+key = string:title
+value = python:u'Sans titre'
+
 [l__1_id_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
@@ -1755,7 +1763,7 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:internal_number
 value = python:item['_eid']
 
-[p__1_comblain_service_id_correct]
+[p__custom_service_id_correct]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and
             item['_category_id'] not in (None, u'0') and item['_service_id'] != u'333' and int(item['_category_id']) >= 48235 and int(item['_category_id']) <= 48271
@@ -1838,6 +1846,12 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:description
 value = python:u'REMARQUES: {}.'.format(item['_remark'])
 separator = python:u'\r\n'
+
+[p__empty_title_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and not item['title']
+key = string:title
+value = python:u'Sans titre'
 
 [p__1_id_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
