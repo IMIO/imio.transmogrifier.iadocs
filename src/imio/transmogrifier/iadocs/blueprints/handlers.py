@@ -383,15 +383,28 @@ class DOMSenderCreation(object):
         if e_userid not in self.euid_to_pers:
             # we create or update a person
             path = os.path.join(self.storage['plone']['directory_path'], 'personnel-folder/{}'.format(pid))
-            pdic = {'_type': 'person', '_path': path, u'internal_number': e_userid, 'use_parent_address': False,
-                    u'_bpk': u'person_sender', u'_eid': item['_eid'], u'_deactivate': 'deactivate' in transitions,
-                    u'creation_date': self.storage['creation_date'],
-                    u'modification_date': self.storage['creation_date'], u'title': title}
-            pdic.setdefault(u'_post_actions', {})[u'store_internal_person_info'] = ''
-            if firstname is not None:
-                pdic[u'firstname'] = firstname
-            if lastname is not None:
-                pdic[u'lastname'] = lastname
+            if title == u'Existing':
+                person = get_obj_from_path(self.portal, path=path)
+                self.storage['data']['p_euid_to_pers'][e_userid] = person.UID()
+                euids = person.internal_number and person.internal_number.split(u',') or []
+                if e_userid not in euids:
+                    euids.append(e_userid)
+                pdic = {'_type': 'person', '_path': path, u'internal_number': u','.join(euids),
+                        u'_bpk': u'person_sender', u'_eid': item['_eid'], u'title': title, '_act': 'U'}
+                if firstname is not None and not person.firstname:
+                    pdic[u'firstname'] = firstname
+                if lastname is not None and not person.lastname:
+                    pdic[u'lastname'] = lastname
+            else:
+                pdic = {'_type': 'person', '_path': path, u'internal_number': e_userid, 'use_parent_address': False,
+                        u'_bpk': u'person_sender', u'_eid': item['_eid'], u'_deactivate': 'deactivate' in transitions,
+                        u'creation_date': self.storage['creation_date'], '_act': 'N',
+                        u'modification_date': self.storage['creation_date'], u'title': title}
+                pdic.setdefault(u'_post_actions', {})[u'store_internal_person_info'] = ''
+                if firstname is not None:
+                    pdic[u'firstname'] = firstname
+                if lastname is not None:
+                    pdic[u'lastname'] = lastname
             self.change = True
             return [pdic]
         return []
@@ -406,7 +419,7 @@ class DOMSenderCreation(object):
             hpdic = {'_type': 'held_position', '_path': path, 'use_parent_address': True,
                      'position': RelationValue(self.intids.getId(org)), 'internal_number': u'',
                      u'_bpk': u'hp_sender', u'_eid': item['_eid'], u'_deactivate': 'deactivate' in transitions,
-                     u'creation_date': self.storage['creation_date'],
+                     u'creation_date': self.storage['creation_date'], '_act': 'N',
                      u'modification_date': self.storage['creation_date']}
             self.p_hps[puid]['hps'][ouid] = {'path': path, 'state': 'deactivated'}
             self.change = True
@@ -1109,12 +1122,11 @@ class PostActions(object):
         for item in self.previous:
             for pa in item.get('_post_actions', {}):
                 course_store(self)
-                if pa == u'store_internal_person_info':
-                    eid = item[u'internal_number']
+                if pa == u'store_internal_person_info':  # only when we first create the person
                     uid = get_obj_from_path(self.portal, item).UID()
-                    self.storage['data']['p_euid_to_pers'][eid] = uid
+                    self.storage['data']['p_euid_to_pers'][item[u'internal_number']] = uid
                     if uid not in self.storage['data']['p_hps']:
-                        self.storage['data']['p_hps'][uid] = {'path': item['_path'], 'eid': eid, 'hps': {},
+                        self.storage['data']['p_hps'][uid] = {'path': item['_path'], 'hps': {},
                                                               'state': 'deactivated'}
             if self.storage['commit'] and self.storage['commit_nb'] and \
                     self.storage['count']['commit_count']['']['c'] % self.storage['commit_nb'] == 0:

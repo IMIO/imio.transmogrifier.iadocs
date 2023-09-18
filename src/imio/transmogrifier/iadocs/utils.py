@@ -180,11 +180,11 @@ def get_personnel(portal, eid_fld='internal_number'):
         ouid = org.UID()
         if person.userid and person.userid not in p_userid_to_person:
             p_userid_to_person[person.userid] = puid
-        euid = getattr(person, eid_fld)
-        if euid and euid not in e_userid_to_person:
+        euids = getattr(person, eid_fld)
+        for euid in (euids and euids.split(u',') or []):
             e_userid_to_person[euid] = puid
         if puid not in hps:
-            hps[puid] = {'path': relative_path(portal, '/'.join(person.getPhysicalPath())), 'eid': euid, 'hps': {},
+            hps[puid] = {'path': relative_path(portal, '/'.join(person.getPhysicalPath())), 'hps': {},
                          'state': api.content.get_state(person)}
         if ouid not in hps[puid]['hps']:
             hps[puid]['hps'][ouid] = {'path': relative_path(portal, brain.getPath()),
