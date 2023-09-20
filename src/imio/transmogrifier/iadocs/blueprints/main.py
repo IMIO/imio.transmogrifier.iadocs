@@ -106,8 +106,7 @@ class Initialization(object):
         ofh.setLevel(logging.INFO)
         o_logger.addHandler(ofh)
         run_options = json.loads(transmogrifier.context.REQUEST.get('_transmo_options_') or '{}')
-        start_msg = u"STARTING '{}' parts at {}".format(run_options['parts'].upper(),
-                                                        datetime.now().strftime('%Y%m%d-%H%M'))
+        start_msg = u"STARTING '{}' parts at {}".format(run_options['parts'], datetime.now().strftime('%Y%m%d-%H%M'))
         if run_options['commit']:
             ecfh = logging.FileHandler(os.path.join(workingpath, '{}_dt_input_errors_commit.log'.format(site_name)),
                                        mode='a')
