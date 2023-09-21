@@ -189,7 +189,7 @@ class ContactAsTextUpdate(object):
         * related_label = O, related label
         * contact_free_key = M, contact free item key name
         * original_item = M, flag to know if mail is item or not (0 or 1)
-        * pass_real_contact = M, flag to pass a real contact (if contact_store contains created contacts) (0 or 1)
+        * skip_real_contact = M, flag to pass a real contact (if contact_store contains created contacts) (0 or 1)
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -212,7 +212,7 @@ class ContactAsTextUpdate(object):
             self.related_label = u' {}'.format(self.related_label)
         self.contact_free_key = safe_unicode(options['contact_free_key'])
         self.original_item = bool(int(options['original_item']))
-        self.pass_real_contact = bool(int(options['pass_real_contact']))
+        self.skip_real_contact = bool(int(options['skip_real_contact']))
         self.mail_paths = self.storage['data'].get(safe_unicode(options['mail_store_key']), {})
         self.e_c = self.storage['data'][options['contact_store_key']]
         self.batch_store = self.storage['data'].setdefault(self.bp_key, {})
@@ -238,7 +238,7 @@ class ContactAsTextUpdate(object):
                 desc = (mail.description or u'').split('\r\n')
                 d_t = (mail.data_transfer or u'').split('\r\n')
             # we pass a contact considered as already created as object if found in contact_store
-            if self.pass_real_contact and item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
+            if self.skip_real_contact and item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
                 self.contact_id_key = ''
             if get_contact_info(self, item, self.contact_label, self.contact_id_key, self.contact_free_key, desc, d_t,
                                 related_label=self.related_label):
