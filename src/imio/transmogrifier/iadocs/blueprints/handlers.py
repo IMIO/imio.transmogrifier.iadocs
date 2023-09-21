@@ -235,8 +235,8 @@ class ContactAsTextUpdate(object):
                     o_logger.warning("mail %s: path '%s' not found", item[self.mail_id_key],
                                      self.mail_paths[item[self.mail_id_key]]['path'])
                     continue
-                desc = (mail.description or u'').split('\r\n')
-                d_t = (mail.data_transfer or u'').split('\r\n')
+                desc = mail.description and mail.description.split('\r\n') or []
+                d_t = mail.data_transfer and mail.data_transfer.split('\r\n') or []
             # we pass a contact considered as already created as object if found in contact_store
             contact_id_param = self.contact_id_key
             if self.skip_real_contact and item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
