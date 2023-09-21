@@ -294,7 +294,9 @@ pipeline =
     q__count
     q__2_archives_xml_contact_store
     q__2_xml_contact_store
-    q__2_recipient_as_text
+# The 2 next sections need to be configured following directory creation...
+#    q__2_recipients
+    q__2_recipients_as_text
 
 # rr  IM/OM recipient_groups
     r__need
@@ -1779,7 +1781,7 @@ contact_label = EXPÉDITEUR
 related_label =
 contact_free_key =
 yield_original = 0
-pass_real_contact = 0
+skip_real_contact = 0
 
 # = = = = = = =  pp  = = = = = = = #
 
@@ -2065,7 +2067,7 @@ parts =
 [q__pickle_omail_recipient_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_o_recipient.pkl
-store_key = e_mail_recipient_text
+store_key = e_mail_recipient
 d_condition = python:storage['commit'] is True
 
 [qu__pickle_o_r]
@@ -2124,7 +2126,7 @@ condition2 = python: item['_principal']
 [q__batched]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'q') and item.get('_bpk') == u'e_mail_recip_o'
-condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_mail_recipient_text'] and storage.get('count', {}).get('q__count', {}).get('e_mail_recip_o', {}).get('c', 0) < storage['batch_nb'])
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_mail_recipient'] and storage.get('count', {}).get('q__count', {}).get('e_mail_recip_o', {}).get('c', 0) < storage['batch_nb'])
 
 [q__count]
 blueprint = imio.transmogrifier.iadocs.count
@@ -2152,9 +2154,23 @@ xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _divi
 contact_id_key = _contact_id
 empty_store = 1
 
-[q__2_recipient_as_text]
+[q__1_recipients]
+blueprint = imio.transmogrifier.iadocs.contact_set
+bp_key = e_mail_recipient
+condition = python: item.get('_bpk') == u'e_mail_recip_o'
+fieldname = recipients
+is_list = 1
+mail_id_key = _mail_id
+mail_store_key = e_mail_o
+contact_id_key = _contact_id
+contact_store_key = e_contact_path
+default_contact =
+original_item = 0
+yield = 1
+
+[q__2_recipients_as_text]
 blueprint = imio.transmogrifier.iadocs.contact_as_text_update
-bp_key = e_mail_recipient_text
+bp_key = e_mail_recipient
 condition = python: item.get('_bpk') == u'e_mail_recip_o'
 mail_store_key = e_mail_o
 contact_store_key = e_contact
@@ -2164,7 +2180,7 @@ contact_label = DESTINATAIRE
 related_label =
 contact_free_key =
 yield_original = 0
-pass_real_contact = 0
+skip_real_contact = 0
 
 # = = = = = = =  rr  = = = = = = = #
 
