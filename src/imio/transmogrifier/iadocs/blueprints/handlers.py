@@ -238,9 +238,10 @@ class ContactAsTextUpdate(object):
                 desc = (mail.description or u'').split('\r\n')
                 d_t = (mail.data_transfer or u'').split('\r\n')
             # we pass a contact considered as already created as object if found in contact_store
+            contact_id_param = self.contact_id_key
             if self.skip_real_contact and item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
-                self.contact_id_key = ''
-            if get_contact_info(self, item, self.contact_label, self.contact_id_key, self.contact_free_key, desc, d_t,
+                contact_id_param = ''
+            if get_contact_info(self, item, self.contact_label, contact_id_param, self.contact_free_key, desc, d_t,
                                 related_label=self.related_label):
                 additional = u''
                 # for customer 1 om recipients
