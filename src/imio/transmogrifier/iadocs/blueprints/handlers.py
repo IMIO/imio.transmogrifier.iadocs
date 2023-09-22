@@ -396,6 +396,55 @@ class DefaultContactSet(object):
             yield item
 
 
+def person_dic(section, bpk, e_userid, item, pid, title, firstname=None, lastname=None, transitions=('deactivate',)):
+    if e_userid not in section.euid_to_pers:
+        # we create or update a person
+        path = os.path.join(section.storage['plone']['directory_path'], 'personnel-folder/{}'.format(pid))
+        if title == u'Existing':
+            person = get_obj_from_path(section.portal, path=path)
+            section.storage['data']['p_euid_to_pers'][e_userid] = person.UID()
+            euids = person.internal_number and person.internal_number.split(u',') or []
+            if e_userid not in euids:
+                euids.append(e_userid)
+            pdic = {'_type': 'person', '_path': path, u'internal_number': u','.join(euids),
+                    u'_bpk': bpk, u'_eid': item['_eid'], u'title': title, '_act': 'U'}
+            if firstname is not None and not person.firstname:
+                pdic[u'firstname'] = firstname
+            if lastname is not None and not person.lastname:
+                pdic[u'lastname'] = lastname
+        else:
+            pdic = {'_type': 'person', '_path': path, u'internal_number': e_userid, 'use_parent_address': False,
+                    u'_bpk': bpk, u'_eid': item['_eid'], u'_deactivate': 'deactivate' in transitions,
+                    u'creation_date': section.storage['creation_date'], '_act': 'N',
+                    u'modification_date': section.storage['creation_date'], u'title': title}
+            pdic.setdefault(u'_post_actions', {})[u'store_internal_person_info'] = ''
+            if firstname is not None:
+                pdic[u'firstname'] = firstname
+            if lastname is not None:
+                pdic[u'lastname'] = lastname
+        section.change = True
+        return [pdic]
+    return []
+
+
+def hp_dic(section, bpk, e_userid, item, transitions=('deactivate',)):
+    puid = section.euid_to_pers[e_userid]
+    ouid = section.eid_to_orgs[item['_service']]['uid']
+    if ouid not in section.p_hps[puid]['hps']:
+        # we create a hp
+        path = os.path.join(section.p_hps[puid]['path'], ouid)
+        org = uuidToObject(ouid, unrestricted=True)
+        hpdic = {'_type': 'held_position', '_path': path, 'use_parent_address': True,
+                 'position': RelationValue(section.intids.getId(org)), 'internal_number': u'',
+                 u'_bpk': bpk, u'_eid': item['_eid'], u'_deactivate': 'deactivate' in transitions,
+                 u'creation_date': section.storage['creation_date'], '_act': 'N',
+                 u'modification_date': section.storage['creation_date']}
+        section.p_hps[puid]['hps'][ouid] = {'path': path, 'state': 'deactivated'}
+        section.change = True
+        return [hpdic]
+    return []
+
+
 class DOMSenderCreation(object):
     """Create sender held_position if necessary.
 
@@ -423,53 +472,6 @@ class DOMSenderCreation(object):
         self.e_u_m = self.storage['data'].get('e_user_match', {})
         self.intids = getUtility(IIntIds)
 
-    def person(self, e_userid, item, pid, title, firstname=None, lastname=None, transitions=('deactivate',)):
-        if e_userid not in self.euid_to_pers:
-            # we create or update a person
-            path = os.path.join(self.storage['plone']['directory_path'], 'personnel-folder/{}'.format(pid))
-            if title == u'Existing':
-                person = get_obj_from_path(self.portal, path=path)
-                self.storage['data']['p_euid_to_pers'][e_userid] = person.UID()
-                euids = person.internal_number and person.internal_number.split(u',') or []
-                if e_userid not in euids:
-                    euids.append(e_userid)
-                pdic = {'_type': 'person', '_path': path, u'internal_number': u','.join(euids),
-                        u'_bpk': u'person_sender', u'_eid': item['_eid'], u'title': title, '_act': 'U'}
-                if firstname is not None and not person.firstname:
-                    pdic[u'firstname'] = firstname
-                if lastname is not None and not person.lastname:
-                    pdic[u'lastname'] = lastname
-            else:
-                pdic = {'_type': 'person', '_path': path, u'internal_number': e_userid, 'use_parent_address': False,
-                        u'_bpk': u'person_sender', u'_eid': item['_eid'], u'_deactivate': 'deactivate' in transitions,
-                        u'creation_date': self.storage['creation_date'], '_act': 'N',
-                        u'modification_date': self.storage['creation_date'], u'title': title}
-                pdic.setdefault(u'_post_actions', {})[u'store_internal_person_info'] = ''
-                if firstname is not None:
-                    pdic[u'firstname'] = firstname
-                if lastname is not None:
-                    pdic[u'lastname'] = lastname
-            self.change = True
-            return [pdic]
-        return []
-
-    def hp(self, e_userid, item, transitions=('deactivate',)):
-        puid = self.euid_to_pers[e_userid]
-        ouid = self.eid_to_orgs[item['_service']]['uid']
-        if ouid not in self.p_hps[puid]['hps']:
-            # we create a hp
-            path = os.path.join(self.p_hps[puid]['path'], ouid)
-            org = uuidToObject(ouid, unrestricted=True)
-            hpdic = {'_type': 'held_position', '_path': path, 'use_parent_address': True,
-                     'position': RelationValue(self.intids.getId(org)), 'internal_number': u'',
-                     u'_bpk': u'hp_sender', u'_eid': item['_eid'], u'_deactivate': 'deactivate' in transitions,
-                     u'creation_date': self.storage['creation_date'], '_act': 'N',
-                     u'modification_date': self.storage['creation_date']}
-            self.p_hps[puid]['hps'][ouid] = {'path': path, 'state': 'deactivated'}
-            self.change = True
-            return [hpdic]
-        return []
-
     def __iter__(self):
         idnormalizer = getUtility(IIDNormalizer)
         for item in self.previous:
@@ -481,25 +483,73 @@ class DOMSenderCreation(object):
                     if _euidm['_p_userid']:  # we have a match
                         if _euidm['_p_userid'] in self.puid_to_pers:  # we already have a person for this user
                             pid = uuidToObject(self.puid_to_pers[_euidm['_p_userid']]).id
-                            for y in self.person(e_userid, item, pid, u'Existing', transitions=()): yield y  # noqa
-                            for y in self.hp(e_userid, item): yield y  # noqa
+                            for y in person_dic(self, u'person_sender', e_userid, item, pid, u'Existing',
+                                                transitions=()): yield y  # noqa
+                            for y in hp_dic(self, u'hp_sender', e_userid, item): yield y  # noqa
                         else:
                             pid = _euidm['_p_userid']
                             fn, ln = separate_fullname(None, fn_first=self.storage['plone']['firstname_first'],
                                                        fullname=_euidm['_fullname'])
-                            for y in self.person(e_userid, item, pid, u'Matched', firstname=fn,
-                                                 lastname=ln): yield y  # noqa
-                            for y in self.hp(e_userid, item): yield y  # noqa
+                            for y in person_dic(self, u'person_sender', e_userid, item, pid, u'Matched', firstname=fn,
+                                                lastname=ln): yield y  # noqa
+                            for y in hp_dic(self, u'hp_sender', e_userid, item): yield y  # noqa
                     else:
                         pid = idnormalizer.normalize(full_name(_euidm['_prenom'], _euidm['_nom'],
                                                                fn_first=self.storage['plone']['firstname_first']))
-                        for y in self.person(e_userid, item, pid, u'Unmatched', firstname=_euidm['_prenom'],
-                                             lastname=_euidm['_nom']): yield y  # noqa
-                        for y in self.hp(e_userid, item): yield y  # noqa
+                        for y in person_dic(self, u'person_sender', e_userid, item, pid, u'Unmatched',
+                                            firstname=_euidm['_prenom'], lastname=_euidm['_nom']): yield y  # noqa
+                        for y in hp_dic(self, u'hp_sender', e_userid, item): yield y  # noqa
                 else:  # we do not have a _sender_id or _sender_id is not a user id
-                    for y in self.person(u'None', item, 'reprise-donnees', u'None', firstname=u'',
-                                         lastname=u'Reprise données'): yield y  # noqa
-                    for y in self.hp(u'None', item): yield y  # noqa
+                    for y in person_dic(self, u'person_sender', u'None', item, 'reprise-donnees', u'None',
+                                        firstname=u'', lastname=u'Reprise données'): yield y  # noqa
+                    for y in hp_dic(self, u'hp_sender', u'None', item): yield y  # noqa
+                continue
+            yield item
+        if self.change:
+            o_logger.info("Part d: some internal persons or/and held positions have been added.")
+
+
+class DPersonnelCreation(object):
+    """Create or link person.
+
+    Parameters:
+        * condition = O, condition expression
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.change = False
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.puid_to_pers = self.storage['data']['p_userid_to_pers']
+        self.euid_to_pers = self.storage['data']['p_euid_to_pers']
+        self.e_u_m = self.storage['data'].get('e_user_match', {})
+        self.intids = getUtility(IIntIds)
+
+    def __iter__(self):
+        for item in self.previous:
+            if is_in_part(self, self.parts) and self.condition(item):
+                course_store(self)
+                e_userid = item['_user_id']
+                _euidm = self.e_u_m[e_userid]
+                if _euidm['_p_userid']:  # we have a match
+                    if _euidm['_p_userid'] in self.puid_to_pers:  # we already have a person for this user
+                        pid = uuidToObject(self.puid_to_pers[_euidm['_p_userid']]).id
+                        for y in person_dic(self, u'personnel', e_userid, item, pid, u'Existing',
+                                            transitions=()): yield y  # noqa
+                    else:
+                        pid = _euidm['_p_userid']
+                        fn, ln = separate_fullname(None, fn_first=self.storage['plone']['firstname_first'],
+                                                   fullname=_euidm['_fullname'])
+                        for y in person_dic(self, u'personnel', e_userid, item, pid, u'Matched', firstname=fn,
+                                            lastname=ln): yield y  # noqa
                 continue
             yield item
         if self.change:
@@ -543,6 +593,7 @@ class ECategoryUpdate(object):
         :param with_letter: add a letter prefix
         :return: unique id
         """
+        # TODO must used the imio.helpers.transmogrifier version
         letters = 'abcdefghijklmnopqrstuvwxyz'
         original = oid
         i = 0

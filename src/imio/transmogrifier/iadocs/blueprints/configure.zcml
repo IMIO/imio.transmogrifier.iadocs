@@ -68,6 +68,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.d_personnel_creation"
+    component=".handlers.DPersonnelCreation"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.contact_as_text_update"
     component=".handlers.ContactAsTextUpdate"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
