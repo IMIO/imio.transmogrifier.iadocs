@@ -681,7 +681,7 @@ class ReadFromData(object):
     """Read items from a dictionary.
 
     Parameters:
-        * bp_key = M, blueprint key representing csv
+        * bp_key = M, blueprint key for item
         * store_key = M, storing keys for item. The item is read from storage[{bp_key}][{store_key}]
         * store_subkey = O, storing sub keys for item. If defined, the item is read from
           storage[{bp_key}][{store_key}][{store_subkey}]
