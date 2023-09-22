@@ -159,8 +159,11 @@ pipeline =
     i__1_address_read
     i__1_address_store
     i__1_contacts_load
+    i__batched
+    i__count
     i__1_contact_update
     i__internal_number_insert
+    i__1_is_user_insert
     i__1_ctyp_insert
     i__org_title_insert
     i__1_empty_org_title_insert
@@ -169,6 +172,7 @@ pipeline =
     i__1_id_insert
     i__1_parent_insert
     i__1_path_insert
+    i__is_user_store
 
 # ll  IM & IEM handling
     l__need
@@ -1323,6 +1327,16 @@ store_key = _eid
 fieldnames =
 sort_value = python:(data[k]['_level'], data[k]['_ln'])
 
+[i__batched]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact'
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_contact_path'] and storage.get('count', {}).get('i__count', {}).get('e_contact', {}).get('c', 0) < storage['batch_nb'])
+
+[i__count]
+blueprint = imio.transmogrifier.iadocs.count
+group_key = _bpk
+condition = python: item.get('_bpk') == u'e_contact'
+
 [i__1_contact_update]
 blueprint = imio.transmogrifier.iadocs.i_1_contact_update
 
@@ -1331,6 +1345,12 @@ blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact'
 key = string:internal_number
 value = python:item['_eid']
+
+[i__1_is_user_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact'
+key = string:_is_user
+value = python:bool(item['_user_id'])
 
 [i__1_ctyp_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1384,6 +1404,15 @@ blueprint = imio.transmogrifier.iadocs.path_insert
 condition = python: item.get('_bpk') == u'e_contact'
 bp_key = e_contact_path
 id_keys = _eid
+
+[i__is_user_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_contact'
+bp_key = e_contact_path
+store_key = _eid
+fieldnames = _is_user
+check_key_uniqueness = 0
+yield = 1
 
 # = = = = = = =  ll  = = = = = = = #
 
