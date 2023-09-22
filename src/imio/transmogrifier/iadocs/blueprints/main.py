@@ -907,11 +907,12 @@ class StoreInData(object):
                     if self.csku and subkey in self.storage['data'][self.bp_key].get(key, {}):
                         log_error(item, u"Subkey '{}' of key '{}' already in '{}' data dict".format(subkey, key,
                                                                                                     self.bp_key))
-                    self.storage['data'][self.bp_key].setdefault(key, {})[subkey] = filter_keys(item, self.fieldnames)
+                    self.storage['data'][self.bp_key].setdefault(key, {}).setdefault(subkey, {}).update(
+                        filter_keys(item, self.fieldnames))
                 else:
                     if self.cku and key in self.storage['data'][self.bp_key]:
                         log_error(item, u"Key '{}' already in '{}' data dict".format(key, self.bp_key))
-                    self.storage['data'][self.bp_key][key] = filter_keys(item, self.fieldnames)
+                    self.storage['data'][self.bp_key].setdefault(key, {}).update(filter_keys(item, self.fieldnames))
                 if not self.yld:
                     continue
             yield item
