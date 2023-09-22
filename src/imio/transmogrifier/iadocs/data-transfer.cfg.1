@@ -66,6 +66,8 @@ pipeline =
     d__1_mail_read
     d__1_S_only
     d__om_sender_creation
+    d__1_contacts_load
+    d__personnel_creation
 # ee  classification categories
     e__category_full_match_read
     e__category_full_match_store
@@ -672,6 +674,16 @@ condition2 = python: item.get('_etype') == 'S'
 [d__om_sender_creation]
 blueprint = imio.transmogrifier.iadocs.d_om_sender_creation
 condition = python: item.get('_bpk') == u'e_mail_sender'
+
+[d__1_contacts_load]
+blueprint = imio.transmogrifier.iadocs.read_from_data
+bp_key = e_contacts_sender
+store_key = _eid
+fieldnames = _user_id
+
+[d__personnel_creation]
+blueprint = imio.transmogrifier.iadocs.d_personnel_creation
+condition = python: item.get('_bpk') == u'e_contacts_sender'
 
 # = = = = = = =  ee  = = = = = = = #
 
