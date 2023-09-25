@@ -189,7 +189,8 @@ class ContactAsTextUpdate(object):
         * related_label = O, related label
         * contact_free_key = M, contact free item key name
         * original_item = M, flag to know if mail is item or not (0 or 1)
-        * skip_real_contact = M, flag to pass a real contact (if contact_store contains created contacts) (0 or 1)
+        * skip_real_contact = M, flag to skip a real contact (if contact_store contains created contacts) (0 or 1)
+        * skip_contact_user = O, skip a contact that is a user (defaut 0)
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -213,6 +214,7 @@ class ContactAsTextUpdate(object):
         self.contact_free_key = safe_unicode(options['contact_free_key'])
         self.original_item = bool(int(options['original_item']))
         self.skip_real_contact = bool(int(options['skip_real_contact']))
+        self.skip_contact_user = bool(int(options.get('skip_contact_user') or '0'))
         self.mail_paths = self.storage['data'].get(safe_unicode(options['mail_store_key']), {})
         self.e_c = self.storage['data'][options['contact_store_key']]
         self.batch_store = self.storage['data'].setdefault(self.bp_key, {})
@@ -239,8 +241,11 @@ class ContactAsTextUpdate(object):
                 d_t = mail.data_transfer and mail.data_transfer.split('\r\n') or []
             # we pass a contact considered as already created as object if found in contact_store
             contact_id_param = self.contact_id_key
-            if self.skip_real_contact and item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
-                contact_id_param = ''
+            if item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
+                if self.skip_real_contact or (self.skip_contact_user and
+                                              self.e_c[item[self.contact_id_key]]['_is_user'] ):
+                    contact_id_param = ''
+                    continue  # is it necessary to consider free field only when there is a contact_id ?
             if get_contact_info(self, item, self.contact_label, contact_id_param, self.contact_free_key, desc, d_t,
                                 related_label=self.related_label):
                 additional = u''
@@ -277,6 +282,7 @@ class ContactSet(object):
         * contact_store_key = M, storage main key to find contact
         * default_contact = O, default contact path
         * original_item = M, flag to know if mail is item or not)
+        * skip_contact_user = O, skip a contact that is a user (defaut 0)
         * yield = M, flag to know if a item yield must be done when original item is 0 (0 or 1, default 0)
         * condition = O, condition expression
     """
@@ -303,6 +309,7 @@ class ContactSet(object):
         self.def_ctct_iid = None
         if default_contact:
             self.def_ctct_iid = self.intids.getId(get_obj_from_path(self.portal, path=default_contact))
+        self.skip_contact_user = bool(int(options.get('skip_contact_user') or '0'))
         self.yld = bool(int(options.get('yield') or '0'))
         self.mail_paths = self.storage['data'].get(safe_unicode(options.get('mail_store_key', u'')), {})
         self.e_c = self.storage['data'].setdefault(options['contact_store_key'], {})
@@ -315,7 +322,9 @@ class ContactSet(object):
                 continue
             course_store(self)
             ctct_iid = self.def_ctct_iid  # default contact
-            if item.get(self.contact_id_key) and item[self.contact_id_key] in self.e_c:
+            if item.get(self.contact_id_key) and item[self.contact_id_key] in self.e_c and \
+                    (not self.skip_contact_user and True or not self.e_c[item[self.contact_id_key]]['_is_user']):
+                # if the contact is a user and we must skip user, we don't pass here
                 path = self.e_c[item[self.contact_id_key]]['path']
                 contact = get_obj_from_path(self.portal, path=path)
                 if contact:

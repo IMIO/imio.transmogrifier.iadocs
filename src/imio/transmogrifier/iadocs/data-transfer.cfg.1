@@ -1545,6 +1545,7 @@ contact_id_key = _sender_id
 condition = python: item.get('_bpk') == u'e_mail_i'
 contact_store_key = e_contact_path
 original_item = 1
+skip_contact_user = 0
 
 [l__1_sender_as_text_set]
 blueprint = imio.transmogrifier.iadocs.l_1_sender_as_text_set
@@ -2041,8 +2042,8 @@ mail_id_key = _mail_id
 mail_store_key = e_mail_o
 contact_id_key = _contact_id
 contact_store_key = e_contact_path
-default_contact =
 original_item = 0
+skip_contact_user = 1
 yield = 1
 
 [q__1_recipients_as_text]
@@ -2058,6 +2059,7 @@ related_label =
 contact_free_key = _contact_text
 original_item = 0
 skip_real_contact = 1
+skip_contact_user = 1
 
 # = = = = = = =  rr  = = = = = = = #
 

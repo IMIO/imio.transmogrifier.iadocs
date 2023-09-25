@@ -1577,10 +1577,14 @@ error = python:u"category '{}' not found for eid '{}'".format(item['_category_id
 
 [l__contact_set]
 blueprint = imio.transmogrifier.iadocs.contact_set
+condition = python: item.get('_bpk') == u'e_mail_i'
+bp_key = e_mail_sender
 fieldname = sender
 is_list = 1
 contact_key = _sender_id
-condition = python: item.get('_bpk') == u'e_mail_i'
+contact_store_key = e_contact_path
+original_item = 1
+skip_contact_user = 0
 
 [l__1_sender_as_text_set]
 blueprint = imio.transmogrifier.iadocs.l_1_sender_as_text_set
@@ -1811,6 +1815,7 @@ related_label =
 contact_free_key =
 yield_original = 0
 skip_real_contact = 0
+skip_contact_user = 0
 
 # = = = = = = =  pp  = = = = = = = #
 
@@ -2192,9 +2197,10 @@ is_list = 1
 mail_id_key = _mail_id
 mail_store_key = e_mail_o
 contact_id_key = _contact_id
-contact_store_key = e_contact_path
+contact_store_key = e_contact
 default_contact =
 original_item = 0
+skip_contact_user = 1
 yield = 1
 
 [q__2_recipients_as_text]
@@ -2210,6 +2216,7 @@ related_label =
 contact_free_key =
 yield_original = 0
 skip_real_contact = 0
+skip_contact_user = 1
 
 # = = = = = = =  rr  = = = = = = = #
 
