@@ -396,7 +396,7 @@ class DefaultContactSet(object):
             yield item
 
 
-def person_dic(section, bpk, e_userid, item, pid, title, firstname=None, lastname=None, transitions=('deactivate',)):
+def person_dic(section, bpk, e_userid, item, p_userid, pid, title, firstname=None, lastname=None, transitions=('deactivate',)):
     if e_userid not in section.euid_to_pers:
         # we create or update a person
         path = os.path.join(section.storage['plone']['directory_path'], 'personnel-folder/{}'.format(pid))
@@ -412,10 +412,12 @@ def person_dic(section, bpk, e_userid, item, pid, title, firstname=None, lastnam
                 pdic[u'firstname'] = firstname
             if lastname is not None and not person.lastname:
                 pdic[u'lastname'] = lastname
+            if p_userid and not person.userid:
+                pdic['userid'] = p_userid
         else:
             pdic = {'_type': 'person', '_path': path, u'internal_number': e_userid, 'use_parent_address': False,
                     u'_bpk': bpk, u'_eid': item['_eid'], u'_deactivate': 'deactivate' in transitions,
-                    u'creation_date': section.storage['creation_date'], '_act': 'N',
+                    u'creation_date': section.storage['creation_date'], '_act': 'N', 'userid': p_userid,
                     u'modification_date': section.storage['creation_date'], u'title': title}
             pdic.setdefault(u'_post_actions', {})[u'store_internal_person_info'] = ''
             if firstname is not None:
@@ -483,24 +485,24 @@ class DOMSenderCreation(object):
                     if _euidm['_p_userid']:  # we have a match
                         if _euidm['_p_userid'] in self.puid_to_pers:  # we already have a person for this user
                             pid = uuidToObject(self.puid_to_pers[_euidm['_p_userid']]).id
-                            for y in person_dic(self, u'person_sender', e_userid, item, pid, u'Existing',
-                                                transitions=()): yield y  # noqa
+                            for y in person_dic(self, u'person_sender', e_userid, item, _euidm['_p_userid'], pid,
+                                                u'Existing', transitions=()): yield y  # noqa
                             for y in hp_dic(self, u'hp_sender', e_userid, item): yield y  # noqa
                         else:
                             pid = _euidm['_p_userid']
                             fn, ln = separate_fullname(None, fn_first=self.storage['plone']['firstname_first'],
                                                        fullname=_euidm['_fullname'])
-                            for y in person_dic(self, u'person_sender', e_userid, item, pid, u'Matched', firstname=fn,
-                                                lastname=ln): yield y  # noqa
+                            for y in person_dic(self, u'person_sender', e_userid, item, _euidm['_p_userid'], pid,
+                                                u'Matched', firstname=fn, lastname=ln): yield y  # noqa
                             for y in hp_dic(self, u'hp_sender', e_userid, item): yield y  # noqa
                     else:
                         pid = idnormalizer.normalize(full_name(_euidm['_prenom'], _euidm['_nom'],
                                                                fn_first=self.storage['plone']['firstname_first']))
-                        for y in person_dic(self, u'person_sender', e_userid, item, pid, u'Unmatched',
+                        for y in person_dic(self, u'person_sender', e_userid, item, None, pid, u'Unmatched',
                                             firstname=_euidm['_prenom'], lastname=_euidm['_nom']): yield y  # noqa
                         for y in hp_dic(self, u'hp_sender', e_userid, item): yield y  # noqa
                 else:  # we do not have a _sender_id or _sender_id is not a user id
-                    for y in person_dic(self, u'person_sender', u'None', item, 'reprise-donnees', u'None',
+                    for y in person_dic(self, u'person_sender', u'None', item, None, 'reprise-donnees', u'None',
                                         firstname=u'', lastname=u'Reprise données'): yield y  # noqa
                     for y in hp_dic(self, u'hp_sender', u'None', item): yield y  # noqa
                 continue
@@ -542,14 +544,14 @@ class DPersonnelCreation(object):
                 if _euidm['_p_userid']:  # we have a match
                     if _euidm['_p_userid'] in self.puid_to_pers:  # we already have a person for this user
                         pid = uuidToObject(self.puid_to_pers[_euidm['_p_userid']]).id
-                        for y in person_dic(self, u'personnel', e_userid, item, pid, u'Existing',
+                        for y in person_dic(self, u'personnel', e_userid, item, _euidm['_p_userid'], pid, u'Existing',
                                             transitions=()): yield y  # noqa
                     else:
                         pid = _euidm['_p_userid']
                         fn, ln = separate_fullname(None, fn_first=self.storage['plone']['firstname_first'],
                                                    fullname=_euidm['_fullname'])
-                        for y in person_dic(self, u'personnel', e_userid, item, pid, u'Matched', firstname=fn,
-                                            lastname=ln): yield y  # noqa
+                        for y in person_dic(self, u'personnel', e_userid, item, _euidm['_p_userid'], pid, u'Matched',
+                                            firstname=fn, lastname=ln): yield y  # noqa
                 continue
             yield item
         if self.change:
