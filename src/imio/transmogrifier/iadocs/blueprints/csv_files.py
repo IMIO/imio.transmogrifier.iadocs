@@ -125,7 +125,6 @@ class CSVReader(object):
                         item[key] = None
                     good_fieldnames.append(key)
             csv_d['fd'] = good_fieldnames
-
             yield item
 
         if csv_d['fh'] is not None:
@@ -136,13 +135,19 @@ class CSVReader(object):
 def writerow(csv_d, item):
     """Write item in csv"""
     if csv_d['fh'] is None:
+        header = True
         try:
-            csv_d['fh'] = open(csv_d['fp'], mode='wb')
+            mode = 'wb'
+            if csv_d['append']:
+                mode = 'ab'
+                if os.path.exists(csv_d['fp']):
+                    header = False
+            csv_d['fh'] = open(csv_d['fp'], mode=mode)
         except IOError as m:
             raise Exception("Cannot create file '{}': {}".format(csv_d['fp'], m))
         o_logger.info(u"Writing '{}'".format(csv_d['fp']))
         csv_d['wh'] = csv.writer(csv_d['fh'], **csv_d['wp'])
-        if csv_d['hd']:
+        if csv_d['hd'] and header:
             csv_d['wh'].writerow(encode_list(csv_d['hd'], csv_d['we']))
     csv_d['wh'].writerow(encode_list([item.get(fd, u'') for fd in csv_d['fd']], csv_d['we']))
 
@@ -160,6 +165,7 @@ class CSVWriter(object):
         * csv_key = O, csv key (default to bp_key)
         * store_key = O, storing key for item. If defined, we get the item from storage[{bp_key}].
         * store_key_sort = 0, field to sort on. If empty or not found, the store key. If '__no_sort__', not sorted !
+        * append_mode = 0, append mode (0 or 1: default 0)
         * csv_encoding = O, csv encoding. Default: utf8.
         * dialect = O, csv dialect. Default: excel.
         * fmtparam-strict = O, raises exception on row error. Default False.
@@ -201,8 +207,8 @@ class CSVWriter(object):
         self.store_subkey = safe_unicode(options.get('store_subkey'))
         self.sort_key = safe_unicode(options.get('store_key_sort') or '__on_store_key__')
         self.storage['csv'][self.csv_key] = {'fp': self.filename, 'fh': None, 'fn': os.path.basename(self.filename),
-                                             'wh': None, 'wp': fmtparam, 'we': csv_encoding,
-                                             'fd': fieldnames, 'hd': headers}
+                                             'wh': None, 'wp': fmtparam, 'we': csv_encoding, 'fd': fieldnames,
+                                             'hd': headers, 'append': bool(int(options.get('append_mode') or '0'))}
 
     def _row(self, dicv, extend):
         extra_dic = dict(dicv)

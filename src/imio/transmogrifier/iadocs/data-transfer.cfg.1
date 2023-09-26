@@ -1538,7 +1538,7 @@ error = python:u"category '{}' not found for eid '{}'".format(item['_category_id
 
 [l__contact_set]
 blueprint = imio.transmogrifier.iadocs.contact_set
-bp_key = e_mail_recipient
+bp_key = e_mail_sender
 fieldname = sender
 is_list = 1
 contact_id_key = _sender_id
@@ -2530,6 +2530,7 @@ filename = 3_folder_created.csv
 fieldnames = _eid title _uid treating_groups archived _path _type classification_categories classification_informations internal_reference_no _deactivate creation_date modification_date
 headers = _eid title _uid treating_groups archived _path _type classification_categories classification_informations internal_reference_no _deactivate creation_date modification_date
 bp_key = 3_folder_created
+append_mode = 1
 yield = 1
 
 [post_actions]
