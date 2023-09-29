@@ -333,6 +333,7 @@ class ContactSet(object):
                 value = item.get(self.fieldname)
                 if not ctct_iid:  # contact not found and no default contact
                     yield item
+                    continue
             else:
                 self.batch_store[item['_eid']] = 0
                 if not ctct_iid:
