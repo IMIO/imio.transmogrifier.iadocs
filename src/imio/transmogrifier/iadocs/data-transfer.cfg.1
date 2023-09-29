@@ -2525,6 +2525,7 @@ value = python:obj.UID()
 
 [f__created_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
+b_condition = python: storage['commit'] is True
 condition = python: item.get('_bpk') == 'e_folder'
 filename = 3_folder_created.csv
 fieldnames = _eid title _uid treating_groups archived _path _type classification_categories classification_informations internal_reference_no _deactivate creation_date modification_date
