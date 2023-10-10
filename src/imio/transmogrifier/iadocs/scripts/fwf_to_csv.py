@@ -60,6 +60,7 @@ def get_values(cols, fh, count_dic, input_sep):
     :param cols: ordered dict containing column: width
     :param fh: input file handler
     :param count_dic: counters dict like {'read': 0, 'max': 10}
+    :param input_sep: input separator char
     :return: continue flag, columns values
     """
     values = []
