@@ -397,6 +397,7 @@ d_condition = python:storage['commit'] is True
 [0__files_list]
 blueprint = imio.transmogrifier.iadocs.files_list
 condition = python: modules['os'].path.exists(storage['filesp'])
+exclude_patterns = python:[r'^BackupScans$', r'^DELIB_DOCUMENT_', r'^DOSSIER_CLASSEMENT_', r'^eDelib', r'^eSignLots$', r'^tmp$']
 bp_key = e_files
 
 # = = = = = = =  aa  = = = = = = = #

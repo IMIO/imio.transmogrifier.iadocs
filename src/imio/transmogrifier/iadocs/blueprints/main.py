@@ -494,6 +494,7 @@ class FilesList(object):
     Parameters:
         * bp_key = M, blueprint key
         * condition = O, condition expression
+        * exclude_patterns = O, folder patterns list to exclude
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -509,9 +510,11 @@ class FilesList(object):
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.bp_key = safe_unicode(options['bp_key'])
         self.files = self.storage['data'].setdefault(self.bp_key, {})
+        exclude_patterns = options.get('exclude_patterns', '').strip()
+        excludes = exclude_patterns and Expression(exclude_patterns, transmogrifier, name, options)(None) or []
         if self.condition({}, storage=self.storage):
             course_store(self)
-            for fp in sorted(read_recursive_dir(self.storage['filesp'], u'')):
+            for fp in sorted(read_recursive_dir(self.storage['filesp'], u'', exclude_patterns=excludes)):
                 filename = os.path.basename(fp)
                 basename, ext = os.path.splitext(filename)
                 if basename not in self.files:
