@@ -107,7 +107,7 @@ def get_folders(section):
         irn = folder.internal_reference_no
         if irn:
             # parts = re.split('/', irn)
-            parts = irn.split('/')
+            parts = irn.split('/')  # ??????? in which case ?
             irn = parts[0]
             # try:
             #     int(irn)
@@ -116,7 +116,9 @@ def get_folders(section):
         folders_uids[brain.UID] = {'title': folder.title, 'path': brain.getPath(), 'full_title': full_title,
                                    'parent': parent and parent.UID() or None, 'irn': folder.internal_reference_no,
                                    'peid': irn}
-        if irn not in irn_to_folder:
+        if irn is None:
+            pass
+        elif irn not in irn_to_folder:
             irn_to_folder[irn] = {'uid': brain.UID}
         elif not brain.getPath().startswith('{}/'.format(folders_uids[irn_to_folder[irn]['uid']]['path'])):
             # subfolder has been created with parent irn but modified by user who has removed suffix
