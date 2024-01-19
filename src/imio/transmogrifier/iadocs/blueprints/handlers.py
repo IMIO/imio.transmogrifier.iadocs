@@ -309,6 +309,8 @@ class ContactSet(object):
         self.def_ctct_iid = None
         if default_contact:
             self.def_ctct_iid = self.intids.getId(get_obj_from_path(self.portal, path=default_contact))
+        elif self.storage['plone']['def_contact']:
+            self.def_ctct_iid = self.intids.getId(self.storage['plone']['def_contact'])
         self.skip_contact_user = bool(int(options.get('skip_contact_user') or '0'))
         self.yld = bool(int(options.get('yield') or '0'))
         self.mail_paths = self.storage['data'].get(safe_unicode(options.get('mail_store_key', u'')), {})
