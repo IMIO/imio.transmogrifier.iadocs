@@ -406,7 +406,8 @@ class DefaultContactSet(object):
             yield item
 
 
-def person_dic(section, bpk, e_userid, item, p_userid, pid, title, firstname=None, lastname=None, transitions=('deactivate',)):
+def person_dic(section, bpk, e_userid, item, p_userid, pid, title, firstname=None, lastname=None,
+               transitions=('deactivate',)):
     if e_userid not in section.euid_to_pers:
         # we create or update a person
         path = os.path.join(section.storage['plone']['directory_path'], 'personnel-folder/{}'.format(pid))
@@ -513,7 +514,7 @@ class DOMSenderCreation(object):
                         for y in person_dic(self, u'person_sender', e_userid, item, None, pid, u'Unmatched',
                                             firstname=_euidm['_prenom'], lastname=_euidm['_nom']): yield y  # noqa
                         for y in hp_dic(self, u'hp_sender', e_userid, item): yield y  # noqa
-                else:  # we do not have a _sender_id or _sender_id is not a user id
+                else:  # we don't have a _sender_id or _sender_id is not a user id
                     for y in person_dic(self, u'person_sender', u'None', item, None, 'reprise-donnees', u'None',
                                         firstname=u'', lastname=u'Reprise données'): yield y  # noqa
                     for y in hp_dic(self, u'hp_sender', u'None', item): yield y  # noqa
@@ -553,7 +554,7 @@ class DPersonnelCreation(object):
                 course_store(self)
                 e_userid = item['_user_id']
                 _euidm = self.e_u_m[e_userid]
-                if _euidm['_p_userid']:  # we have a match
+                if _euidm['_p_userid']:  # we have a match (plone user)
                     if _euidm['_p_userid'] in self.puid_to_pers:  # we already have a person for this user
                         pid = uuidToObject(self.puid_to_pers[_euidm['_p_userid']]).id
                         for y in person_dic(self, u'personnel', e_userid, item, _euidm['_p_userid'], pid, u'Existing',
@@ -1013,6 +1014,7 @@ class L1SenderAsTextSet(object):
         # do we use contact id field ?
         self.eid_key = '_sender_id'
         self.eids = self.storage['data'].get('e_contact_path')
+        # e_contact_path from 'i' like: {u'5633': {'path': u'/contacts/5633', u'_is_user': False}}
 
     def __iter__(self):
         for item in self.previous:
@@ -1022,7 +1024,8 @@ class L1SenderAsTextSet(object):
             course_store(self)
             desc = 'description' in item and item.get('description').split('\r\n') or []
             d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
-            get_contact = (not item[self.eid_key] or item[self.eid_key] not in self.eids) and self.eid_key or ''
+            # if id_key value and not in contact: pass id_key to get infos from contact
+            get_contact = (item[self.eid_key] and item[self.eid_key] not in self.eids) and self.eid_key or ''
             if get_contact_info(self, item, u'EXPÉDITEUR', get_contact, '_sender', desc, d_t):
                 item['description'] = u'\r\n'.join(desc)
                 item['data_transfer'] = u'\r\n'.join(d_t)
