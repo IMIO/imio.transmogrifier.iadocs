@@ -427,9 +427,11 @@ def person_dic(section, bpk, e_userid, item, p_userid, pid, title, firstname=Non
         else:
             pdic = {'_type': 'person', '_path': path, u'internal_number': e_userid, 'use_parent_address': False,
                     u'_bpk': bpk, u'_eid': item['_eid'], u'_deactivate': 'deactivate' in transitions,
-                    u'creation_date': section.storage['creation_date'], '_act': 'N', 'userid': p_userid,
+                    u'creation_date': section.storage['creation_date'], '_act': 'N',
                     u'modification_date': section.storage['creation_date'], u'title': title}
             pdic.setdefault(u'_post_actions', {})[u'store_internal_person_info'] = ''
+            if p_userid:  # avoid None causing error in schemaupdater converter
+                pdic['userid'] = p_userid
             if firstname is not None:
                 pdic[u'firstname'] = firstname
             if lastname is not None:
@@ -492,7 +494,7 @@ class DOMSenderCreation(object):
                 if item.get('_sender_id') and item['_sender_id'] in self.e_c_s:  # we have a user id
                     e_userid = self.e_c_s[item['_sender_id']]['_user_id']
                     _euidm = self.e_u_m[e_userid]
-                    if _euidm['_p_userid']:  # we have a match
+                    if _euidm['_p_userid']:  # we have a match (plone user)
                         if _euidm['_p_userid'] in self.puid_to_pers:  # we already have a person for this user
                             pid = uuidToObject(self.puid_to_pers[_euidm['_p_userid']]).id
                             for y in person_dic(self, u'person_sender', e_userid, item, _euidm['_p_userid'], pid,
