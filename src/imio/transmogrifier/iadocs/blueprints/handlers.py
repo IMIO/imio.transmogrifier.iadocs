@@ -270,7 +270,7 @@ class ContactAsTextUpdate(object):
 
 
 class ContactSet(object):
-    """Set contact.
+    """Set contact. Try to find a contact or set default contact.
 
     Parameters:
         * bp_key = M, blueprint key used on new item if not yield
@@ -1003,7 +1003,7 @@ class L1RecipientGroupsSet(object):
 
 
 class L1SenderAsTextSet(object):
-    """Handles contact"""
+    """Handles contact. Set sender as text (from sender_id if not already used and from sender text value). """
     classProvides(ISectionBlueprint)
     implements(ISection)
 
@@ -1035,7 +1035,7 @@ class L1SenderAsTextSet(object):
 
 
 class M1AssignedUserHandling(object):
-    """Handles assigned user.
+    """Handles assigned user. If user is in treating_group, set assigned_user.
 
     Parameters:
         * store_key = M, storage main key to find mail path
