@@ -348,24 +348,32 @@ class ContactSet(object):
                                      self.mail_paths[item[self.mail_id_key]]['path'])
                     continue
                 value = getattr(mail, self.fieldname)
+            change = False
             if self.is_list:
                 if value:
                     if ctct_iid not in [rel.to_id for rel in value]:
                         value.append(RelationValue(ctct_iid))
-                    if self.def_ctct_iid in [rel.to_id for rel in value]:
+                        change = True
+                    # if we have another contact, we remove the default contact
+                    if len(value) > 1 and self.def_ctct_iid in [rel.to_id for rel in value]:
                         value = [rel for rel in value if rel.to_id != self.def_ctct_iid]
+                        change = True
                     # value.remove(del_rem) error from_object when removing (without commit, rel not ok ?)
                 else:
                     value = [RelationValue(ctct_iid)]
+                    change = True
             else:
                 value = RelationValue(ctct_iid)
+                change = True
             if self.original_item:
-                item[self.fieldname] = value
+                if change:
+                    item[self.fieldname] = value
                 yield item
             else:
-                item2 = {'_eid': item['_eid'], '_path': self.mail_paths[item[self.mail_id_key]]['path'],
-                         '_type': mail.portal_type, '_bpk': self.bp_key, '_act': 'U', self.fieldname: value}
-                yield item2
+                if change:
+                    item2 = {'_eid': item['_eid'], '_path': self.mail_paths[item[self.mail_id_key]]['path'],
+                             '_type': mail.portal_type, '_bpk': self.bp_key, '_act': 'U', self.fieldname: value}
+                    yield item2
                 if self.yld:
                     yield item
 
@@ -1255,7 +1263,7 @@ class PostActions(object):
 
 
 class Q1RecipientsAsTextUpdate(object):
-    """Handles om recipients.
+    """Handles om recipients. Yet used ??
 
     Parameters:
         * condition = O, condition expression
