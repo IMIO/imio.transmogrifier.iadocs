@@ -2455,12 +2455,14 @@ blueprint = imio.transmogrifier.iadocs.need_other
 parts =
 
 [x__pickle_mail_link_w]
+# write already treated mail links
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_link.pkl
 store_key = reply_to
 d_condition = python:storage['commit'] is True
 
 [x__1_mail_link_read]
+# read mail links csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 # filename = eCourriersLiens_test.csv
@@ -2469,27 +2471,32 @@ fieldnames = _A _eid _target_id _comment
 bp_key = e_mail_link
 
 [x__1_already_only]
+# keep plone loaded mail links
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'x') and item.get('_bpk') == u'e_mail_link'
 condition2 = python: item['_eid'] in storage['data']['e_mail'] and item['_target_id'] in storage['data']['e_mail']
 
 [x__batched]
+# keep only not already treated mail links
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'x') and item.get('_bpk') == u'e_mail_link'
 condition2 = python:not storage['batch_nb'] and True or ((item['_eid'] not in storage['data']['reply_to'] or item['_target_id'] not in storage['data']['reply_to'][item['_eid']])
              and storage.get('count', {}).get('x__count', {}).get('reply_to', {}).get('c', 0) < storage['batch_nb'])
 
 [x__1_reply_to_update]
+# yield new mail item with reply_to field value
 blueprint = imio.transmogrifier.iadocs.x_1_reply_to_update
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'x') and item.get('_bpk') == u'e_mail_link'
 store_key = e_mail
 
 [x__count]
+# mail links counter
 blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
 condition = python: item.get('_bpk') == u'reply_to'
 
 [x__1_batch_store]
+# store treated mail links in pickle dic
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'reply_to'
 bp_key = reply_to
