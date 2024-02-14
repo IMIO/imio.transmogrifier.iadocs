@@ -17,6 +17,7 @@ sqlcmd_ext = '.fwf'
 tables = OrderedDict([
     ('XeAdresses', {}), ('eClassement', {}), ('eClassementDossiers', {}), ('eContacts', {}),
     ('eContactsAdresses', {}), ('eContactsTitres', {}), ('eContactsType', {}),
+    # ('eCourriers', {'c': "isnull(Supprime, '0') != '1'",
     ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'",
                     'o': "isnull(DateEncodage, dateentree), dateentree"}),
     # ('eCourriers', {'c': "(TypeEntrantSortant != 'I' or isnull(NatureID, '') not in (select id from eNatures where "
