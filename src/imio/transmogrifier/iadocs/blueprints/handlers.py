@@ -12,6 +12,7 @@ from imio.dms.mail.utils import create_period_folder
 from imio.dms.mail.utils import separate_fullname
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import clean_value
+from imio.helpers.transmogrifier import get_correct_id
 from imio.helpers.transmogrifier import get_obj_from_path
 from imio.helpers.transmogrifier import pool_tuples
 from imio.pyutils.system import full_path
@@ -610,25 +611,6 @@ class ECategoryUpdate(object):
             raise 'Code is only handling decimal import'
         self.p_category = self.storage['data']['p_category']
 
-    def correct_id(self, obj, oid, with_letter=False):
-        """ Modify an id already existing in obj.
-
-        :param obj: plone obj or dict
-        :param oid: id to check
-        :param with_letter: add a letter prefix
-        :return: unique id
-        """
-        # TODO must used the imio.helpers.transmogrifier version
-        letters = 'abcdefghijklmnopqrstuvwxyz'
-        original = oid
-        i = 0
-        pfx = with_letter and letters[i] or i
-        while oid in obj:
-            oid = u'{}-{}'.format(original, pfx)
-            i += 1
-            pfx = with_letter and letters[i] or i
-        return oid
-
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.b_cond and self.condition(item):
@@ -676,7 +658,7 @@ class ECategoryUpdate(object):
                         log_error(item, u"Same code '{}' with title '{}' previously created with title '{}'".format(
                             code, self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle'],
                             self.p_category[code]['title']))
-                        code = self.correct_id(self.p_category, code, with_letter=True)
+                        code = get_correct_id(self.p_category, code, with_letter=True)
                     node = create_category(parent, {'identifier': code, 'title': self.replace_slash and
                                            item['_etitle'].replace('/', '-') or item['_etitle'],
                                            'enabled': item['_eactive']}, event=True)
