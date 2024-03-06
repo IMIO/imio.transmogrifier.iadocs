@@ -836,10 +836,13 @@ class SetState(object):
                 if len(obj.workflow_history[self.workflow_id]) > 1:
                     log_error(item, "workflow_history len > 1: {}".format(obj.workflow_history))
                 wfh = []
+                old_wfh = obj.workflow_history.get(self.workflow_id)
+                old_wfh_len = len(old_wfh)
                 change = False
-                for status in obj.workflow_history.get(self.workflow_id):
+                for i, status in enumerate(old_wfh, 1):
                     if self.replace:
-                        if status['review_state'] == self.replace:
+                        # only modify last wf action
+                        if i == old_wfh_len and status['review_state'] == self.replace:
                             if self.state_id:
                                 status['review_state'] = self.state_id
                             if self.action_id:
@@ -848,8 +851,8 @@ class SetState(object):
                                 status['time'] = DateTime(item[self.date_key])
                             if self.actor:
                                 status['actor'] = self.actor
+                            change = True
                     wfh.append(status)
-                    change = True
                 if not self.replace:
                     status = {'action': self.action_id, 'actor': self.actor, 'comments': '',
                               'review_state': self.state_id, 'time': DateTime(item[self.date_key])}
