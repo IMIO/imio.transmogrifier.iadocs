@@ -14,6 +14,8 @@ from imio.pyutils.system import load_var
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
 from plone import api
+from zope.component import getUtility
+from zope.schema.interfaces import IVocabularyFactory
 
 import os
 
@@ -97,6 +99,9 @@ def get_folders(section):
         load_var(ft_file, folders_titles)
         return folders_uids, irn_to_folder, folders_titles
 
+    factory = getUtility(IVocabularyFactory, u'collective.dms.basecontent.treating_groups')
+    tgs = factory(portal)
+
     crits = {'object_provides': 'collective.classification.folder.content.classification_folder.'
                                 'IClassificationFolder',
              'sort_on': 'ClassificationFolderSort'}
@@ -115,7 +120,7 @@ def get_folders(section):
             #     o_logger.error(u"Invalid irn '{}' for '{}' ({})".format(irn, full_title, folder.absolute_url()))
         folders_uids[brain.UID] = {'title': folder.title, 'path': brain.getPath(), 'full_title': full_title,
                                    'parent': parent and parent.UID() or None, 'irn': folder.internal_reference_no,
-                                   'peid': irn}
+                                   'peid': irn, 'tgft': tgs.getTerm(folder.treating_groups).title}
         if irn is None:
             pass
         elif irn not in irn_to_folder:
