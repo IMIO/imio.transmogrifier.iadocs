@@ -108,8 +108,8 @@ pipeline =
     f__dependency_sorter
     f__plone_folder_write
     f__1_folder_load
-    # only to check if all parents are found
-    # continue
+# only to check if all parents are found
+;    continue
     f__folder_to_create
     f__batched
     f__count
@@ -178,7 +178,8 @@ pipeline =
 # ll  IM & IEM handling
     l__need
     lq__pickle_c_r
-    lpq__1_contacts_check
+# dont know if really used ??
+;    lpq__1_contacts_check
     l__1_mail_read
     l__pickle_i_w
     l__1_E_only
@@ -196,12 +197,12 @@ pipeline =
     l__1_category_id_insert
     l__contact_set
     l__1_sender_as_text_set
-    l__mail_type_source_insert
-    l__1_source_insert
     l__mail_type_nature_insert
     l__1_nature_insert
+    l__mail_type_source_insert
+    l__1_source_insert
     l__mail_type_default_insert
-    l__1_meetingitem_link_insert
+;    l__1_meetingitem_link_insert
     l__1_confidential_insert
     l__1_remark_insert
     l__empty_title_insert
@@ -1443,7 +1444,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 ;filename = eCourriers_E_test.csv
 filename = eCourriers.csv
-fieldnames = _A _eid _C reception_date original_mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
+fieldnames = _A _eid _C reception_date original_mail_date _external_reference_no _due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
              _Q _R _S _T _U _to_del _W _source _source_id _Z
              creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
              _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
@@ -1475,11 +1476,11 @@ blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_i
 condition = python: item.get('_bpk') == u'e_mail_i'
 clean_value = _remark python:u'\n' " " "python:[(r'^[""\']+$', u'')]" python:u'\r\n' _sender python:u'\n' " " "python:[(r'^-+$', u''), (r'\s{2,}', u' ')]" python:u'\n'
-hyphen_newline = external_reference_no
-invalids = reception_date 0 original_mail_date 0 due_date 0 _category_id 0
+hyphen_newline =
+invalids = reception_date 0 original_mail_date 0 _category_id 0
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans = _confidential _meetingitem_link
-dates = reception_date %Y%m%d 0 original_mail_date %Y%m%d 1 due_date %Y%m%d 1 creation_date %Y%m%d 0
+dates = reception_date %Y%m%d 0 original_mail_date %Y%m%d 1 creation_date %Y%m%d 0
 
 [l__creation_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1558,29 +1559,29 @@ condition = python: item.get('_bpk') == u'e_mail_i'
 [l__mail_type_nature_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_nature_id') and 'mail_type' not in item
-            and storage['data']['e_mailtype_match'][item['_nature_id']]['E']['_key']
+            and storage['data']['e_mailtype_match'][item['_nature_id']][item['_etype']]['_key']
 key = string:mail_type
-value = python:storage['data']['e_mailtype_match'][item['_nature_id']]['E']['_key']
+value = python:storage['data']['e_mailtype_match'][item['_nature_id']][item['_etype']]['_key']
 
 [l__1_nature_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_nature_id')
 key = string:data_transfer
-value = python:u'NATURE: {}.'.format(storage['data']['e_mailtype_match'][item['_nature_id']]['E']['_etitle'])
+value = python:u'NATURE: {}.'.format(storage['data']['e_mailtype_match'][item['_nature_id']][item['_etype']]['_etitle'])
 separator = python:u'\r\n'
 
 [l__mail_type_source_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_source_id') and 'mail_type' not in item
-            and storage['data']['e_mailtype_match'][item['_source_id']]['E']['_key']
+            and storage['data']['e_mailtype_match'][item['_source_id']][item['_etype']]['_key']
 key = string:mail_type
-value = python: storage['data']['e_mailtype_match'][item['_source_id']]['E']['_key']
+value = python: storage['data']['e_mailtype_match'][item['_source_id']][item['_etype']]['_key']
 
 [l__1_source_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_source_id')
 key = string:data_transfer
-value = python:u'SOURCE: {}.'.format(storage['data']['e_mailtype_match'][item['_source_id']]['E']['_etitle'])
+value = python:u'SOURCE: {}.'.format(storage['data']['e_mailtype_match'][item['_source_id']][item['_etype']]['_etitle'])
 separator = python:u'\r\n'
 
 [l__mail_type_default_insert]
