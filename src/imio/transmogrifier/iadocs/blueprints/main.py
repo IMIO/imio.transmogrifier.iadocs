@@ -7,6 +7,7 @@ from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
 from collective.transmogrifier.utils import Expression
+from copy import copy
 from datetime import date
 from datetime import datetime
 from DateTime.DateTime import DateTime
@@ -14,8 +15,8 @@ from imio.dms.mail import ARCHIVE_SITE
 from imio.dms.mail.browser.settings import IImioDmsMailConfig
 from imio.helpers.security import generate_password
 from imio.helpers.transmogrifier import clean_value
-from imio.helpers.transmogrifier import get_correct_path
 from imio.helpers.transmogrifier import filter_keys
+from imio.helpers.transmogrifier import get_correct_path
 from imio.helpers.transmogrifier import get_main_path
 from imio.helpers.transmogrifier import get_obj_from_path
 from imio.helpers.transmogrifier import pool_tuples
@@ -34,11 +35,11 @@ from imio.transmogrifier.iadocs.utils import course_print
 from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import get_categories
 from imio.transmogrifier.iadocs.utils import get_folders
-from imio.transmogrifier.iadocs.utils import get_org_level
 from imio.transmogrifier.iadocs.utils import get_mailtypes
-from imio.transmogrifier.iadocs.utils import get_related_parts
+from imio.transmogrifier.iadocs.utils import get_org_level
 from imio.transmogrifier.iadocs.utils import get_personnel
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
+from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import get_users
 from imio.transmogrifier.iadocs.utils import get_users_groups
 from imio.transmogrifier.iadocs.utils import is_in_part
@@ -58,11 +59,11 @@ from zope.interface import implements
 from zope.lifecycleevent import ObjectModifiedEvent
 from zope.schema.interfaces import IVocabularyFactory
 
+import cPickle
 import csv
 import json
 import logging
 import os
-import cPickle
 
 
 class Initialization(object):
@@ -485,6 +486,10 @@ class DependencySorter(object):
             course_store(self)
             if not self.condition(item):
                 continue
+            if main_key in self.parent_relation and self.parent_relation[main_key]['_parent_id'] not in orig_dic:
+                temp_item = copy(item)
+                temp_item.update({'_bpk': self.bp_key, '_eid': main_key})  # to be used in log_error
+                log_error(temp_item, u"Parent '{}' not found".format(self.parent_relation[main_key]['_parent_id']))
             item['_level'] = get_org_level(self.parent_relation, main_key)
 
 

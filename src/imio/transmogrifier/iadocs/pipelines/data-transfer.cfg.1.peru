@@ -108,6 +108,8 @@ pipeline =
     f__dependency_sorter
     f__plone_folder_write
     f__1_folder_load
+    # only to check if all parents are found
+    # continue
     f__folder_to_create
     f__batched
     f__count
@@ -116,10 +118,10 @@ pipeline =
     f__modification_date_insert
     f__1_category_id_insert
     f__1_empty_title_insert
-    f__1_localisation_insert
+;    f__1_localisation_insert
     f__1_remark_insert
     f__1_comment_insert
-    f__1_archive_date_insert
+;    f__1_archive_date_insert
     f__treating_groups_insert
     fF__deactivate_insert
     f__type_insert
