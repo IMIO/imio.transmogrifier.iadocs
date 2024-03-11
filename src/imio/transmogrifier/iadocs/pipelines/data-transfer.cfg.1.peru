@@ -316,9 +316,6 @@ pipeline =
 #    t__need
     tu__pickle_file_unfound_w
     t__pickle_file_i_w
-#     t__1_mail_read
-#     t__1_E_only
-#     t__1_store_mail
     t__1_already_only
 #     t__1_i_only
     t__batched
@@ -2295,32 +2292,6 @@ blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_file_i.pkl
 store_key = e_dmsfile_i
 d_condition = python:storage['commit'] is True
-
-[t__1_mail_read]
-# read mails csv file
-blueprint = imio.transmogrifier.iadocs.csv_reader
-#b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-#filename = eCourriers_E_test.csv
-filename = eCourriers.csv
-fieldnames = _A _eid _C _D _E _F _G _H _I _J _K _L _M _etype _O _P _Q _R _S _T _U _to_del _W _X _Y _Z
-             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
-bp_key = e_mail
-
-[t__1_E_only]
-blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 't') and item.get('_bpk') == u'e_mail'
-condition2 = python: item.get('_etype') in ('E', 'S') and str(item['_to_del']) != '1'
-# condition2 = python: item.get('_etype') in ('E',) and str(item['_to_del']) != '1'
-
-[t__1_store_mail]
-# store mails in dic
-blueprint = imio.transmogrifier.iadocs.store_in_data
-condition = python: item.get('_bpk') == u'e_mail'
-bp_key = e_mail
-store_key = _eid
-fieldnames = _etype
-yield = 0
 
 [t__1_already_only]
 # keep plone loaded mails
