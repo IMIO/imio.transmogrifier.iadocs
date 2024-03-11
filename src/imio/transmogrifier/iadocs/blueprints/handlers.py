@@ -688,11 +688,12 @@ class F1Level3Handler(object):
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
 
     def __iter__(self):
         for item in self.previous:
-            if not self.condition(item):
+            if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
             course_store(self)
