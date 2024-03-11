@@ -1146,7 +1146,7 @@ class POMSenderSet(object):
                         item['description'] = u'\r\n'.join(desc)
                         item['data_transfer'] = u'\r\n'.join(d_t)
             else:  # we do not have a _sender_id
-                e_userid = u'None'
+                e_userid = u'None'  # person reprise-donnees
             pers_userid = self.euid_to_pers[e_userid]
             ouid = self.eid_to_orgs[item['_service_id']]['uid']
             hp_dic = self.p_hps[pers_userid]['hps'][ouid]

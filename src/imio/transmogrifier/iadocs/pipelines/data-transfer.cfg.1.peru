@@ -253,7 +253,7 @@ pipeline =
     p__1_nature_insert
     p__send_modes_insert
     p__1_source_insert
-    p__1_meetingitem_link_insert
+;    p__1_meetingitem_link_insert
     p__1_confidential_insert
     p__1_remark_insert
     p__empty_title_insert
@@ -1760,7 +1760,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 # filename = eCourriers_S_test.csv
 filename = eCourriers.csv
-fieldnames = _A _eid _C outgoing_date mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
+fieldnames = _A _eid _C outgoing_date mail_date _external_reference_no _due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
              _Q _R _S _T _U _to_del _W _source _source_id _Z
              creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
              _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
@@ -1796,12 +1796,12 @@ condition = python: item.get('_bpk') == u'e_mail_o'
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_o
 condition = python: item.get('_bpk') == u'e_mail_o'
-hyphen_newline = external_reference_no
-invalids = outgoing_date 0 mail_date 0 due_date 0 _category_id 0
+hyphen_newline =
+invalids = outgoing_date 0 mail_date 0 _category_id 0
 clean_value = title python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" python:u'\n' _remark python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" python:u'\r\n' _sender python:u'\n' " " "python:[(r'^-+$', u''), (r'\s{2,}', u' ')]" python:u'\n'
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans = _confidential _meetingitem_link
-dates = outgoing_date %Y%m%d 0 mail_date %Y%m%d 1 due_date %Y%m%d 1 creation_date %Y%m%d 0
+dates = outgoing_date %Y%m%d 0 mail_date %Y%m%d 1 creation_date %Y%m%d 0
 
 [p__creation_date_insert]
 # insert creation date
