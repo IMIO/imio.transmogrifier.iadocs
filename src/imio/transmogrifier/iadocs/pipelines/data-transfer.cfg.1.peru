@@ -126,6 +126,7 @@ pipeline =
     fF__deactivate_insert
     f__type_insert
     f__1_id_insert
+    f__1_level3_handler
     f__1_parent_insert
     fF__1_path_insert
 ;    f__to_correct_only
@@ -1121,6 +1122,10 @@ blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 key = string:_id
 value = python:item['_eid']
+
+[f__1_level3_handler]
+blueprint = imio.transmogrifier.iadocs.f_1_level3_handler
+condition = python: item['_level'] == 3
 
 [f__1_parent_insert]
 blueprint = imio.transmogrifier.iadocs.parent_path_insert

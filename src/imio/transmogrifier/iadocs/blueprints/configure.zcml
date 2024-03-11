@@ -104,6 +104,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.f_1_level3_handler"
+    component=".handlers.F1Level3Handler"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.files_list"
     component=".main.FilesList"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

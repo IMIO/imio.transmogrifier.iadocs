@@ -673,6 +673,40 @@ class ECategoryUpdate(object):
             yield item
 
 
+class F1Level3Handler(object):
+    """Handles level 3 folder.
+
+    Parameters:
+        * condition = O, condition expression
+        * bp_key = M, key of parents data dict
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+
+    def __iter__(self):
+        for item in self.previous:
+            if not self.condition(item):
+                yield item
+                continue
+            course_store(self)
+            log_error(item, u"Modifying level3 folder")
+            # replace level3 by level2 parent
+            orig_parent_id = item['_parent_id']
+            item['_parent_id'] = self.storage['data']['e_f_parent_relation'][orig_parent_id]['_parent_id']
+            # combines titles
+            item['title'] = u'{} | {}'.format(self.storage['data']['e_folder'][orig_parent_id]['title'], item['title'])
+            # set type
+            item['_type'] = 'ClassificationSubfolder'
+            yield item
+
+
 def get_contact_name(dic, dic2):
     sender = []
     p_sender = []
