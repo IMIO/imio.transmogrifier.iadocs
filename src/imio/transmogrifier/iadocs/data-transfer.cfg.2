@@ -108,6 +108,8 @@ pipeline =
     f__dependency_sorter
     f__plone_folder_write
     f__1_folder_load
+# only to check if all parents are found
+;    continue
     f__folder_to_create
     f__batched
     f__count
@@ -124,6 +126,7 @@ pipeline =
     fF__deactivate_insert
     f__type_insert
     f__1_id_insert
+    f__1_level3_handler
     f__1_parent_insert
     fF__1_path_insert
 ;    f__to_correct_only
@@ -310,6 +313,7 @@ pipeline =
     r__1_recipient_groups_update
     r__count
     r__1_batch_store
+;    r__filter_item
 
 # ss classification folders assignments
     s__need
@@ -378,6 +382,7 @@ pipeline =
     fF__deactivated_state_set
     l__state_set
     p__state_set
+    r__read_label_for_recipient_group
     reindexobject
 #     workflowupdater
 #     workflow_history_update
@@ -1128,6 +1133,10 @@ blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 key = string:_id
 value = python:item['_eid']
+
+[f__1_level3_handler]
+blueprint = imio.transmogrifier.iadocs.f_1_level3_handler
+condition = python: item['_level'] == 3
 
 [f__1_parent_insert]
 blueprint = imio.transmogrifier.iadocs.parent_path_insert
@@ -2266,6 +2275,11 @@ store_subkey = _service_id
 fieldnames = _eid
 yield = 1
 
+[r__filter_item]
+blueprint = imio.transmogrifier.iadocs.filter_item
+condition = python: item.get('_bpk') == u'recipient_groups'
+kept_keys = _none
+
 # = = = = = = =  ss  = = = = = = = #
 
 [s__need]
@@ -2655,6 +2669,10 @@ action_id = mark_as_sent
 replace = created
 date_key = creation_date
 actor = ${config:creator}
+
+[r__read_label_for_recipient_group]
+blueprint = imio.transmogrifier.iadocs.read_label_for_recipient_group
+condition = python: item.get('_bpk') == u'recipient_groups' and item.get('_suid') and item['_type'] != 'dmsoutgoingmail'
 
 [reindexobject]
 blueprint = plone.app.transmogrifier.reindexobject
