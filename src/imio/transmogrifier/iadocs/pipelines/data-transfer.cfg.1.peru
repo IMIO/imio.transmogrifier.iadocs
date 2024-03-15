@@ -297,6 +297,7 @@ pipeline =
     r__1_recipient_groups_update
     r__count
     r__1_batch_store
+    r__filter_item
 
 # ss classification folders assignments
     s__need
@@ -362,6 +363,7 @@ pipeline =
     fF__deactivated_state_set
     l__state_set
     p__state_set
+    r__read_label_for_recipient_group
     reindexobject
 #     workflowupdater
 #     workflow_history_update
@@ -2183,6 +2185,11 @@ store_subkey = _service_id
 fieldnames = _eid
 yield = 1
 
+[r__filter_item]
+blueprint = imio.transmogrifier.iadocs.filter_item
+condition = python: item.get('_bpk') == u'recipient_groups'
+kept_keys = _none
+
 # = = = = = = =  ss  = = = = = = = #
 
 [s__need]
@@ -2586,6 +2593,10 @@ action_id = mark_as_sent
 replace = created
 date_key = creation_date
 actor = ${config:creator}
+
+[r__read_label_for_recipient_group]
+blueprint = imio.transmogrifier.iadocs.read_label_for_recipient_group
+condition = python: item.get('_bpk') == u'recipient_groups' and item.get('_suid') and item['_type'] != 'dmsoutgoingmail'
 
 [reindexobject]
 blueprint = plone.app.transmogrifier.reindexobject

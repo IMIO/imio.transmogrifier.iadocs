@@ -4,10 +4,13 @@ from collective.classification.tree.utils import create_category
 from collective.classification.tree.utils import get_parents
 from collective.contact.plonegroup.config import get_registry_organizations
 from collective.contact.plonegroup.config import set_registry_organizations
+from collective.contact.plonegroup.utils import get_selected_org_suffix_principal_ids
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Condition
+from ftw.labels.interfaces import ILabeling
 from imio.dms.mail import IM_EDITOR_SERVICE_FUNCTIONS
+from imio.dms.mail import IM_READER_SERVICE_FUNCTIONS
 from imio.dms.mail.utils import create_period_folder
 from imio.dms.mail.utils import separate_fullname
 from imio.helpers.content import uuidToObject
@@ -32,6 +35,7 @@ from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from imio.transmogrifier.iadocs.utils import MAILTYPES
 from imio.transmogrifier.iadocs.utils import print_item  # noqa
+from persistent.list import PersistentList
 from plone import api
 from plone.i18n.normalizer import IIDNormalizer
 from Products.CMFPlone.utils import safe_unicode
@@ -1371,14 +1375,60 @@ class R1RecipientGroupsUpdate(object):
                      '_bpk': u'recipient_groups', '_path': mail_path, '_type': mail.portal_type, '_act': 'U'}
             s_uid = self.storage['data']['e_service_match'][item['_service_id']]['uid']
             if s_uid in mail.treating_groups or []:
+                # store for batch
+                self.storage['data']['recipient_groups'].setdefault(item['_mail_id'], {})[item['_service_id']] = {u'_eid': item['_eid']}
                 continue
+            # useful when correcting
+            if item['_service_id'] not in self.storage['data']['recipient_groups'].get(item['_mail_id'], []):
+                item2['_suid'] = s_uid
             if mail.recipient_groups:
                 if s_uid not in mail.recipient_groups:
                     item2['recipient_groups'] = mail.recipient_groups + [s_uid]
+                    item2['_suid'] = s_uid
             else:
                 item2['recipient_groups'] = [s_uid]
-            if 'recipient_groups' in item2:
+                item2['_suid'] = s_uid
+            # if 'recipient_groups' in item2:
+            if '_suid' in item2:
                 yield item2
+
+
+class ReadLabelForRecipientGroup(object):
+    """Handles recipient_group read label.
+
+    Parameters:
+        * condition = O, condition expression
+        * store_key = M, storage main key to find mail path
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            course_store(self)
+            mail = get_obj_from_path(self.portal, item=item)
+            if mail is None:
+                log_error(item, u"Cannot find mail with path '{}'".format(item['_path']))
+                continue
+            userids = get_selected_org_suffix_principal_ids(item['_suid'], IM_READER_SERVICE_FUNCTIONS)
+            labeling = ILabeling(mail)
+            read_user_ids = labeling.storage.setdefault('lu', PersistentList())  # _p_changed is managed
+            for userid in userids:
+                if userid not in read_user_ids:
+                    read_user_ids.append(userid)  # _p_changed is managed
 
 
 class RsyncFileWrite(object):

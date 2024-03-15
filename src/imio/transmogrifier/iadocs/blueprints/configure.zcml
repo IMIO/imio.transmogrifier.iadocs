@@ -230,6 +230,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.read_label_for_recipient_group"
+    component=".handlers.ReadLabelForRecipientGroup"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.rsync_writer"
     component=".handlers.RsyncFileWrite"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
