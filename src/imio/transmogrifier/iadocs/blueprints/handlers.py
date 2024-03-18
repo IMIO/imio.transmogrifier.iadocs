@@ -1429,6 +1429,7 @@ class ReadLabelForRecipientGroup(object):
             for userid in userids:
                 if userid not in read_user_ids:
                     read_user_ids.append(userid)  # _p_changed is managed
+            yield item
 
 
 class RsyncFileWrite(object):
