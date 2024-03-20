@@ -354,7 +354,8 @@ class CommonInputChecks(object):
         * bp_key = M, blueprint key corresponding to csv
         * condition = O, condition expression
         * csv_key = O, csv key (default to bp_key)
-        * strip_chars = O, list of pairs (fieldname chars) on which a strip must be done
+        * strip_chars = O, list of triplets (fieldname chars type) on which a strip must be done
+          (type: l=lstrip, s=strip, r=rstrip)
         * clean_value = 0, list of quintets (fieldname isep_expr strip patterns osep_expr)
           for which field multilines content will be cleaned
         * hyphen_newline = O, list of fields where newline will be replaced by hyphen
@@ -382,7 +383,7 @@ class CommonInputChecks(object):
         fieldnames = self.storage['csv'].get(self.csv_key, {}).get('fd', [])
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.strips = safe_unicode(options.get('strip_chars', '')).strip().split()
-        self.strips = [tup for tup in pool_tuples(self.strips, 2, 'strip_chars option') if tup[0] in fieldnames]
+        self.strips = [tup for tup in pool_tuples(self.strips, 3, 'strip_chars option') if tup[0] in fieldnames]
         self.cleans = next(csv.reader([options.get('clean_value', '').strip()], delimiter=' ', quotechar='"',
                                       skipinitialspace=True))
         self.cleans = [cell.decode('utf8') for cell in self.cleans]
@@ -414,10 +415,15 @@ class CommonInputChecks(object):
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self)
                 # strip chars
-                for fld, chars in self.strips:
+                for fld, chars, _typ in self.strips:
                     if not item[fld]:
                         continue
-                    item[fld] = item[fld].strip(chars)
+                    if _typ == 's':
+                        item[fld] = item[fld].strip(chars)
+                    elif _typ == 'l':
+                        item[fld] = item[fld].lstrip(chars)
+                    elif _typ == 'r':
+                        item[fld] = item[fld].rstrip(chars)
                 # clean multiline value
                 for fld, isep, strip, patterns, osep in self.cleans:
                     item[fld] = clean_value(item[fld], isep, strip, patterns, osep)

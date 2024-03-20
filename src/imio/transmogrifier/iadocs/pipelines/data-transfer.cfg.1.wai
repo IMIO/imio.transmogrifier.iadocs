@@ -722,7 +722,7 @@ bp_key = e_category_match
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_category_match
 condition = python: item.get('_bpk') == u'e_category_match'
-strip_chars = _ecode .
+strip_chars = _ecode . r
 booleans = _eactive
 
 [e__1_mail_read]
@@ -792,7 +792,7 @@ value = python:item['_ecode'].replace('/', '.')
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_category
 condition = python: item.get('_bpk') == u'e_category'
-strip_chars = _ecode .
+strip_chars = _ecode . r
 booleans = _eactive
 
 [e__category_store]

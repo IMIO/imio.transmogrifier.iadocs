@@ -24,7 +24,7 @@ class TestBluePrintMain(unittest.TestCase):
         bp.previous = [{u'1': u'xx', u'2': u'yy'}]
         self.assertDictEqual(next(iter(bp)), bp.previous[0])
         # check strip_chars
-        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'strip_chars': '1 $.'}, None)
+        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'strip_chars': '1 $. s'}, None)
         bp.previous = [{u'1': u'aa.$', u'2': u'bb'}]
         self.assertDictEqual(next(iter(bp)), {u'1': u'aa', u'2': u'bb'})
         # check clean_value
@@ -68,7 +68,7 @@ class TestBluePrintMain(unittest.TestCase):
                                               u'2': date(2001, 2, 12), u'3': None, u'_error': True})
         # check combination
         self.storage['csv']['cip']['fd'] = [u'1', u'2', u'3']
-        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'strip_chars': '1 !', 'hyphen_newline': '1',
+        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'strip_chars': '1 ! l', 'hyphen_newline': '1',
                                                        'invalids': '1 néant', 'booleans': '1'}, None)
         bp.previous = [{u'1': u'!néant\n'}]
         self.assertDictEqual(next(iter(bp)), {u'1': False})
