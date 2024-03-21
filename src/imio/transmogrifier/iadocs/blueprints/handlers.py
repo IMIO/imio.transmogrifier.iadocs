@@ -594,6 +594,7 @@ class ECategoryUpdate(object):
         * condition = O, condition expression
         * title_replace_slash = O, replace / by - if 1 (default 1)
         * decimal_import = O, identifier is decimal code if 1 (default 1)
+        * parent_relation = O, parent_relation dictionary name containing (key: {'_parent_id': 'xx'}
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -611,8 +612,7 @@ class ECategoryUpdate(object):
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.replace_slash = bool(int(options.get('title_replace_slash') or '1'))
         self.decimal_import = bool(int(options.get('decimal_import') or '1'))
-        if not self.decimal_import:
-            raise 'Code is only handling decimal import'
+        self.parent_relation = self.storage['data'].get(options.get('parent_relation', ''), {})
         self.p_category = self.storage['data']['p_category']
 
     def __iter__(self):
@@ -643,26 +643,35 @@ class ECategoryUpdate(object):
                     #     item['_act'] = 'U'
                 else:  # we will create the category
                     parent = self.portal.tree
-                    parts = get_parents(item['_ecode'])
-                    for part in parts[:-1]:
-                        if part not in self.p_category:  # not already in Plone
-                            title = self.storage['data']['e_category'].get(part, {}).get('_etitle', part)
-                            # if title != part:
-                            #     o_logger.info(u"P:{}, {}".format(item['_ecode'], item['_etitle']))
-                            parent = create_category(parent, {'identifier': part, 'title': title, 'enabled': False},
-                                                     event=False)
-                            self.p_category[parent.identifier] = {'title': parent.title, 'uid': parent.UID(),
-                                                                  'enabled': parent.enabled, 'obj': parent}
-                            item['_act'] = 'N'
-                        else:
-                            parent = self.p_category[part]['obj']
-                    # we check if code has already been created (duplicated code)
-                    code = parts[-1]
-                    if code in self.p_category:
-                        log_error(item, u"Same code '{}' with title '{}' previously created with title '{}'".format(
-                            code, self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle'],
-                            self.p_category[code]['title']))
-                        code = get_correct_id(self.p_category, code, with_letter=True)
+                    if self.decimal_import:
+                        parts = get_parents(item['_ecode'])
+                        for part in parts[:-1]:
+                            if part not in self.p_category:  # not already in Plone
+                                title = self.storage['data']['e_category'].get(part, {}).get('_etitle', part)
+                                # if title != part:
+                                #     o_logger.info(u"P:{}, {}".format(item['_ecode'], item['_etitle']))
+                                parent = create_category(parent, {'identifier': part, 'title': title, 'enabled': False},
+                                                         event=False)
+                                self.p_category[parent.identifier] = {'title': parent.title, 'uid': parent.UID(),
+                                                                      'enabled': parent.enabled, 'obj': parent}
+                                item['_act'] = 'N'
+                            else:
+                                parent = self.p_category[part]['obj']
+                        # we check if code has already been created (duplicated code)
+                        code = parts[-1]
+                        if code in self.p_category:
+                            log_error(item, u"Same code '{}' with title '{}' previously created with title '{}'".format(
+                                code, self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle'],
+                                self.p_category[code]['title']))
+                            code = get_correct_id(self.p_category, code, with_letter=True)
+                    else:
+                        code = item['_ecode']
+                        if item['_ecode'] in self.parent_relation:  # we have a parent
+                            parent_id = self.parent_relation[item['_ecode']]['_parent_id']
+                            if parent_id not in self.p_category:
+                                log_error(item, u"The parent '{}' is not in the created categories.".format(parent_id))
+                            else:
+                                parent = self.p_category[parent_id]['obj']
                     node = create_category(parent, {'identifier': code, 'title': self.replace_slash and
                                            item['_etitle'].replace('/', '-') or item['_etitle'],
                                            'enabled': item['_eactive']}, event=True)
