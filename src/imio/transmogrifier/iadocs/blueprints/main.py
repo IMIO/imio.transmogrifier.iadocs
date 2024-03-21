@@ -641,7 +641,7 @@ class LastSection(object):
         for item in self.previous:
             yield item
         # end of process
-        course_store(self, item)
+        course_store(self, None)
         # dump pkl
         for filename, store_key, condition in self.storage['lastsection']['pkl_dump']:
             if filename and condition(None, storage=self.storage):
