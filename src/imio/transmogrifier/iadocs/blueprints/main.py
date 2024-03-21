@@ -495,7 +495,8 @@ class DependencySorter(object):
             if main_key in self.parent_relation and self.parent_relation[main_key]['_parent_id'] not in orig_dic:
                 temp_item = copy(item)
                 temp_item.update({'_bpk': self.bp_key, '_eid': main_key})  # to be used in log_error
-                log_error(temp_item, u"Parent '{}' not found".format(self.parent_relation[main_key]['_parent_id']))
+                log_error(temp_item, u"Parent '{}' not found: please correct csv".format(
+                    self.parent_relation[main_key]['_parent_id']))
             item['_level'] = get_org_level(self.parent_relation, main_key)
 
 
