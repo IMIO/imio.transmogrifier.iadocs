@@ -258,7 +258,7 @@ class Initialization(object):
                 o_logger.info('Created default category {}'.format(code))
                 self.storage['data']['p_category'][node.identifier] = {'title': node.title, 'uid': node.UID(),
                                                                        'enabled': node.enabled, 'obj': node}
-                self.storage['plone']['def_category'] = node.UID()
+            self.storage['plone']['def_category'] = self.storage['data']['p_category'][code]['uid']
         # store classification folders
         if 'f' in self.storage['parts'] or 's' in self.storage['parts']:
             (self.storage['data']['p_folder_uid'], self.storage['data']['p_irn_to_folder'],
