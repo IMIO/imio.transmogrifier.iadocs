@@ -721,6 +721,48 @@ class F1Level3Handler(object):
             yield item
 
 
+class F3TextCategoriesToId(object):
+    """Handles text categories.
+
+    Parameters:
+        * condition = O, condition expression
+        * bp_key = M, key of categories data dict
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        self.bp_key = safe_unicode(options['bp_key'])
+        self.categories = self.storage['data'][self.bp_key]
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            course_store(self)
+            txt = item['_classification_categories_text']
+            if txt.startswith(u'0'):
+                txt = u'.{}'.format(txt)
+            elif txt.startswith(u'1'):
+                txt = u'-{}'.format(txt)
+            if txt in self.categories:
+                item['classification_categories'] = [self.categories[txt]['uid']]
+            else:
+                # log_error(item, u"Category '{}' not found".format(txt))
+                item['classification_categories'] = [self.storage['plone']['def_category']]
+            desc = 'classification_informations' in item and item.get('classification_informations').split('\r\n') or []
+            desc.append(u'CLASSEMENT: {}'.format(item['_classification_categories_text']))
+            item['classification_informations'] = u'\r\n'.join(desc)
+            yield item
+
+
 def get_contact_name(dic, dic2):
     sender = []
     p_sender = []

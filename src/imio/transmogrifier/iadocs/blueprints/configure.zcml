@@ -110,6 +110,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.f_3_text_categories"
+    component=".handlers.F3TextCategoriesToId"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.files_list"
     component=".main.FilesList"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
