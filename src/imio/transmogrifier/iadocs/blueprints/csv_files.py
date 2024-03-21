@@ -113,7 +113,7 @@ class CSVReader(object):
                 # pass headers if any
                 if self.csv_headers(None):
                     continue
-            course_store(self)
+            course_store(self, item)
             # removing useless keys as _A or _AB
             good_fieldnames = []
             for key in fieldnames:
@@ -235,10 +235,10 @@ class CSVWriter(object):
             if is_in_part(self, self.parts) and self.doit and self.condition(item, storage=self.storage):
                 if self.store_key:
                     if csv_d['fh'] is None and self.storage['data'][self.bp_key]:  # only doing one time
-                        course_store(self)
+                        course_store(self, item)
                         self._from_dic()
                 else:
-                    course_store(self)
+                    course_store(self, item)
                     writerow(csv_d, item)
                 if not self.yld:
                     continue
@@ -246,7 +246,7 @@ class CSVWriter(object):
         # if the section is located after an empty yield, we can try to write a stored dic (independent of item)
         if (is_in_part(self, self.parts) and self.doit and self.store_key and csv_d['fh'] is None and
                 self.storage['data'][self.bp_key]):
-            course_store(self)
+            course_store(self, None)
             self._from_dic()
         if csv_d is not None and csv_d.get('fh') is not None:
             csv_d['fh'].close()

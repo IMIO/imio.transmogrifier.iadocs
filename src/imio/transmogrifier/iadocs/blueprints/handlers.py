@@ -78,7 +78,7 @@ class AServiceUpdate(object):
         change = False
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
-                course_store(self)
+                course_store(self, item)
                 if item['_eid'] in self.eid_to_orgs or not self.match:
                     continue
                 if item['_eid'] not in self.match:
@@ -125,7 +125,7 @@ class BMailtypesByType(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
-                course_store(self)
+                course_store(self, item)
                 for _etype in self.storage['data'][self.related_storage][item['_eid']]:
                     item['_etype'] = _etype
                     yield item
@@ -157,7 +157,7 @@ class BMailtypeUpdate(object):
         p_types = self.storage['data']['p_mailtype']
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
-                course_store(self)
+                course_store(self, item)
                 #  _eid _etype _etitle _enature _esource _c_type _key _title _active
                 if not item['_c_type'] or not item['_key']:
                     log_error(item, u'Empty match: we pass _eid {}'.format(item['_eid']), 'warning')
@@ -229,7 +229,7 @@ class ContactAsTextUpdate(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             # path = 'incoming-mail/202334/010452000045293'
             if self.original_item:
                 desc = 'description' in item and item.get('description').split('\r\n') or []
@@ -327,7 +327,7 @@ class ContactSet(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             ctct_iid = self.def_ctct_iid  # default contact
             if item.get(self.contact_id_key) and item[self.contact_id_key] in self.e_c and \
                     (not self.skip_contact_user and True or not self.e_c[item[self.contact_id_key]]['_is_user']):
@@ -413,7 +413,7 @@ class DefaultContactSet(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             if self.is_list:
                 item[self.fieldname] = [RelationValue(self.def_ctct_iid)]
             else:
@@ -506,7 +506,7 @@ class DOMSenderCreation(object):
         idnormalizer = getUtility(IIDNormalizer)
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 if item.get('_sender_id') and item['_sender_id'] in self.e_c_s:  # we have a user id
                     e_userid = self.e_c_s[item['_sender_id']]['_user_id']
                     _euidm = self.e_u_m[e_userid]
@@ -566,7 +566,7 @@ class DPersonnelCreation(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 e_userid = item['_user_id']
                 _euidm = self.e_u_m[e_userid]
                 if _euidm['_p_userid']:  # we have a match (plone user)
@@ -618,7 +618,7 @@ class ECategoryUpdate(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.b_cond and self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 # o_logger.info(u"{}, {}".format(item['_ecode'], item['_etitle']))
                 if item.get('_pcode'):  # code is already in plone
                     if item['_pcode'] not in self.p_category:
@@ -709,7 +709,7 @@ class F1Level3Handler(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             log_error(item, u"Modifying level3 folder")
             # replace level3 by level2 parent
             orig_parent_id = item['_parent_id']
@@ -746,7 +746,7 @@ class F3TextCategoriesToId(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             txt = item['_classification_categories_text']
             if txt.startswith(u'0'):
                 txt = u'.{}'.format(txt)
@@ -919,7 +919,7 @@ class HContactTypeUpdate(object):
         p_types = self.storage['data']['p_dir_org_types']
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
-                course_store(self)
+                course_store(self, item)
                 if not item['_pid']:
                     log_error(item, u'Empty match: we pass _eid {}'.format(item['_eid']))
                     continue
@@ -964,7 +964,7 @@ class I1ContactUpdate(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
-                course_store(self)
+                course_store(self, item)
                 # mainly address
                 if item['_addr_id']:
                     a_dic = self.storage['data']['e_address'][item['_addr_id']]
@@ -1072,7 +1072,7 @@ class L1RecipientGroupsSet(object):
             if not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             if item['_service_id'] not in self.gr_tg_exc and self.grs_uid not in item.get('recipient_groups', []):
                 if item.get('recipient_groups'):
                     if self.grs_uid not in item['recipient_groups']:
@@ -1103,7 +1103,7 @@ class L1SenderAsTextSet(object):
             if not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             desc = 'description' in item and item.get('description').split('\r\n') or []
             d_t = 'data_transfer' in item and item.get('data_transfer').split('\r\n') or []
             # if id_key value and not in contact: pass id_key to get infos from contact
@@ -1154,7 +1154,7 @@ class M1AssignedUserHandling(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             if item['_contact_id'] not in self.contacts:
                 o_logger.warning("eid '%s', contact id not a user '%s'", item['_eid'], item['_contact_id'])
                 continue
@@ -1223,7 +1223,7 @@ class POMSenderSet(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             if item.get('_sender_id'):
                 if self.e_c_s[item['_sender_id']]['_user_id']:  # we have a user id
                     e_userid = self.e_c_s[item['_sender_id']]['_user_id']
@@ -1274,7 +1274,7 @@ class ParentPathInsert(object):
             if not ptyp or '_path' in item or '_parenth' in item:
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             if ptyp in ('dmsincomingmail', 'dmsincoming_email'):
                 container = create_period_folder(self.im_folder, item['creation_date'])
                 item['_parenth'] = u'/incoming-mail/{}'.format(container.id)
@@ -1314,7 +1314,7 @@ class PostActions(object):
     def __iter__(self):
         for item in self.previous:
             for pa in item.get('_post_actions', {}):
-                course_store(self)
+                course_store(self, item)
                 if pa == u'store_internal_person_info':  # only when we first create the person
                     uid = get_obj_from_path(self.portal, item).UID()
                     self.storage['data']['p_euid_to_pers'][item[u'internal_number']] = uid
@@ -1367,7 +1367,7 @@ class Q1RecipientsAsTextUpdate(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             omail = get_obj_from_path(self.portal, path=self.om_paths[item['_mail_id']]['path'])
             if omail is None:
                 o_logger.warning("mail %s: path '%s' not found", item['_mail_id'],
@@ -1416,7 +1416,7 @@ class R1RecipientGroupsUpdate(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             mail_path = self.paths[item['_mail_id']]['path']
             mail = get_obj_from_path(self.portal, path=mail_path)
             if mail is None:
@@ -1469,7 +1469,7 @@ class ReadLabelForRecipientGroup(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             mail = get_obj_from_path(self.portal, item=item)
             if mail is None:
                 log_error(item, u"Cannot find mail with path '{}'".format(item['_path']))
@@ -1524,7 +1524,7 @@ class RsyncFileWrite(object):
                 except IOError as m:
                     raise Exception("Cannot create file '{}': {}".format(self.filename, m))
                 o_logger.info(u"Writing '{}'".format(self.filename))
-            course_store(self)
+            course_store(self, item)
             if item['_eid'] not in self.files:
                 log_error(item, u"Cannot find '{}' eid in browsed files".format(item['_eid']))
                 continue
@@ -1562,7 +1562,7 @@ class S1ClassificationFoldersUpdate(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             mail_path = self.paths[item['_eid']]['path']
             mail = get_obj_from_path(self.portal, path=mail_path)
             item2 = {'_eid': item['_eid'], '_folder_id': item['_folder_id'], '_bpk': u'classification_folders',
@@ -1627,7 +1627,7 @@ class T1DmsfileCreation(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             order = item['_order'] is not None and int(item['_order']) or None
             # self.ext.setdefault(item['_ext'].lower(), {'c': 0})['c'] += 1
             if item['_mail_id'] not in self.files:
@@ -1715,7 +1715,7 @@ class X1ReplyToUpdate(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             source_path = self.paths[item['_eid']]['path']  # source is the om
             target_path = self.paths[item['_target_id']]['path']  # target is the im
             source = get_obj_from_path(self.portal, path=source_path)
@@ -1773,7 +1773,7 @@ class WorkflowHistoryUpdate(object):
     def __iter__(self):
         for item in self.previous:
             if self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 obj = get_obj_from_path(self.portal, item)
                 for wkf in obj.workflow_history or {}:
                     change = False
@@ -1840,7 +1840,7 @@ class XmlContactHandling(object):
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            course_store(self)
+            course_store(self, item)
             xml = Soup(item[self.source_key], 'lxml-xml')
             contacts_tags = xml.find_all(self.xml_contact_key)
             if not contacts_tags:

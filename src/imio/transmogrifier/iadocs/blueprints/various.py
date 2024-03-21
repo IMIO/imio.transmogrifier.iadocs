@@ -73,7 +73,7 @@ class Count(object):
         counter = self.storage['count'][self.name]
         for item in self.previous:
             if self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 if self.group_key:
                     if self.group_key in item:
                         counter.setdefault(item[self.group_key], {'c': 0})['c'] += 1
@@ -110,7 +110,7 @@ class EnhancedCondition(object):
     def __iter__(self):
         for item in self.previous:
             if self.condition1(item, storage=self.storage):
-                course_store(self)
+                course_store(self, item)
                 obj = None
                 if self.get_obj:
                     obj = get_obj_from_path(self.portal, item)
@@ -158,7 +158,7 @@ class EnhancedInserter(object):
         for item in self.previous:
             key = self.key(item)
             if self.condition(item, key=key, storage=self.storage):
-                course_store(self)
+                course_store(self, item)
                 obj = None
                 if self.get_obj:
                     obj = get_obj_from_path(self.portal, item)
@@ -206,7 +206,7 @@ class FilterItem(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.kept_keys and self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 yield filter_keys(item, self.kept_keys + [fld for fld in item if fld.startswith('_')])
                 continue
             yield item
@@ -229,7 +229,7 @@ class NeedOther(object):
         this_part = get_related_parts(name)
         if not is_in_part(self, this_part):
             return
-        course_store(self)
+        course_store(self, None)
         needed_parts = safe_unicode(options.get('parts') or u'')
         for needed_part in needed_parts:
             if not is_in_part(self, needed_part):

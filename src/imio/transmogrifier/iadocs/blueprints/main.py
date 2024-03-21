@@ -184,7 +184,7 @@ class Initialization(object):
         self.storage['csv'] = {}
         self.storage['data'] = {}
         self.storage['course'] = OrderedDict()
-        course_store(self)
+        course_store(self, None)
         self.storage['parts'] = run_options['parts']
         self.storage['commit'] = run_options['commit']
         self.storage['commit_nb'] = run_options['commit_nb']
@@ -343,7 +343,7 @@ class AddDataInItem(object):
         ddic = self.storage['data'].get(self.related_storage, {})
         for item in self.previous:
             if is_in_part(self, self.parts) and self.related_storage is not None and self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 store_keys = {}
                 vdic = ddic.get(item[self.store_key], {})
                 if self.add_store_keys:
@@ -427,7 +427,7 @@ class CommonInputChecks(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 # strip chars
                 for fld, chars, _typ in self.strips:
                     if not item[fld]:
@@ -503,7 +503,7 @@ class DependencySorter(object):
         orig_dic = self.storage['data'].get(self.bp_key, {})
         for main_key in orig_dic:
             item = orig_dic[main_key]
-            course_store(self)
+            course_store(self, item)
             if not self.condition(item):
                 continue
             if main_key in self.parent_relation and self.parent_relation[main_key]['_parent_id'] not in orig_dic:
@@ -539,7 +539,7 @@ class FilesList(object):
         exclude_patterns = options.get('exclude_patterns', '').strip()
         excludes = exclude_patterns and Expression(exclude_patterns, transmogrifier, name, options)(None) or []
         if self.condition({}, storage=self.storage):
-            course_store(self)
+            course_store(self, None)
             for fp in sorted(read_recursive_dir(self.storage['filesp'], u'', exclude_patterns=excludes)):
                 filename = os.path.basename(fp)
                 basename, ext = os.path.splitext(filename)
@@ -588,7 +588,7 @@ class InsertPath(object):
         idnormalizer = getUtility(IIDNormalizer)
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 if '_path' in item:  # _path is already set
                     if '_act' not in item:
                         item['_act'] = 'N'
@@ -641,7 +641,7 @@ class LastSection(object):
         for item in self.previous:
             yield item
         # end of process
-        course_store(self)
+        course_store(self, item)
         # dump pkl
         for filename, store_key, condition in self.storage['lastsection']['pkl_dump']:
             if filename and condition(None, storage=self.storage):
@@ -754,15 +754,15 @@ class ReadFromData(object):
         for key in sorted(data, key=sort_method):
             if self.store_subkey:
                 for skey in sorted(data[key].keys()):
-                    course_store(self)
+                    course_store(self, item)
                     item = {'_bpk': self.bp_key, self.store_key: key, self.store_subkey: skey}
                     item.update(filter_keys(data[key][skey], self.fieldnames))
                     if self.condition(item):
                         yield item
             else:
-                course_store(self)
                 item = {'_bpk': self.bp_key, self.store_key: key}
                 item.update(filter_keys(data[key], self.fieldnames))
+                course_store(self, item)
                 if self.condition(item):
                     yield item
 
@@ -792,7 +792,7 @@ class SetOwner(object):
     def __iter__(self):
         for item in self.previous:
             if self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 obj = get_obj_from_path(self.portal, item)
                 creators = list(obj.creators)
                 # change creator metadata
@@ -850,7 +850,7 @@ class SetState(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
-                course_store(self)
+                course_store(self, item)
                 try:
                     obj = self.portal.unrestrictedTraverse(safe_unicode(item['_path'][1:]).encode('utf8'))
                 except (AttributeError, KeyError):
@@ -929,7 +929,7 @@ class StoreInData(object):
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
-                course_store(self)
+                course_store(self, item)
                 # if not self.fieldnames and item['_bpk'] == self.bp_key:
                 #     del item['_bpk']
                 # key = get_values_string(item, self.store_key)

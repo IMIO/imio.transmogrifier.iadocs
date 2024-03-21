@@ -4,11 +4,12 @@ from collective.classification.tree.utils import iterate_over_tree
 from collective.contact.plonegroup.browser.settings import BaseOrganizationServicesVocabulary
 from collective.contact.plonegroup.config import get_registry_organizations
 from collective.contact.plonegroup.utils import get_organizations
+# from datetime import datetime
 from imio.helpers.cache import get_plone_groups_for_user
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.vocabularies import get_users_voc
-from imio.pyutils.system import dump_var
+# from imio.pyutils.system import dump_var
 from imio.pyutils.system import full_path
 from imio.pyutils.system import load_var
 from imio.transmogrifier.iadocs import e_logger
@@ -25,8 +26,10 @@ MAILTYPES = {'te': '{}.mail_types'.format(itf), 'ts': '{}.omail_types'.format(it
              'fe': '{}.omail_send_modes'.format(itf)}
 
 
-def course_store(section):
+def course_store(section, item):
     """Stores course in blueprints.  Needs storage and name as section attributes"""
+    # if item and item.get('_eid') in (u'76126', u'78337', u'626107'):
+    #     section.storage['o_logger'].info("{} : {}".format(datetime.now().strftime('%H:%M:%S.%f'), section.name))
     if section.name in section.storage['course']:
         section.storage['course'][section.name] += 1
     else:
@@ -143,7 +146,8 @@ def get_folders(section):
 
 def get_org_ancestors(parent_relation, oid):
     """"""
-    return (get_org_ancestors(parent_relation, parent_relation[oid]['_parent_id']) if oid in parent_relation else []) + [oid]
+    return ((get_org_ancestors(parent_relation, parent_relation[oid]['_parent_id']) if oid in parent_relation else [])
+            + [oid])
 
 
 def get_org_level(parent_relation, oid):
