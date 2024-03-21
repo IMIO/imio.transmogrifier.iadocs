@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
+from collective.classification.tree.utils import create_category
 from collective.contact.plonegroup.config import get_registry_organizations
 from collective.contact.plonegroup.config import set_registry_organizations
 from collective.documentviewer.settings import GlobalSettings
@@ -245,6 +246,19 @@ class Initialization(object):
                 'f__to_correct_only' in transmogrifier['transmogrifier']['pipeline'].split('\n')):
             self.storage['data']['p_categories'] = \
                 getUtility(IVocabularyFactory, 'collective.classification.vocabularies:fulltree')(self.portal)
+        # create default classification category
+        def_cat = transmogrifier['config'].get('default_category') or u''
+        if def_cat:
+            code, title = next(csv.reader([transmogrifier['config'].get('default_category').strip()], delimiter=' ',
+                                          quotechar='"', skipinitialspace=True))
+            if code not in self.storage['data']['p_category']:
+                node = create_category(self.portal.tree, {'identifier': safe_unicode(code),
+                                                          'title': safe_unicode(title), 'enabled': False},
+                                       event=True)
+                o_logger.info('Created default category {}'.format(code))
+                self.storage['data']['p_category'][node.identifier] = {'title': node.title, 'uid': node.UID(),
+                                                                       'enabled': node.enabled, 'obj': node}
+                self.storage['plone']['def_category'] = node.UID()
         # store classification folders
         if 'f' in self.storage['parts'] or 's' in self.storage['parts']:
             (self.storage['data']['p_folder_uid'], self.storage['data']['p_irn_to_folder'],
