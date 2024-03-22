@@ -30,8 +30,8 @@ MAILTYPES = {'te': '{}.mail_types'.format(itf), 'ts': '{}.omail_types'.format(it
 
 def course_store(section, item):
     """Stores course in blueprints.  Needs storage and name as section attributes"""
-    if item and item.get('_eid') in (u'76872', ):
-        time_display(section, item)
+    # if item and item.get('_eid') in (u'76872', ):
+    #     time_display(section, item)
     if section.name in section.storage['course']:
         section.storage['course'][section.name] += 1
     else:
