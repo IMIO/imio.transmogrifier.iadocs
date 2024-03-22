@@ -284,6 +284,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.time_display"
+    component=".various.TimeDisplay"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.workflow_history_update"
     component=".handlers.WorkflowHistoryUpdate"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

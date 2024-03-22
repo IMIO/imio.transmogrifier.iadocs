@@ -5,15 +5,15 @@ from imio.helpers.transmogrifier import Condition
 from imio.helpers.transmogrifier import Expression
 from imio.helpers.transmogrifier import filter_keys
 from imio.helpers.transmogrifier import get_obj_from_path  # noqa
-from imio.helpers.transmogrifier import key_val as dim
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
-from imio.transmogrifier.iadocs import T_S
 from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import print_item  # noqa
+from imio.transmogrifier.iadocs.utils import short_log
+from imio.transmogrifier.iadocs.utils import time_display
 from Products.CMFPlone.utils import safe_unicode
 from zope.annotation.interfaces import IAnnotations
 from zope.interface import classProvides
@@ -241,15 +241,6 @@ class NeedOther(object):
             yield item
 
 
-def short_log(item, count=None):
-    """log in o_logger"""
-    to_print = u"{}:{},{},{},{}".format(item['_bpk'], item.get('_eid', ''), dim(item.get('_type', ''), T_S),
-                                        item.get('_act', '?'), item.get('_path', '') or item.get('title', ''))
-    if count:
-        to_print = u"{}:{}".format(count, to_print)
-    return to_print
-
-
 class ShortLog(object):
     """Logs shortly item."""
     classProvides(ISectionBlueprint)
@@ -288,4 +279,27 @@ class Stop(object):
         for item in self.previous:
             if self.condition(item):
                 raise Exception('STOP requested')
+            yield item
+
+
+class TimeDisplay(object):
+    """Displays time if condition is matched.
+
+    Parameters:
+        * condition = O, matching condition.
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.condition = Condition(options.get('condition', 'python:False'), transmogrifier, name, options)
+        self.previous = previous
+        self.name = name
+        self.transmogrifier = transmogrifier
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+
+    def __iter__(self):
+        for item in self.previous:
+            if self.condition(item):
+                time_display(self, item)
             yield item

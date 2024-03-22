@@ -4,9 +4,10 @@ from collective.classification.tree.utils import iterate_over_tree
 from collective.contact.plonegroup.browser.settings import BaseOrganizationServicesVocabulary
 from collective.contact.plonegroup.config import get_registry_organizations
 from collective.contact.plonegroup.utils import get_organizations
-# from datetime import datetime
+from datetime import datetime
 from imio.helpers.cache import get_plone_groups_for_user
 from imio.helpers.content import uuidToObject
+from imio.helpers.transmogrifier import key_val as dim
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.vocabularies import get_users_voc
 # from imio.pyutils.system import dump_var
@@ -14,6 +15,7 @@ from imio.pyutils.system import full_path
 from imio.pyutils.system import load_var
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs import T_S
 from plone import api
 from zope.component import getUtility
 from zope.schema.interfaces import IVocabularyFactory
@@ -28,8 +30,8 @@ MAILTYPES = {'te': '{}.mail_types'.format(itf), 'ts': '{}.omail_types'.format(it
 
 def course_store(section, item):
     """Stores course in blueprints.  Needs storage and name as section attributes"""
-    # if item and item.get('_eid') in (u'76126', u'78337', u'626107'):
-    #     section.storage['o_logger'].info("{} : {}".format(datetime.now().strftime('%H:%M:%S.%f'), section.name))
+    if item and item.get('_eid') in (u'76872', ):
+        time_display(section, item)
     if section.name in section.storage['course']:
         section.storage['course'][section.name] += 1
     else:
@@ -291,3 +293,18 @@ def print_item(item, remove=['file']):
         if k in remove:
             continue
         print(u"{}: {}".format(k, item[k]))
+
+
+def short_log(item, count=None):
+    """log in o_logger"""
+    to_print = u"{}:{},{},{},{}".format(item['_bpk'], item.get('_eid', ''), dim(item.get('_type', ''), T_S),
+                                        item.get('_act', '?'), item.get('_path', '') or item.get('title', ''))
+    if count:
+        to_print = u"{}:{}".format(count, to_print)
+    return to_print
+
+
+def time_display(section, item):
+    """Output logger time display"""
+    section.storage['o_logger'].info("{} : {}, {}".format(datetime.now().strftime('%H:%M:%S.%f'), section.name,
+                                                          item.get('_eid', '')))

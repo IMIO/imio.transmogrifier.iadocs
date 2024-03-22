@@ -24,17 +24,17 @@ from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
-from imio.transmogrifier.iadocs.blueprints.various import short_log
 from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import full_name
 from imio.transmogrifier.iadocs.utils import get_file_content
 from imio.transmogrifier.iadocs.utils import get_mailtypes
-from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import get_plonegroup_orgs
+from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from imio.transmogrifier.iadocs.utils import MAILTYPES
 from imio.transmogrifier.iadocs.utils import print_item  # noqa
+from imio.transmogrifier.iadocs.utils import short_log
 from persistent.list import PersistentList
 from plone import api
 from plone.i18n.normalizer import IIDNormalizer
