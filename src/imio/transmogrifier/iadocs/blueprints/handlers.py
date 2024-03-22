@@ -7,7 +7,6 @@ from collective.contact.plonegroup.config import set_registry_organizations
 from collective.contact.plonegroup.utils import get_selected_org_suffix_principal_ids
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
-from collective.transmogrifier.utils import Condition
 from ftw.labels.interfaces import ILabeling
 from imio.dms.mail import IM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail import IM_READER_SERVICE_FUNCTIONS
@@ -15,6 +14,7 @@ from imio.dms.mail.utils import create_period_folder
 from imio.dms.mail.utils import separate_fullname
 from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import clean_value
+from imio.helpers.transmogrifier import Condition
 from imio.helpers.transmogrifier import get_correct_id
 from imio.helpers.transmogrifier import get_obj_from_path
 from imio.helpers.transmogrifier import pool_tuples

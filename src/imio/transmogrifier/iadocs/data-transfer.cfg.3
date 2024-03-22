@@ -21,7 +21,7 @@ default_tg = 197035
 default_category = -9 "Classement indéfini"
 to_treat = 10
 ;permitted_sections = 0abcdefFhilmp1qrstux
-permitted_sections = 0aef
+permitted_sections = 0aefF
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -107,7 +107,7 @@ pipeline =
     fF__pickle_w
     fs__1_folder_read
     F__1_folder_created_read
-    fsF__1_folder_check
+;    fsF__1_folder_check
     f__folder_matched_uid_add
     f__folder_matched_folder_info_add
     f__folder_service_uid_add
@@ -135,14 +135,15 @@ pipeline =
     f__1_comment_insert
     f__1_archive_date_insert
     f__treating_groups_insert
-    fF__deactivate_insert
+;    fF__deactivate_insert
     f__type_insert
     f__1_id_insert
 ;    f__1_level3_handler
     f__1_parent_insert
     fF__1_path_insert
-;    f__to_correct_only
-;    f__filter_item
+    f__to_correct_only
+    F__3_ci_correct
+    F__filter_item
 
 # hh  directory configuration
     h__contact_type_match_read
@@ -375,7 +376,7 @@ pipeline =
     di__state_set
     di__deactivated_state_set
     fF__state_set
-    fF__deactivated_state_set
+;    fF__deactivated_state_set
     l__state_set
     p__state_set
     r__read_label_for_recipient_group
@@ -996,7 +997,7 @@ condition = python: item.get('_bpk') == u'e_folder'
 hyphen_newline = title
 invalids = _parent_id 0 _classification_categories_text ? _service_id 0
 booleans = archived _enabled
-dates = creation_date "%Y-%m-%d %H:%M:%S" 0
+dates = creation_date "%Y-%m-%d %H:%M:%S" 0 _archive_date "%Y-%m-%d %H:%M:%S" 0
 
 [f__folder_matched_uid_add]
 blueprint = imio.transmogrifier.iadocs.add_data_in_item
@@ -1174,14 +1175,14 @@ separator = python:u'\r\n'
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder' and item.get('_comment')
 key = string:classification_informations
-value = python: u'COMMENTAIRE: {}.'.format(item['_comment'])
+value = python: u'COMMENTAIRE: {}'.format(item['_comment'])
 separator = python:u'\r\n'
 
 [f__1_archive_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder' and item.get('_archive_date')
 key = string:classification_informations
-value = python: u"DATE D'ARCHIVAGE: {}.".format(item['_archive_date'])
+value = python: u"DATE D'ARCHIVAGE: {}".format(item['_archive_date'].strftime('%Y-%m-%d'))
 separator = python:u'\r\n'
 
 [f__treating_groups_insert]
@@ -1225,14 +1226,19 @@ id_keys = _eid
 
 [f__to_correct_only]
 blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
-condition2 = python: obj and ('classification_categories' in item and obj.classification_categories and obj.classification_categories != item['classification_categories'])
-get_obj = 1
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'F') and item.get('_bpk') == u'e_folder'
+condition2 = python: u"DATE D'ARCHIVAGE" in item['classification_informations']
 
-[f__filter_item]
+[F__3_ci_correct]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'F') and item.get('_bpk') == u'e_folder'
+key = string:classification_informations
+value = python:u'\r\n'.join([(u"DATE D'ARCHIVAGE:" in line and line[:28] or line) for line in item['classification_informations'].split('\r\n')])
+
+[F__filter_item]
 blueprint = imio.transmogrifier.iadocs.filter_item
-condition = python: item.get('_bpk') == u'e_folder' and 'f__to_correct_only' in transmogrifier['transmogrifier']['pipeline'].split('\n')
-kept_keys = classification_categories
+condition = python: item.get('_bpk') == u'e_folder'
+kept_keys = classification_informations
 
 # = = = = = = =  hh  = = = = = = = #
 

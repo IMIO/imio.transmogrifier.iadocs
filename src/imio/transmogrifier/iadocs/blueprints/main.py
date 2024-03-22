@@ -6,8 +6,6 @@ from collective.contact.plonegroup.config import set_registry_organizations
 from collective.documentviewer.settings import GlobalSettings
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
-from collective.transmogrifier.utils import Condition
-from collective.transmogrifier.utils import Expression
 from copy import copy
 from datetime import date
 from datetime import datetime
@@ -16,6 +14,8 @@ from imio.dms.mail import ARCHIVE_SITE
 from imio.dms.mail.browser.settings import IImioDmsMailConfig
 from imio.helpers.security import generate_password
 from imio.helpers.transmogrifier import clean_value
+from imio.helpers.transmogrifier import Condition
+from imio.helpers.transmogrifier import Expression
 from imio.helpers.transmogrifier import filter_keys
 from imio.helpers.transmogrifier import get_correct_path
 from imio.helpers.transmogrifier import get_main_path

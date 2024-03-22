@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
-from collective.transmogrifier.utils import Condition
-from collective.transmogrifier.utils import Expression
 from collective.transmogrifier.utils import openFileReference
+from imio.helpers.transmogrifier import Condition
+from imio.helpers.transmogrifier import Expression
 from imio.helpers.transmogrifier import get_obj_from_path  # noqa
 from imio.pyutils.system import full_path
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
