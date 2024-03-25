@@ -727,6 +727,7 @@ class F3TextCategoriesToId(object):
     Parameters:
         * condition = O, condition expression
         * bp_key = M, key of categories data dict
+        * txt_field_name = M, textfield field name where the text value will be added
     """
     classProvides(ISectionBlueprint)
     implements(ISection)
@@ -739,6 +740,7 @@ class F3TextCategoriesToId(object):
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         self.bp_key = safe_unicode(options['bp_key'])
+        self.fld_name = safe_unicode(options['txt_field_name'])
         self.categories = self.storage['data'][self.bp_key]
 
     def __iter__(self):
@@ -757,9 +759,9 @@ class F3TextCategoriesToId(object):
             else:
                 # log_error(item, u"Category '{}' not found".format(txt))
                 item['classification_categories'] = [self.storage['plone']['def_category']]
-            desc = 'classification_informations' in item and item.get('classification_informations').split('\r\n') or []
+            desc = self.fld_name in item and item[self.fld_name].split('\r\n') or []
             desc.append(u'CLASSEMENT: {}'.format(item['_classification_categories_text']))
-            item['classification_informations'] = u'\r\n'.join(desc)
+            item[self.fld_name] = u'\r\n'.join(desc)
             yield item
 
 
