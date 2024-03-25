@@ -204,6 +204,8 @@ pipeline =
     l__batched
     l__count
     l__1_mail_check
+    l__title_insert
+    l__description_insert
 ;    l__creation_date_insert
     l__modification_date_insert
 ;    l__reception_date_insert
@@ -1560,7 +1562,7 @@ blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_struct
 condition = python: item.get('_bpk') == u'e_struct'
 clean_value = title python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" python:u'\n'
-replace_newline = title " ; "
+replace_newline = title " - "
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 
 [l__3_struct_store]
@@ -1576,7 +1578,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 ;filename = burdoc.csv
 filename = burdoc_test.csv
-fieldnames = _eid _internal_reference_no _classification_categories_text _nature_id _etype original_mail_date creation_date _H _I _J _K external_reference_no _M _N _O _P _Q _R _S _T _U reception_date _source_id _X _Y _Z
+fieldnames = _eid _internal_reference_no _classification_categories_text _D _etype original_mail_date creation_date _H _I _J _K external_reference_no _M _N _O _P _Q _R _S _T _U reception_date _source_id _X _Y _Z
              _AA _AB _AC _service_id _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN
 ;fieldnames = _A _eid _C reception_date original_mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
 ;             _Q _R _S _T _U _to_del _W _source _source_id _Z
@@ -1617,6 +1619,19 @@ booleans =
 dates = reception_date "%Y-%m-%d %H:%M:%S" 0 original_mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
 ;fieldnames = _eid _internal_reference_no _classification_categories_text _nature_id _etype original_mail_date creation_date _H _I _J _K external_reference_no _M _N _O _P _Q _R _S _T _U reception_date _source_id _X _Y _Z
 ;             _AA _AB _AC _service_id _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN
+
+[l__title_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_eid'] in storage['data']['e_struct']
+key = string:title
+value = python:storage['data']['e_struct'][item['_eid']]['title']
+
+[l__description_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_eid'] in storage['data']['e_struct']
+            and storage['data']['e_struct'][item['_eid']].get('description')
+key = string:description
+value = python:storage['data']['e_struct'][item['_eid']]['description']
 
 [l__creation_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -2808,7 +2823,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
 ;condition = python:item.get('_eid', None) in (u'', u'626107')
-;condition = python:True
+condition = python:True
 # condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
 
 [stop]
