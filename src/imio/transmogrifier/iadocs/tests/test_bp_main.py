@@ -33,8 +33,8 @@ class TestBluePrintMain(unittest.TestCase):
         self.assertListEqual(bp.cleans, [(u'1', u'\n', u' ', [('^[" ]+$', u'')], u'\r\n')])
         bp.previous = [{u'1': u'aa\n" "\nbb', u'2': None}]
         self.assertDictEqual(next(iter(bp)), {u'1': u'aa\r\nbb', u'2': None})
-        # check hyphen_newline
-        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'hyphen_newline': '1 2'}, None)
+        # check replace_newline
+        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'replace_newline': '1 " - " 2 " - "'}, None)
         bp.previous = [{u'1': u'aa\n', u'2': u'aa\nbb'}]
         self.assertDictEqual(next(iter(bp)), {u'1': u'aa', u'2': u'aa - bb'})
         # check invalids
@@ -68,7 +68,8 @@ class TestBluePrintMain(unittest.TestCase):
                                               u'2': date(2001, 2, 12), u'3': None, u'_error': True})
         # check combination
         self.storage['csv']['cip']['fd'] = [u'1', u'2', u'3']
-        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'strip_chars': '1 ! l', 'hyphen_newline': '1',
-                                                       'invalids': '1 néant', 'booleans': '1'}, None)
-        bp.previous = [{u'1': u'!néant\n'}]
-        self.assertDictEqual(next(iter(bp)), {u'1': False})
+        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'strip_chars': '1 ! l',
+                                                       'replace_newline': '1 ;', 'invalids': '1 néant',
+                                                       'booleans': '1'}, None)
+        bp.previous = [{u'_bpk': 'cip', u'_eid': u'0', u'1': u'!néant\n'}]
+        self.assertDictEqual(next(iter(bp)), {u'_bpk': 'cip', u'_eid': u'0', u'1': False})

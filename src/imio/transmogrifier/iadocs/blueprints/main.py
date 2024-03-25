@@ -372,7 +372,7 @@ class CommonInputChecks(object):
           (type: l=lstrip, s=strip, r=rstrip)
         * clean_value = 0, list of quintets (fieldname isep_expr strip patterns osep_expr)
           for which field multilines content will be cleaned
-        * hyphen_newline = O, list of fields where newline will be replaced by hyphen
+        * replace_newline = O, list of pairs (fieldname value) where newline will be replaced by value
         * invalids = O, list of pairs (fieldname values) for which field content will be replaced with None
           if it is equal to a value. values are | separated
         * split_text = O, list of septets (field length remainder_field remainder_position isep_expr osep_expr prefix)
@@ -405,7 +405,10 @@ class CommonInputChecks(object):
                         Expression(tup[3], transmogrifier, name, options)(None),
                         Expression(tup[4], transmogrifier, name, options)(None))
                        for tup in pool_tuples(self.cleans, 5, 'clean_value option') if tup[0] in fieldnames]
-        self.hyphens = [key for key in safe_unicode(options.get('hyphen_newline', '')).split() if key in fieldnames]
+        self.repl_nl = next(csv.reader([options.get('replace_newline', '').strip()], delimiter=' ', quotechar='"',
+                                       skipinitialspace=True))
+        self.repl_nl = [cell.decode('utf8') for cell in self.repl_nl]
+        self.repl_nl = [tup for tup in pool_tuples(self.repl_nl, 2, 'replace_newline option') if tup[0] in fieldnames]
         self.invalids = next(csv.reader([options.get('invalids', '').strip()], delimiter=' ', quotechar='"',
                                         skipinitialspace=True))
         self.invalids = [cell.decode('utf8') for cell in self.invalids]
@@ -441,10 +444,10 @@ class CommonInputChecks(object):
                 # clean multiline value
                 for fld, isep, strip, patterns, osep in self.cleans:
                     item[fld] = clean_value(item[fld], isep, strip, patterns, osep)
-                # replace newline by hyphen on specified fields
-                for fld in self.hyphens:
+                # replace newline by given value on specified fields
+                for fld, val in self.repl_nl:
                     if u'\n' in (item[fld] or u''):
-                        item[fld] = u' - '.join([part.strip() for part in item[fld].split(u'\n') if part.strip()])
+                        item[fld] = val.join([part.strip() for part in item[fld].split(u'\n') if part.strip()])
                 # replace invalid values on specified fields
                 for fld, values in self.invalids:
                     for value in values.split(u'|'):
