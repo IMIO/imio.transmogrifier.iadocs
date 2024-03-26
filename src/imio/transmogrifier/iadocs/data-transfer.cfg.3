@@ -21,7 +21,7 @@ default_tg = 197035
 default_category = -9 "Classement indéfini"
 to_treat = 10
 ;permitted_sections = 0abcdefFhilmp1qrstux
-permitted_sections = 0aefFl
+permitted_sections = 0aefFlm
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -68,7 +68,7 @@ pipeline =
     c__1_user_match_write
 # dd  personnel held_position for OM sender
     d__need
-    dm__1_contacts_read
+;    dm__1_contacts_read  pendant le m
     dm__1_contacts_userid_only
     dm__1_contacts_store
     d__1_mail_read
@@ -215,7 +215,7 @@ pipeline =
     l__treating_groups_insert
 ;    l__1_recipient_groups_set
     l__3_category_id_insert
-;    l__contact_set
+    l__contact_set
 ;    l__1_sender_as_text_set
     l__3_irn_insert
 ;    l__mail_type_source_insert
@@ -236,18 +236,25 @@ pipeline =
 
 # mm  IM & IEM recipients
     m__need
+    m__pickle_imail_sender_w
 #     m__user_service_read
 #     m__user_service_store
     mt__pickle_i_r
-    m__pickle_mail_assigned_user_w
-    m__1_mail_recipient_read
-    m__1_already_only
+;    m__pickle_mail_assigned_user_w
+;    m__1_mail_recipient_read
+    m__3_struct_read
+    m__3_xml_only
+    m__already_only
     m__batched
-    m__1_mail_recipient_check
+;    m__1_mail_recipient_check
 #    m__1_principal_only
     m__count
-    m__1_batch_store
-    m__1_assigned_user
+    m__3_sender_contact_store
+    m__3_sender_as_text
+    m__3_recipient_contact_store
+    m__3_recipient_as_text
+;    m__1_batch_store
+;    m__1_assigned_user
 
 # pp  OM handling
     p__need
@@ -1577,8 +1584,8 @@ yield = 0
 [l__3_mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-;filename = burdoc.csv
-filename = burdoc_test.csv
+filename = burdoc.csv
+;filename = burdoc_test.csv
 fieldnames = _eid _internal_reference_no _classification_categories_text _D _etype original_mail_date creation_date _H _I _J _K external_reference_no _M _N _O _P _Q _R _S _T _U reception_date _source_id _X _Y _Z
              _AA _AB _AC _service_id _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN
 ;fieldnames = _A _eid _C reception_date original_mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
@@ -1709,7 +1716,7 @@ condition = python: item.get('_bpk') == u'e_mail_i'
 
 [l__3_irn_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_nature_id')
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_internal_reference_no']
 key = string:data_transfer
 value = python:u'RÉFÉFENCE INTERNE: {}'.format(item['_internal_reference_no'])
 separator = python:u'\r\n'
@@ -1812,7 +1819,15 @@ kept_keys = modification_date original_mail_date reception_date
 
 [m__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = ac
+;parts = ac
+parts =
+
+[m__pickle_imail_sender_w]
+# batch file
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_mail_i_sender.pkl
+store_key = e_mail_sender_text
+d_condition = python:storage['commit'] is True
 
 [m__user_service_read]
 # read users services csv file
@@ -1856,7 +1871,20 @@ filename = eCourriersDestinataires.csv
 fieldnames = _A _eid _mail_id _contact_id _action _due_date _trm_date _H _trm_user_id _message _response _L _trt_date _N _O _P _principal _comment _S _T _U _V _W
 bp_key = e_mail_recip_i
 
-[m__1_already_only]
+[m__3_struct_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+#b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
+;filename = burdocstruct.csv
+filename = burdocstruct_test2.csv
+fieldnames = _eid _struct_typ _mail_id _D _xml _F _G _H _I _J _K
+bp_key = e_mail_recip_i
+
+[m__3_xml_only]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
+condition2 = python: item.get('_struct_typ') == '200'
+
+[m__already_only]
 # keep plone loaded IM mails recipients
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
@@ -1866,7 +1894,7 @@ condition2 = python: item['_mail_id'] in storage['data']['e_mail_i']
 # keep only not already treated recipients
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
-condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['assigned_users']
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_mail_sender_text']
              and storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) < storage['batch_nb'])
 
 [m__1_mail_recipient_check]
@@ -1890,6 +1918,60 @@ condition2 = python: item['_principal']
 blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
 condition = python: item.get('_bpk') == u'e_mail_recip_i'
+
+[m__3_sender_contact_store]
+blueprint = imio.transmogrifier.iadocs.xml_contact_store
+bp_key = e_contact
+condition = python: item.get('_bpk') == u'e_mail_recip_i' and '_xml' in item
+source_key = _xml
+xml_contact_key = Sender
+xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _division Level2 _service Level3 _level3 Level4 _level4 Level5 _level5 Address _street ZipCode _pc City _city PhoneNumber _phone1 FaxNumber _phone2 Email _email1 |
+                   Contact:PersId: FirstName firstname LastName lastname PhoneNumber _phone1 FaxNumber _phone2 Email _email1 Gsm _cell1
+contact_id_key = _sender_id
+empty_store = 1
+
+[m__3_sender_as_text]
+blueprint = imio.transmogrifier.iadocs.contact_as_text_update
+bp_key = e_mail_sender_text
+condition = python: item.get('_bpk') == u'e_mail_recip_i'
+mail_store_key = e_mail_i
+contact_store_key = e_contact
+mail_id_key = _mail_id
+contact_id_key = _sender_id
+contact_label = EXPÉDITEUR
+related_label =
+contact_free_key =
+yield_original = 1
+skip_real_contact = 0
+skip_contact_user = 0
+original_item = 0
+
+[m__3_recipient_contact_store]
+blueprint = imio.transmogrifier.iadocs.xml_contact_store
+bp_key = e_contact
+condition = python: item.get('_bpk') == u'e_mail_recip_i' and '_xml' in item
+source_key = _xml
+xml_contact_key = Addressee
+xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _division Level2 _service Level3 _level3 Level4 _level4 Level5 _level5 Address _street ZipCode _pc City _city PhoneNumber _phone1 FaxNumber _phone2 Email _email1 |
+                   Contact:PersId: FirstName firstname LastName lastname PhoneNumber _phone1 FaxNumber _phone2 Email _email1 Gsm _cell1
+contact_id_key = _contact_id
+empty_store = 1
+
+[m__3_recipient_as_text]
+blueprint = imio.transmogrifier.iadocs.contact_as_text_update
+bp_key = e_mail_sender_text
+condition = python: item.get('_bpk') == u'e_mail_recip_i'
+mail_store_key = e_mail_i
+contact_store_key = e_contact
+mail_id_key = _mail_id
+contact_id_key = _contact_id
+contact_label = DESTINATAIRE
+related_label =
+contact_free_key =
+yield_original = 0
+skip_real_contact = 0
+skip_contact_user = 0
+original_item = 0
 
 [m__1_batch_store]
 # store treated recipients links in pickle dic
@@ -2825,7 +2907,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
 ;condition = python:item.get('_eid', None) in (u'', u'626107')
-condition = python:True
+;condition = python:True
 # condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
 
 [stop]

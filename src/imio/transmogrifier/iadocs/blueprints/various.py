@@ -141,7 +141,7 @@ class EnhancedInserter(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.key = Expression(options['key'], transmogrifier, name, options)
-        self.value = Expression(options['value'], transmogrifier, name, options)
+        self.value = Expression(safe_unicode(options['value']), transmogrifier, name, options)
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
         self.error = Expression(options.get('error', 'python:u"error getting value for eid {}".format('
                                 'item.get("_eid"))'), transmogrifier, name, options)
