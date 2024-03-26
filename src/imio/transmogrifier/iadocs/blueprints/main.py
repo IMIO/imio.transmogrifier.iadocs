@@ -457,7 +457,7 @@ class CommonInputChecks(object):
                 # split long value
                 for fld, length, dest_fld, dest_pos, isep, osep, prefix in self.splits:
                     part1, part2 = split_text(item[fld], length)
-                    if part1 != item[fld]:
+                    if part1 != item[fld] or isep in item[fld]:
                         item[fld] = part1.replace(isep, ' ')
                         if part2:
                             remainder = dest_fld in item and item[dest_fld] and item[dest_fld].split(osep) or []

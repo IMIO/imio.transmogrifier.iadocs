@@ -1549,6 +1549,7 @@ raise_on_error = ${config:raise_on_error}
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 filename = burdocstruct.csv
+;filename = burdocstruct_test.csv
 fieldnames = _eid _struct_typ _mail_id _D title _F _G _H _I _J _K
 bp_key = e_struct
 
@@ -1562,7 +1563,7 @@ blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_struct
 condition = python: item.get('_bpk') == u'e_struct'
 clean_value = title python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" python:u'\n'
-replace_newline = title " - "
+;replace_newline = title " - "
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 
 [l__3_struct_store]
@@ -1632,6 +1633,7 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
             and storage['data']['e_struct'][item['_eid']].get('description')
 key = string:description
 value = python:storage['data']['e_struct'][item['_eid']]['description']
+separator = python:u'\r\n'
 
 [l__creation_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
