@@ -1589,7 +1589,7 @@ condition = python: item.get('_bpk') == u'e_mail_i'
 bp_key = e_mail_sender
 fieldname = sender
 is_list = 1
-contact_key = _sender_id
+contact_id_key = _sender_id
 contact_store_key = e_contact_path
 original_item = 1
 skip_contact_user = 0
@@ -1805,7 +1805,7 @@ bp_key = e_contact
 condition = python: item.get('_bpk') == u'e_mail_recip_i' and '_xml' in item
 source_key = _xml
 xml_contact_key = Sender
-xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _division Level2 _service Level3 _level3 Level4 _level4 Level4 _level5 Address _street ZipCode _pc City _city PhoneNumber _phone1 FaxNumber _phone2 Email _email1 |
+xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _division Level2 _service Level3 _level3 Level4 _level4 Level5 _level5 Address _street ZipCode _pc City _city PhoneNumber _phone1 FaxNumber _phone2 Email _email1 |
                    Contact:PersId: FirstName firstname LastName lastname PhoneNumber _phone1 FaxNumber _phone2 Email _email1 Gsm _cell1
 contact_id_key = _sender_id
 empty_store = 1
@@ -1822,6 +1822,7 @@ contact_label = EXPÉDITEUR
 related_label =
 contact_free_key =
 yield_original = 0
+original_item = 0
 skip_real_contact = 0
 skip_contact_user = 0
 
@@ -2191,7 +2192,7 @@ bp_key = e_contact
 condition = python: item.get('_bpk') == u'e_mail_recip_o' and '_xml' in item
 source_key = _xml
 xml_contact_key = Addressee
-xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _division Level2 _service Level3 _level3 Level4 _level4 Level4 _level5 Address _street ZipCode _pc City _city PhoneNumber _phone1 FaxNumber _phone2 Email _email1 |
+xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _division Level2 _service Level3 _level3 Level4 _level4 Level5 _level5 Address _street ZipCode _pc City _city PhoneNumber _phone1 FaxNumber _phone2 Email _email1 |
                    Contact:PersId: FirstName firstname LastName lastname PhoneNumber _phone1 FaxNumber _phone2 Email _email1 Gsm _cell1
 contact_id_key = _contact_id
 empty_store = 1
@@ -2223,6 +2224,7 @@ contact_label = DESTINATAIRE
 related_label =
 contact_free_key =
 yield_original = 0
+original_item = 0
 skip_real_contact = 0
 skip_contact_user = 1
 

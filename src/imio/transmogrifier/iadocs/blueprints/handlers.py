@@ -1798,7 +1798,7 @@ class XmlContactHandling(object):
         * condition = O, condition expression
         * source_key = M, item key name with xml
         * xml_contact_key = M, xml tag name containing contact info
-        * xml_contact_cols = M, list of sequances separated by "|". Each sequence contains a first parameter and
+        * xml_contact_cols = M, list of sequences separated by "|". Each sequence contains a first parameter and
           a list of pairs (xml_tag dic_col).
           The first parameter contains a triplet separated by ":"; level1 tag name (optional), id tag name,
           item key name (optional)
@@ -1866,7 +1866,7 @@ class XmlContactHandling(object):
                             has_val = True
                         else:
                             dic[c_key] = u''
-                    if has_val:  # we consider only if walue in
+                    if has_val:  # we consider only if value in
                         skey_val = current_tag.find(skey).text
                         # we save link if defined
                         if link:
