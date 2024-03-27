@@ -251,8 +251,8 @@ pipeline =
     m__count
     m__3_sender_contact_store
     m__3_sender_as_text
-    m__3_recipient_contact_store
-    m__3_recipient_as_text
+;    m__3_recipient_contact_store
+;    m__3_recipient_as_text
 ;    m__1_batch_store
 ;    m__1_assigned_user
 
@@ -1874,8 +1874,8 @@ bp_key = e_mail_recip_i
 [m__3_struct_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-;filename = burdocstruct.csv
-filename = burdocstruct_test2.csv
+filename = burdocstruct.csv
+;filename = burdocstruct_test2.csv
 fieldnames = _eid _struct_typ _mail_id _D _xml _F _G _H _I _J _K
 bp_key = e_mail_recip_i
 
@@ -1941,7 +1941,7 @@ contact_id_key = _sender_id
 contact_label = EXPÉDITEUR
 related_label =
 contact_free_key =
-yield_original = 1
+yield_original = 0
 skip_real_contact = 0
 skip_contact_user = 0
 original_item = 0
@@ -2908,7 +2908,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 blueprint = imio.transmogrifier.iadocs.breakpoint
 ;condition = python:item.get('_eid', None) in (u'', u'626107')
 ;condition = python:True
-# condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
+;condition = python:storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) % 500 == 0
 
 [stop]
 # raise an error to stop the pipeline

@@ -194,6 +194,7 @@ class ContactAsTextUpdate(object):
         * related_label = O, related label
         * contact_free_key = M, contact free item key name
         * original_item = M, flag to know if mail is item or not (0 or 1)
+        * yield_original = M, flag to know if original item must be yielded (0 or 1)
         * skip_real_contact = M, flag to skip a real contact (if contact_store contains created contacts) (0 or 1)
         * skip_contact_user = O, skip a contact that is a user (defaut 0)
     """
@@ -218,6 +219,7 @@ class ContactAsTextUpdate(object):
             self.related_label = u' {}'.format(self.related_label)
         self.contact_free_key = safe_unicode(options['contact_free_key'])
         self.original_item = bool(int(options['original_item']))
+        self.yield_original = bool(int(options['yield_original']))
         self.skip_real_contact = bool(int(options['skip_real_contact']))
         self.skip_contact_user = bool(int(options.get('skip_contact_user') or '0'))
         self.mail_paths = self.storage['data'].get(safe_unicode(options['mail_store_key']), {})
@@ -244,6 +246,11 @@ class ContactAsTextUpdate(object):
                     continue
                 desc = mail.description and mail.description.split('\r\n') or []
                 d_t = mail.data_transfer and mail.data_transfer.split('\r\n') or []
+            # if there is no contact_id, we pass the item or yield it following yield_original
+            if not item.get(self.contact_id_key):
+                if self.yield_original:
+                    yield item
+                continue
             # we pass a contact considered as already created as object if found in contact_store
             contact_id_param = self.contact_id_key
             if item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
@@ -268,6 +275,8 @@ class ContactAsTextUpdate(object):
                     yield item
                 else:
                     # item2 = {'_eid': item['_eid'], '_path': path,
+                    if self.yield_original:
+                        yield item
                     item2 = {'_eid': item['_eid'], '_path': self.mail_paths[item[self.mail_id_key]]['path'],
                              '_type': mail.portal_type, '_bpk': self.bp_key, '_act': 'U',
                              'description': u'\r\n'.join(desc), 'data_transfer': u'\r\n'.join(d_t)}

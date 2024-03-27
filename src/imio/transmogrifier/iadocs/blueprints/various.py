@@ -42,7 +42,7 @@ class Breakpoint(object):
 
     def __iter__(self):
         for item in self.previous:
-            if self.condition(item):
+            if self.condition(item, storage=self.storage):
                 # ipdb.set_trace(sys._getframe().f_back)  # Break!
                 ipdb.set_trace()  # Break!
             yield item
