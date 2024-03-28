@@ -1664,12 +1664,15 @@ class S3ClassificationFoldersUpdate(object):
                     change = True
             else:
                 log_error(item, u"Cannot find folder_id in plone '{}' => put in in description".format(folder_id))
-                desc = mail.description and mail.description.split(u'\r\n') or []
-                folder_tit = u"DOSSIER: {}".format(self.storage['data']['e_folder'][folder_id]['_title'])
-                if folder_tit not in desc:
-                    desc.append(folder_tit)
-                    item2['description'] = u'\r\n'.join(desc)
-                    change = True
+                if folder_id in self.storage['data']['e_folder']:
+                    desc = mail.description and mail.description.split(u'\r\n') or []
+                    folder_tit = u"DOSSIER: {}".format(self.storage['data']['e_folder'][folder_id]['_title'])
+                    if folder_tit not in desc:
+                        desc.append(folder_tit)
+                        item2['description'] = u'\r\n'.join(desc)
+                        change = True
+                else:
+                    log_error(item, u"Cannot find folder_id in external folders '{}' => we pass it".format(folder_id))
             if change:
                 yield item2
 
