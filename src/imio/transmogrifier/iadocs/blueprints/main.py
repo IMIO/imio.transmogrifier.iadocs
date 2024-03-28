@@ -580,7 +580,7 @@ class InsertPath(object):
         self.csv_key = safe_unicode(options.get('csv_key', self.bp_key))
         if not is_in_part(self, self.parts):
             return
-        self.eids = self.storage['data'].setdefault(self.bp_key, {})
+        self.eids = self.storage['data'].setdefault(self.bp_key, {})  # also used for batching
         self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
         fieldnames = self.storage['csv'].get(self.csv_key, {}).get('fd', [])
         self.id_keys = [key for key in safe_unicode(options.get('id_keys', '')).split() if not fieldnames or

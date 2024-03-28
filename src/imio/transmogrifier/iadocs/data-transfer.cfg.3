@@ -21,7 +21,7 @@ default_tg = 197035
 default_category = -9 "Classement indéfini"
 to_treat = 10
 ;permitted_sections = 0abcdefFhilmp1qrstux
-permitted_sections = 0abdefFlmp
+permitted_sections = 0abdefFlmpq
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -310,14 +310,16 @@ pipeline =
 #    q__need
     qu__pickle_o_r
     q__pickle_omail_recipient_w
-    q__1_mail_recipient_read
-    q__1_already_only
-    q__1_mail_recipient_check
+;    q__1_mail_recipient_read
+    q__3_struct_read
+    q__3_xml_only
+    q__already_only
+;    q__1_mail_recipient_check
     q__batched
     q__count
 # The 2 next sections need to be configured following directory creation...
-    q__1_recipients
-    q__1_recipients_as_text
+    q__3_recipients_contact_store
+    q__3_recipients_as_text
 
 # rr  IM/OM recipient_groups
     r__need
@@ -2048,7 +2050,7 @@ blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_o
 condition = python: item.get('_bpk') == u'e_mail_o'
 replace_newline =
-invalids = external_reference_no "Pas de référence" _source_id 0 _service "0|-9999"
+invalids = external_reference_no "Pas de référence" _source_id 0 _service_id "0|-9999"
 booleans =
 dates = outgoing_date "%Y-%m-%d %H:%M:%S" 0 mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
 
@@ -2333,7 +2335,20 @@ filename = eCourriersDestinataires.csv
 fieldnames = _A _eid _mail_id _contact_id _action _due_date _trm_date _H _trm_user_id _message _response _L _trt_date _N _O _P _principal _contact_text _S _T _U _V _W
 bp_key = e_mail_recip_o
 
-[q__1_already_only]
+[q__3_struct_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+#b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
+filename = burdocstruct.csv
+;filename = burdocstruct_test2.csv
+fieldnames = _eid _struct_typ _mail_id _D _xml _F _G _H _I _J _K
+bp_key = e_mail_recip_o
+
+[q__3_xml_only]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'q') and item.get('_bpk') == u'e_mail_recip_o'
+condition2 = python: item.get('_struct_typ') == '200'
+
+[q__already_only]
 # keep plone loaded om recipients
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'q') and item.get('_bpk') == u'e_mail_recip_o'
@@ -2362,36 +2377,34 @@ blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
 condition = python: item.get('_bpk') == u'e_mail_recip_o'
 
-[q__1_recipients]
+[q__3_recipients_contact_store]
 # set om recipients field value
-blueprint = imio.transmogrifier.iadocs.contact_set
-bp_key = e_mail_recipient
-condition = python: item.get('_bpk') == u'e_mail_recip_o'
-fieldname = recipients
-is_list = 1
-mail_id_key = _mail_id
-mail_store_key = e_mail_o
+blueprint = imio.transmogrifier.iadocs.xml_contact_store
+bp_key = e_contact
+condition = python: item.get('_bpk') == u'e_mail_recip_o' and '_xml' in item
+source_key = _xml
+xml_contact_key = Addressee
+xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _division Level2 _service Level3 _level3 Level4 _level4 Level5 _level5 Address _street ZipCode _pc City _city PhoneNumber _phone1 FaxNumber _phone2 Email _email1 |
+                   Contact:PersId: FirstName firstname LastName lastname PhoneNumber _phone1 FaxNumber _phone2 Email _email1 Gsm _cell1
 contact_id_key = _contact_id
-contact_store_key = e_contact_path
-original_item = 0
-skip_contact_user = 1
-yield = 1
+empty_store = 1
 
-[q__1_recipients_as_text]
+[q__3_recipients_as_text]
 # set om recipients value as text (beware of skip_real_contact following contacts import)
 blueprint = imio.transmogrifier.iadocs.contact_as_text_update
 bp_key = e_mail_recipient
 condition = python: item.get('_bpk') == u'e_mail_recip_o'
 mail_store_key = e_mail_o
-contact_store_key = e_contact_path
+contact_store_key = e_contact
 mail_id_key = _mail_id
 contact_id_key = _contact_id
 contact_label = DESTINATAIRE
 related_label =
-contact_free_key = _contact_text
+contact_free_key =
 original_item = 0
-skip_real_contact = 1
-skip_contact_user = 1
+yield_original = 0
+skip_real_contact = 0
+skip_contact_user = 0
 
 # = = = = = = =  rr  = = = = = = = #
 
