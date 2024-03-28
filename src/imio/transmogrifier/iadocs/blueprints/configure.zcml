@@ -278,6 +278,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.s_3_classification_folders_update"
+    component=".handlers.S3ClassificationFoldersUpdate"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.t_1_dmsfile_creation"
     component=".handlers.T1DmsfileCreation"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

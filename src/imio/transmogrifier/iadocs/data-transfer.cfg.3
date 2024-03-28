@@ -21,7 +21,7 @@ default_tg = 197035
 default_category = -9 "Classement indéfini"
 to_treat = 10
 ;permitted_sections = 0abcdefFhilmp1qrstux
-permitted_sections = 0abdefFlmpq
+permitted_sections = 0abdefFlmpqs
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -333,15 +333,16 @@ pipeline =
 ;    r__filter_item
 
 # ss classification folders assignments
-    s__need
+;    s__need
     s__1_folder_store
     s__pickle_mail_folder_w
-    s__1_mail_folder_read
+    s__3_mail_folder_read
+    s__3_folder_only
     s__1_already_only
     s__batched
-    s__1_classification_folders_update
+    s__3_classification_folders_update
     s__count
-    s__1_batch_store
+;    s__1_batch_store
 ;    s__to_correct_only
 ;    s__filter_item
 ;    s__1_remove_unfound_folder
@@ -2481,6 +2482,7 @@ bp_key = e_folder
 store_key = _eid
 fieldnames = _title _category_id
 yield = 0
+;fieldnames = _eid _classification_categories_text title _D _ftype archived _archive_date _parent_id _enabled _comment _service_id _order _M _N creation_date _P _Q _R
 
 [s__pickle_mail_folder_w]
 # write already treated folders
@@ -2489,20 +2491,26 @@ filename = 2_e_mail_folder.pkl
 store_key = classification_folders
 d_condition = python:storage['commit'] is True and 's__to_correct_only' not in transmogrifier['transmogrifier']['pipeline'].split('\n')
 
-[s__1_mail_folder_read]
+[s__3_mail_folder_read]
 # read folders links csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = eCourriersDossiers.csv
+filename = k2.csv
 ;filename = eCourriersDossiers_test.csv
-fieldnames = _A _eid _folder_id _principal
+fieldnames = _eid _folder_id _mail_id _etype _E _F _G _H _I _J _K _L
 bp_key = e_mail_folder
+
+[s__3_folder_only]
+# keep folder relations
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 's') and item.get('_bpk') == u'e_mail_folder'
+condition2 = python: item['_etype'] == u'-4005'
 
 [s__1_already_only]
 # keep plone loaded mails folders
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 's') and item.get('_bpk') == u'e_mail_folder'
-condition2 = python: item['_eid'] in storage['data']['e_mail']
+condition2 = python: item['_mail_id'] in storage['data']['e_mail']
 
 [s__batched]
 # keep only not already treated mails folders links
@@ -2516,6 +2524,14 @@ condition2 = python:not storage['batch_nb'] and True or ((item['_eid'] not in st
 blueprint = imio.transmogrifier.iadocs.s_1_classification_folders_update
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 's') and item.get('_bpk') == u'e_mail_folder'
 store_key = e_mail
+
+[s__3_classification_folders_update]
+# yield new mail item with classification_folders field value
+blueprint = imio.transmogrifier.iadocs.s_3_classification_folders_update
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 's') and item.get('_bpk') == u'e_mail_folder'
+store_key = e_mail
+mail_id_key = _mail_id
+replace_default_category = 1
 
 [s__count]
 # folders links counter

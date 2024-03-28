@@ -1607,6 +1607,73 @@ class S1ClassificationFoldersUpdate(object):
                 yield item2
 
 
+class S3ClassificationFoldersUpdate(object):
+    """Handles classification folders assignments.
+
+    Parameters:
+        * condition = O, condition expression
+        * store_key = M, storage main key to find mail path
+        * mail_id_key = O, mail id key (default _eid)
+        * replace_default_category = O, replace mail default category by folder one (default 0)
+    """
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get('condition') or 'python:True', transmogrifier, name, options)
+        store_key = safe_unicode(options['store_key'])
+        self.mail_id_key = safe_unicode(options.get('mail_id_key', u'_eid'))
+        self.rdc = bool(int(options.get('replace_default_category') or '0'))
+        self.paths = self.storage['data'][store_key]
+        self.def_cat = self.storage['plone'].get('def_category')
+        self.irn_to_f = self.storage['data'].get('p_irn_to_folder')
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            course_store(self, item)
+            mail_path = self.paths[item[self.mail_id_key]]['path']
+            mail = get_obj_from_path(self.portal, path=mail_path)
+            item2 = {'_eid': item.get('_eid', self.mail_id_key), '_folder_id': item['_folder_id'],
+                     '_bpk': u'classification_folders', '_path': mail_path, '_type': mail.portal_type, '_act': 'U'}
+            change = False
+            folder_id = item['_folder_id']
+            folder_uid = self.irn_to_f.get(folder_id, {}).get('uid')
+            folder = uuidToObject(folder_uid, unrestricted=True)
+            # Fill empty mail category with folder one
+            if not mail.classification_categories or (self.rdc and mail.classification_categories == [self.def_cat]):
+                cat_uids = folder and folder.classification_categories or None
+                if cat_uids and cat_uids != [self.def_cat]:
+                    item2['classification_categories'] = [cat for cat in cat_uids if cat != self.def_cat]
+                    change = True
+            # Add folder to mail
+            if folder:
+                cf = mail.classification_folders or []
+                if folder_uid not in cf:
+                    cf.append(folder_uid)
+                    item2['classification_folders'] = cf
+                    change = True
+            else:
+                log_error(item, u"Cannot find folder_id in plone '{}' => put in in description".format(folder_id))
+                desc = mail.description and mail.description.split(u'\r\n') or []
+                folder_tit = u"DOSSIER: {}".format(self.storage['data']['e_folder'][folder_id]['_title'])
+                if folder_tit not in desc:
+                    desc.append(folder_tit)
+                    item2['description'] = u'\r\n'.join(desc)
+                    change = True
+            if change:
+                yield item2
+
+
 class T1DmsfileCreation(object):
     """Create file.
 
