@@ -269,8 +269,8 @@ pipeline =
 # 11  rsync file
 
     1tu__pickle_f_r
-    1rsx__pickle_i_r
-    1rsx__pickle_o_r
+    1rsxy__pickle_i_r
+    1rsxy__pickle_o_r
     1tu__1_dmsfile_read
 ;    1__files_load
     1__already_only
@@ -352,6 +352,19 @@ pipeline =
     x__1_reply_to_update
     x__count
     x__1_batch_store
+
+# yy correct dates
+    y__pickle_mails_correction_w
+    y__mails_load
+    y__batched
+    y__rename_path
+    y__modification_date
+    y__count
+    y__1_batch_store
+    y__modified
+    breakpoint
+;    y__wh
+    y__type
 
 # constructors
     creators_insert
@@ -1996,14 +2009,14 @@ blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_files.pkl
 store_key = e_files
 
-[1rsx__pickle_i_r]
+[1rsxy__pickle_i_r]
 # read plone loaded IM
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_i.pkl
 store_key = e_mail
 d_condition = python:False
 
-[1rsx__pickle_o_r]
+[1rsxy__pickle_o_r]
 # read plone loaded OM
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_o.pkl
@@ -2522,6 +2535,82 @@ store_subkey = _target_id
 fieldnames = _eid
 yield = 1
 
+# = = = = = = =  yy  = = = = = = = #
+
+[y__pickle_mails_correction_w]
+# write already treated mails
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_mails_correction.pkl
+store_key = e_mails_correction
+d_condition = python:storage['commit'] is True
+
+[y__mails_load]
+# read imported mails
+blueprint = imio.transmogrifier.iadocs.read_from_data
+bp_key = e_mail
+store_key = _eid
+fieldnames = path
+
+[y__batched]
+# keep only not already treated mails
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'y') and item.get('_bpk') == u'e_mail'
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_mails_correction']
+             and storage.get('count', {}).get('y__count', {}).get('e_mail', {}).get('c', 0) < storage['batch_nb'])
+
+[y__rename_path]
+blueprint = collective.transmogrifier.sections.manipulator
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'y') and item.get('_bpk') == u'e_mail'
+keys = path
+destination = string:_path
+delete = path
+
+[y__modification_date]
+# must reset modification_date ?
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'y') and item.get('_bpk') == u'e_mail'
+condition2 = python: obj.modification_date != obj.creation_date
+key = string:modification_date
+value = python:obj.creation_date
+get_obj = 1
+
+[y__count]
+# mails counter
+blueprint = imio.transmogrifier.iadocs.count
+group_key = _bpk
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'y') and item.get('_bpk') == u'e_mail'
+
+[y__1_batch_store]
+# store treated mails in pickle dic
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_mail'
+bp_key = e_mails_correction
+store_key = _eid
+fieldnames = _path
+yield = 1
+
+[y__modified]
+# keep only items to correct
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'y') and item.get('_bpk') == u'e_mail'
+condition2 = python: 'modification_date' in item
+
+[y__wh]
+# keep only items to correct
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'y') and item.get('_bpk') == u'e_mail'
+condition2 = python: len(obj.workflow_history.get('incomingmail_workflow', [])) > 1
+get_obj = 1
+
+[y__type]
+# must add _type
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'y') and item.get('_bpk') == u'e_mail'
+key = string:_type
+value = python:obj.portal_type
+get_obj = 1
+
+
 
 # = = = = = = =  end  = = = = = = = #
 
@@ -2677,7 +2766,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 blueprint = imio.transmogrifier.iadocs.breakpoint
 ;condition = python:item.get('_eid', None) in (u'191013', u'')
 ;condition = python:True
-# condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
+;condition = python:storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) % 500 == 0
 
 [stop]
 # raise an error to stop the pipeline

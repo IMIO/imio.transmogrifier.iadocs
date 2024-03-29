@@ -623,7 +623,7 @@ class InsertPath(object):
                     item['_path'] = '/'.join([item['_parenth'], new_id])
                     item['_path'] = get_correct_path(self.portal, item['_path'])
                     item['_act'] = 'N'
-                    self.eids.setdefault(item['_eid'], {})['path'] = item['_path']
+                    self.eids.setdefault(item['_eid'], {})['path'] = item['_path']  # TODO why path and not _path ????
             yield item
 
 
