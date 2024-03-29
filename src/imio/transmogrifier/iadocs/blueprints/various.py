@@ -127,6 +127,7 @@ class EnhancedInserter(object):
         * key = M, key value expression
         * value = M, value expression
         * condition = O, matching condition
+        * condition2 = O, secondary matching condition (with obj)
         * separator = O, separator expression: if specified, the value is appended after the separator
         * get_obj = O, flag to get object from path (default 0)
         * error = O, error message to display
@@ -143,6 +144,9 @@ class EnhancedInserter(object):
         self.key = Expression(options['key'], transmogrifier, name, options)
         self.value = Expression(safe_unicode(options['value']), transmogrifier, name, options)
         self.condition = Condition(options.get('condition', 'python:True'), transmogrifier, name, options)
+        self.condition2 = options.get('condition2')
+        if self.condition2:
+            self.condition2 = Condition(self.condition2, transmogrifier, name, options)
         self.error = Expression(options.get('error', 'python:u"error getting value for eid {}".format('
                                 'item.get("_eid"))'), transmogrifier, name, options)
         self.get_obj = bool(int(options.get('get_obj') or '0'))
@@ -162,6 +166,10 @@ class EnhancedInserter(object):
                 obj = None
                 if self.get_obj:
                     obj = get_obj_from_path(self.portal, item)
+                # if condition2 is defined and not matched, we yield the item
+                if self.condition2 is not None and not self.condition2(item, key=key, storage=self.storage, obj=obj):
+                    yield item
+                    continue
                 try:
                     value = self.value(item, key=key, storage=self.storage, obj=obj)
                 except Exception as msg:

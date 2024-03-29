@@ -52,9 +52,9 @@ class TestBluePrintVarious(unittest.TestCase):
         self.assertDictEqual(next(iter(bp)), {})
         # with error_value
         bp = EnhancedInserter(self.portal, '', {'key': 'string:aa', 'value': "python: unknown",
-                                                'error_value': "python: u'ok'"}, None)
+                                                'error_value': "python: u'fallback'"}, None)
         bp.previous = [{}]
-        self.assertDictEqual(next(iter(bp)), {'aa': u'ok'})
+        self.assertDictEqual(next(iter(bp)), {'aa': u'fallback'})
         # with bad error_value
         bp = EnhancedInserter(self.portal, '', {'key': 'string:aa', 'value': "python: unknown",
                                                 'error_value': "python: nok"}, None)
@@ -75,3 +75,13 @@ class TestBluePrintVarious(unittest.TestCase):
                                                 'separator': "python:u'\\r\\n'"}, None)
         bp.previous = [{'aa': u'one'}]
         self.assertDictEqual(next(iter(bp)), {'aa': u'one\r\nbb'})
+        # with False second condition and get_obj
+        bp = EnhancedInserter(self.portal, '', {'key': 'string:aa', 'value': "python:u'bb'",
+                                                'condition2': "python:'toto' in obj", 'get_obj': '1'}, None)
+        bp.previous = [{'_path': 'portal_workflow'}]
+        self.assertDictEqual(next(iter(bp)), {'_path': 'portal_workflow'})
+        # with True second condition and get_obj
+        bp = EnhancedInserter(self.portal, '', {'key': 'string:aa', 'value': "python:u'bb'",
+                                                'condition2': "python:'plone_workflow' in obj", 'get_obj': '1'}, None)
+        bp.previous = [{'_path': 'portal_workflow'}]
+        self.assertDictEqual(next(iter(bp)), {'_path': 'portal_workflow', 'aa': u'bb'})
