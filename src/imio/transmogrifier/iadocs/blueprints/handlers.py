@@ -1644,7 +1644,8 @@ class S3ClassificationFoldersUpdate(object):
             mail_path = self.paths[item[self.mail_id_key]]['path']
             mail = get_obj_from_path(self.portal, path=mail_path)
             item2 = {'_eid': item.get('_eid', self.mail_id_key), '_folder_id': item['_folder_id'],
-                     '_bpk': u'classification_folders', '_path': mail_path, '_type': mail.portal_type, '_act': 'U'}
+                     '_bpk': u'classification_folders', '_path': mail_path, '_type': mail.portal_type, '_act': 'U',
+                     'modification_date': mail.creation_date}
             change = False
             folder_id = item['_folder_id']
             folder_uid = self.irn_to_f.get(folder_id, {}).get('uid')
