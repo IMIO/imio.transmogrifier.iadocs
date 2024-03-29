@@ -1710,7 +1710,7 @@ class T1DmsfileCreation(object):
                 yield item
                 continue
             course_store(self, item)
-            order = item['_order'] is not None and int(item['_order']) or None
+            order = item.get('_order') is not None and int(item['_order']) or None
             # self.ext.setdefault(item['_ext'].lower(), {'c': 0})['c'] += 1
             if item['_mail_id'] not in self.files:
                 if self.bp_key == u'e_dmsfile_i':
@@ -1757,7 +1757,7 @@ class T1DmsfileCreation(object):
                 self.storage['data']['e_dmsfile_unfound'][item['_eid']] = {'err': '{} not found'.format(new_ext)}
                 continue
             else:
-                filename = item['_filename']
+                filename = item.get('_filename', os.path.basename(item['_fs_path']))
                 (basename, ext) = os.path.splitext(filename)
                 if not ext:
                     filename = u'{}{}'.format(filename, new_ext)
