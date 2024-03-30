@@ -371,10 +371,11 @@ pipeline =
     u__1_already_only
     u__batched
     u__1_upload_date_modify
-    u__1_dmsfile_check
+;    u__1_dmsfile_check
     u__1_fspath_insert
+    u__desc_insert
     u__1_dmsfile_creation
-    u__1_path_insert
+    u__1_batch_store
     u__count
 
 # xx  IM/OM links
@@ -2719,14 +2720,14 @@ d_condition = python:storage['commit'] is True
 # keep plone loaded OM files
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'u') and item.get('_bpk') == u'e_file'
-condition2 = python: item['_mail_id'] in storage['data']['e_mail_o'] and item['_last_version'] != '0' and item['_eid'] not in storage['data']['e_dmsfile_unfound']
+condition2 = python: item['_mail_id'] in storage['data']['e_mail_o'] and item['_eid'] not in storage['data']['e_dmsfile_unfound']
 
 [u__1_upload_date_modify]
 # insert creation_date field value
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'u') and item.get('_bpk') == u'e_file'
 key = string:creation_date
-value = python:item['_upload_date'][:-4]
+value = python:storage['creation_date']
 
 [u__1_dmsfile_check]
 # check dmsfile items (read in section 1)
@@ -2742,10 +2743,15 @@ dates = creation_date "%Y%m%d %H:%M:%S" 0
 [u__1_fspath_insert]
 # insert _fs_path field value
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'u') and item.get('_bpk') == u'e_file' and not item['_fs_path'] and
-            item['_eid'] in storage['data']['e_files']
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'u') and item.get('_bpk') == u'e_file' and item['_eid'] in storage['data']['e_files']
 key = string:_fs_path
-value = python:u"{}/{}{}".format(storage['data']['e_files'][item['_eid']]['f'][0][1], item['_eid'], storage['data']['e_files'][item['_eid']]['f'][0][0])
+value = python:u"{}{}".format(item['_eid'], storage['data']['e_files'][item['_eid']]['f'][0][0])
+
+[u__desc_insert]
+blueprint = collective.transmogrifier.sections.manipulator
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'u') and item.get('_bpk') == u'e_file'
+keys = _eid
+destination = string:_desc
 
 [u__batched]
 # keep only not already treated files
@@ -2760,7 +2766,7 @@ condition = python: item.get('_bpk') == u'e_file'
 bp_key = e_dmsfile_o
 store_key = e_mail_o
 
-[u__1_path_insert]
+[u__1_batch_store]
 # insert _path field value
 blueprint = imio.transmogrifier.iadocs.path_insert
 condition = python: item.get('_bpk') == u'e_dmsfile_o'
