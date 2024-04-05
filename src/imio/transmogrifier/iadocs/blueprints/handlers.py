@@ -1581,7 +1581,8 @@ class S1ClassificationFoldersUpdate(object):
             mail_path = self.paths[item['_eid']]['path']
             mail = get_obj_from_path(self.portal, path=mail_path)
             item2 = {'_eid': item['_eid'], '_folder_id': item['_folder_id'], '_bpk': u'classification_folders',
-                     '_path': mail_path, '_type': mail.portal_type, '_act': 'U'}
+                     '_path': mail_path, '_type': mail.portal_type, '_act': 'U',
+                     'modification_date': mail.creation_date}
             change = False
             folder_id = item['_folder_id']
             # Fill empty mail category with folder one
