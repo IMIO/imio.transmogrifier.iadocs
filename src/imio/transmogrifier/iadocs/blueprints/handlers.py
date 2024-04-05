@@ -255,7 +255,7 @@ class ContactAsTextUpdate(object):
             contact_id_param = self.contact_id_key
             if item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
                 if self.skip_real_contact or (self.skip_contact_user and
-                                              self.e_c[item[self.contact_id_key]]['_is_user'] ):
+                                              self.e_c[item[self.contact_id_key]]['_is_user']):
                     contact_id_param = ''
                     continue  # is it necessary to consider free field only when there is a contact_id ?
             if get_contact_info(self, item, self.contact_label, contact_id_param, self.contact_free_key, desc, d_t,
@@ -279,7 +279,8 @@ class ContactAsTextUpdate(object):
                         yield item
                     item2 = {'_eid': item['_eid'], '_path': self.mail_paths[item[self.mail_id_key]]['path'],
                              '_type': mail.portal_type, '_bpk': self.bp_key, '_act': 'U',
-                             'description': u'\r\n'.join(desc), 'data_transfer': u'\r\n'.join(d_t)}
+                             'description': u'\r\n'.join(desc), 'data_transfer': u'\r\n'.join(d_t),
+                             'modification_date': mail.creation_date}
                     yield item2
 
 
@@ -386,7 +387,8 @@ class ContactSet(object):
             else:
                 if change:
                     item2 = {'_eid': item['_eid'], '_path': self.mail_paths[item[self.mail_id_key]]['path'],
-                             '_type': mail.portal_type, '_bpk': self.bp_key, '_act': 'U', self.fieldname: value}
+                             '_type': mail.portal_type, '_bpk': self.bp_key, '_act': 'U', self.fieldname: value,
+                             'modification_date': mail.creation_date}
                     yield item2
                 if self.yld:
                     yield item
