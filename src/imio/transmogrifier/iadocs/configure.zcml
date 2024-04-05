@@ -25,4 +25,10 @@
       for="collective.task.interfaces.ILocalRoleMasterSelectField"
       />
 
+  <!-- Set deserializer on plonegroup userid field, otherwise ObjectDeserializer is gotten -->
+  <adapter
+      factory="transmogrify.dexterity.converters.DefaultDeserializer"
+      for="plone.formwidget.masterselect.interfaces.IMasterSelectField"
+      />
+
 </configure>
