@@ -1178,7 +1178,8 @@ class M1AssignedUserHandling(object):
                                  self.im_paths[item['_mail_id']]['path'])
                 continue
             item2 = {'_eid': item['_eid'], '_path': self.im_paths[item['_mail_id']]['path'],
-                     '_type': imail.portal_type, '_bpk': 'i_assigned_user', '_act': 'U'}
+                     '_type': imail.portal_type, '_bpk': 'i_assigned_user', '_act': 'U',
+                     'modification_date': imail.creation_date}
             # store info in data_transfer
             d_t = (imail.data_transfer or u'').split('\r\n')
             r_name = u' '.join(all_of_dict_values(self.user_match[e_userid], ['_nom', '_prenom']))
