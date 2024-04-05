@@ -757,9 +757,9 @@ class ReadFromData(object):
         for key in sorted(data, key=sort_method):
             if self.store_subkey:
                 for skey in sorted(data[key].keys()):
-                    course_store(self, item)
                     item = {'_bpk': self.bp_key, self.store_key: key, self.store_subkey: skey}
                     item.update(filter_keys(data[key][skey], self.fieldnames))
+                    course_store(self, item)
                     if self.condition(item):
                         yield item
             else:
