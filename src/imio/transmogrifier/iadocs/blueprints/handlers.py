@@ -1437,7 +1437,8 @@ class R1RecipientGroupsUpdate(object):
                 o_logger.warning("mail %s: path '%s' not found", item['_mail_id'], mail_path)
                 continue
             item2 = {'_eid': item['_eid'], '_mail_id': item['_mail_id'], '_service_id': item['_service_id'],
-                     '_bpk': u'recipient_groups', '_path': mail_path, '_type': mail.portal_type, '_act': 'U'}
+                     '_bpk': u'recipient_groups', '_path': mail_path, '_type': mail.portal_type, '_act': 'U',
+                     'modification_date': mail.creation_date}
             s_uid = self.storage['data']['e_service_match'][item['_service_id']]['uid']
             if s_uid in mail.treating_groups or []:
                 # store for batch
