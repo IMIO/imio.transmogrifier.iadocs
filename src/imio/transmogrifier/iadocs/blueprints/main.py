@@ -288,7 +288,7 @@ class Initialization(object):
         counter = api.portal.get_registry_record('collective.classification.folder.browser.settings.'
                                                  'IClassificationConfig.folder_number')
 
-        # deactivate versioning
+        # deactivate versioning : TODO seems not working !!
         pr_tool = api.portal.get_tool('portal_repository')
         self.storage['plone']['pr_vct'] = tuple(pr_tool._versionable_content_types)
         pr_tool._versionable_content_types[:] = ()

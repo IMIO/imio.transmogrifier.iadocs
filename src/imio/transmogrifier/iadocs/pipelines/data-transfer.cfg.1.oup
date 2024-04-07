@@ -20,7 +20,7 @@ default_creation_date = 20090922-1200
 default_tg = 3
 default_category =
 to_treat = 10
-permitted_sections = 0abcdefhilmp1qrstux
+permitted_sections = 0abcdefhilmp1qrstuxy
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -363,7 +363,6 @@ pipeline =
     y__count
     y__1_batch_store
     y__modified
-    breakpoint
 ;    y__wh
     y__type
 
