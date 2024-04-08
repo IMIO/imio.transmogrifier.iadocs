@@ -288,10 +288,12 @@ class Initialization(object):
         counter = api.portal.get_registry_record('collective.classification.folder.browser.settings.'
                                                  'IClassificationConfig.folder_number')
 
-        # deactivate versioning : TODO seems not working !!
+        # deactivate versioning :
         pr_tool = api.portal.get_tool('portal_repository')
         self.storage['plone']['pr_vct'] = tuple(pr_tool._versionable_content_types)
-        pr_tool._versionable_content_types[:] = ()
+        self.storage['plone']['pr_vpm'] = dict(pr_tool._version_policy_mapping)
+        pr_tool._versionable_content_types = []
+        pr_tool._version_policy_mapping = {}
 
     def __iter__(self):
         for item in self.previous:
@@ -658,8 +660,8 @@ class LastSection(object):
         # reactivate versioning
         if not ARCHIVE_SITE:
             pr_tool = api.portal.get_tool('portal_repository')
-            pr_tool._versionable_content_types[:] = ()
-            pr_tool._versionable_content_types.extend(self.storage['plone']['pr_vct'])
+            pr_tool._versionable_content_types = list(self.storage['plone']['pr_vct'])
+            pr_tool._version_policy_mapping = self.storage['plone']['pr_vpm']
         course_print(self)
         # import ipdb; ipdb.set_trace()
 
