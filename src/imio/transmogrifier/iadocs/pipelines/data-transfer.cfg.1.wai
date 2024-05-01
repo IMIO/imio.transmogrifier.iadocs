@@ -16,8 +16,8 @@ default_o_mail_type = courrier
 default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
-default_creation_date = 20190502-0800
-default_tg = 3
+default_creation_date = 20190101-0800
+default_tg = 20
 default_category =
 to_treat = 10
 permitted_sections = 0abcdefFhilmp1qrstuxy
@@ -1780,11 +1780,10 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 # filename = eCourriers_S_test.csv
 filename = eCourriers.csv
-;fieldnames = _A _eid _C outgoing_date mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
-;             _Q _R _S _T _U _to_del _W _source _source_id _Z
-;             creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-;             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
-fieldnames = ${l__1_mail_read:fieldnames}
+fieldnames = _A _B _eid _D outgoing_date mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
+             _R _S _T _U _V _to_del _X _source _source_id
+             _AA creation_date _AC _AD _AE _AF _AG _AH _AI _AJ _meeting_link _meetingitem_link _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
+             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR
 bp_key = e_mail_o
 
 [p__pickle_o_w]
@@ -2083,7 +2082,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 ;filename = eCourriersDestinataires_test.csv
 filename = eCourriersDestinataires.csv
-fieldnames = _A _B _eid _mail_id _contact_id _action _due_date _trm_date _I _trm_user_id _message _response _M _trt_date _O _P _Q _principal _comment _T _U _V _W _X
+fieldnames = _A _B _eid _mail_id _contact_id _action _due_date _trm_date _I _trm_user_id _message _response _M _trt_date _O _P _Q _principal _contact_text _T _U _V _W _X
 bp_key = e_mail_recip_o
 
 [q__1_already_only]
@@ -2764,7 +2763,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [breakpoint]
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
-;condition = python:item.get('_eid', None) in (u'191013', u'')
+;condition = python:item.get('_eid', None) in (u'4533', u'')
 ;condition = python:True
 ;condition = python:storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) % 500 == 0
 
