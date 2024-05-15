@@ -40,6 +40,7 @@ setup(
     install_requires=[
         # -*- Extra requirements: -*-
         'imio.dms.mail',
+        'imio.pyutils',
         'plone.api>=1.8.4',
         'Products.GenericSetup>=1.8.2',
         'transmogrify.dexterity',
