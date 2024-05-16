@@ -134,16 +134,16 @@ def get_records_info(fh, crlf):
     for offset in range(-15, -50, -1):
         fh.seek(offset, 2)
         buf = fh.read()
-        if buf.startswith(u' rows affected)') or buf.startswith(u' lignes affectées)'):
+        if re.match(u' (rows? affected|lignes? affectées?)', buf):
             break
     else:
-        stop(u"End of file not as expected '{}'".format(buf))
+        stop(u"End of file not as expected '{}'".format(buf), logger)
     offset -= 3
-    while not re.match(r'{}\(\d+ (rows|lignes) '.format(crlf), buf) and abs(offset) <= file_len:
+    while not re.match(r'{}\(\d+ (rows?|lignes?) '.format(crlf), buf) and abs(offset) <= file_len:
         fh.seek(offset, 2)
         buf = fh.read()
         offset -= 1
-    match = re.match(r'{}\((\d+) (rows|lignes) '.format(crlf), buf)
+    match = re.match(r'{}\((\d+) (rows?|lignes?) '.format(crlf), buf)
     fh.seek(0)  # start of file
     return int(match.group(1)), file_len + offset  # offset is neg
 
