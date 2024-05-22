@@ -20,8 +20,10 @@ default_creation_date = 20090922-1200
 default_tg = 3
 default_category =
 to_treat = 10
+profils_donnee = ECH-IN ECH-OUT ENTRANT ENTRANTFER ET-IN ET-NOTE ET-OUT PERS-OUT RA-OUTMED1 RA-OUTMEDR RA-OUTSAN1 RA-OUTSAND
+                 RA-OUTSS RE-OUTMED1 RE-OUTMEDR RE-OUTSAN1 RE-OUTSAND RE-OUTSS SORTANT SPINTAY TVX-OUT
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
-permitted_sections = a
+permitted_sections = 2a
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -29,11 +31,17 @@ pipeline =
     initialization
     0__pickle_f_w
     0__files_list
+# 22 mail profil données gardés
+    2__pickle_m_w
+    2__mail_read
+    2__mail_keep
+    2__mail_store
+
 # aa services
     a__service_match_read
     a__service_match_store
-    a__4_service_read
-    a__4_service_reject
+    a__service_read
+    a__service_reject
 #    a__1_service_check
     a__plone_service_write
     a__service_match_write
@@ -421,6 +429,34 @@ condition = python: modules['os'].path.exists(storage['filesp'])
 exclude_patterns = python:[r'^BackupScans$', r'^DELIB_DOCUMENT_', r'^DOSSIER_CLASSEMENT_', r'^eDelib', r'^eSignLots$', r'^tmp$']
 bp_key = e_files
 
+# = = = = = = =  22  = = = = = = = #
+
+[2__pickle_m_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_mails_prd.pkl
+store_key = e_mails_prd
+d_condition = python:storage['commit'] is True
+
+[2__mail_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+filename = dodon00.csv
+fieldnames = _eid _prd _C _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T
+bp_key = e_mails
+
+[2__mail_keep]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: item.get('_bpk') == u'e_mails'
+condition2 = python: item['_prd'] in transmogrifier['config']['profils_donnee'].split()
+
+[2__mail_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_mails'
+bp_key = e_mails_prd
+store_key = _eid
+check_key_uniqueness = 0
+fieldnames = _prd
+yield = 0
+
 # = = = = = = =  aa  = = = = = = = #
 
 [a__service_match_read]
@@ -446,7 +482,7 @@ store_key = eid
 fieldnames = etitle uid title
 yield = 0
 
-[a__4_service_read]
+[a__service_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
               or transmogrifier.storage['parts'] == 'a'
@@ -454,7 +490,7 @@ filename = maser00.csv
 fieldnames = _eid _title _C _D _E _F _G _H _I _J _K _code _M _N _O _P _Q _R _S _T
 bp_key = e_service
 
-[a__4_service_reject]
+[a__service_reject]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_service'
 condition2 = python: item['_eid']
