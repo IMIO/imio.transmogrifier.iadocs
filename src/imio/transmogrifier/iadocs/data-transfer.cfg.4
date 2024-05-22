@@ -31,12 +31,11 @@ pipeline =
     initialization
     0__pickle_f_w
     0__files_list
-# 22 mail profil données gardés
+# 22 sauvegarde données avec profil gardé
     2__pickle_m_w
     2__mail_read
     2__mail_keep
     2__mail_store
-
 # aa services
     a__service_match_read
     a__service_match_store
@@ -435,10 +434,11 @@ bp_key = e_files
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mails_prd.pkl
 store_key = e_mails_prd
-d_condition = python:storage['commit'] is True
+d_condition = python:storage['commit'] is True and not modules['os'].path.exists(filename)
 
 [2__mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('2__pickle_m_w', {}).get('filename', '_not_found_')))
 filename = dodon00.csv
 fieldnames = _eid _prd _C _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T
 bp_key = e_mails
