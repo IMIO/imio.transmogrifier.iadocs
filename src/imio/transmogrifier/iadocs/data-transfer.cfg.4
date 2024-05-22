@@ -32,7 +32,8 @@ pipeline =
 # aa services
     a__service_match_read
     a__service_match_store
-    a__1_service_read
+    a__4_service_read
+    a__4_service_reject
 #    a__1_service_check
     a__plone_service_write
     a__service_match_write
@@ -445,13 +446,18 @@ store_key = eid
 fieldnames = etitle uid title
 yield = 0
 
-[a__1_service_read]
+[a__4_service_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
               or transmogrifier.storage['parts'] == 'a'
 filename = maser00.csv
 fieldnames = _eid _title _C _D _E _F _G _H _I _J _K _code _M _N _O _P _Q _R _S _T
 bp_key = e_service
+
+[a__4_service_reject]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: item.get('_bpk') == u'e_service'
+condition2 = python: item['_eid']
 
 [a__1_service_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
