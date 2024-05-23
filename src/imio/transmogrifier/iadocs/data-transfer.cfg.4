@@ -23,7 +23,7 @@ to_treat = 10
 profils_donnee = ECH-IN ECH-OUT ENTRANT ENTRANTFER ET-IN ET-NOTE ET-OUT PERS-OUT RA-OUTMED1 RA-OUTMEDR RA-OUTSAN1 RA-OUTSAND
                  RA-OUTSS RE-OUTMED1 RE-OUTMEDR RE-OUTSAN1 RE-OUTSAND RE-OUTSS SORTANT SPINTAY TVX-OUT
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
-permitted_sections = 2a
+permitted_sections = 23ab
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -52,16 +52,18 @@ pipeline =
     a__service_match_write
     a__service_update
 # bb  mail type and send mode configuration
+    b__need
     b__mailtype_match_read
     b__1_mailtype_match_check
     b__mailtype_match_store
-    b__1_mail_read
-#    b__1_mail_reject
+    b__maval_read
+    b__maval_reject
     b__1_used_nature_store
-    b__1_used_source_store
-    b__1_mailtype_read
+;    b__1_used_source_store
+    b__palib_read
     b__mailtype_used_only
-    b__1_mailtype_check
+    b__eid_correction
+;    b__1_mailtype_check
     b__plone_mailtype_write
     b__1_mailtype_by_type
     b__1_plonetype_insert
@@ -566,6 +568,10 @@ condition = python: item.get('_bpk') == u'e_service'
 
 # = = = = = = =  bb  = = = = = = = #
 
+[b__need]
+blueprint = imio.transmogrifier.iadocs.need_other
+parts = 23
+
 [b__mailtype_match_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: modules['os'].path.exists(filename)
@@ -588,19 +594,17 @@ store_subkey = _etype
 fieldnames = _enature _esource _etitle _c_type _key _title _active
 yield = 1
 
-[b__1_mail_read]
+[b__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = eCourriers.csv
-fieldnames = _A _eid _C _D _E _F _G _nature_id _H _I _J _K _L _etype _N _O _P _Q _R _S _T _U _to_del _W _source _source_id _Z
-             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
+filename = maval00.csv
+fieldnames = _etype _m_id _field _nature_id _E _F _G _H _I _J
 bp_key = e_mail_mailtype
 
-[b__1_mail_reject]
+[b__maval_reject]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'b') and item.get('_bpk') == 'e_mail_mailtype'
-condition2 = python: item.get('_etype') in ('E', 'S', 'I') and str(item['_to_del']) != '1'
+condition2 = python: item.get('_etype') == u'D' and item.get('_field') == u'TYPEDOC' and item['_m_id'] in storage['data']['e_mails_prd']
 
 [b__1_used_nature_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
@@ -610,8 +614,8 @@ store_key = _nature_id
 store_subkey = _etype
 check_key_uniqueness = 0
 check_subkey_uniqueness = 0
-fieldnames = _eid
-yield = 1
+fieldnames = _m_id
+yield = 0
 
 [b__1_used_source_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
@@ -624,17 +628,20 @@ check_subkey_uniqueness = 0
 fieldnames = _eid
 yield = 0
 
-[b__1_mailtype_read]
+[b__palib_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = eNatures.csv
-fieldnames = _A _eid _etitle _D _nature _source _G _H _I _J _K _L _M _N _O
+;filename = palib00.csv
+filename = palib01.csv
+fieldnames = _libfic _liblge _eid _etitle _E _F _G _H _I
 bp_key = e_mailtype
 
+# {u'TYPEDOC': {u'_default': u'LETTRE', u'_prienc': u'CBO', u'_prizon': u'150'}}
 [b__mailtype_used_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'b') and item.get('_bpk') == u'e_mailtype'
-condition2 = python: item.get('_eid') in storage['data'].get('e_used_mailtype', [])
+condition2 = python: item['_libfic'] == u'PARAMUTIL' and item['_liblge'] == u'FRA' and item['_eid'].startswith(storage['data']['e_papri']['TYPEDOC']['_prizon']) and item.get('_eid')[len(storage['data']['e_papri']['TYPEDOC']['_prizon']):] in storage['data'].get('e_used_mailtype', [])
+;condition2 = python: item['_libfic'] == u'PARAMUTIL' and item['_liblge'] == u'FRA' and item['_eid'].startswith(storage['data']['e_papri']['TYPEDOC']['_prizon'])
 
 [b__1_mailtype_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -642,6 +649,12 @@ bp_key = e_mailtype
 condition = python: item.get('_bpk') == u'e_mailtype'
 booleans = _nature _source
 raise_on_error = ${config:raise_on_error}
+
+[b__eid_correction]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: not storage['data'].get('e_mailtype_match') and item.get('_bpk') == 'e_mailtype'
+key = string:_eid
+value = python:item['_eid'][len(storage['data']['e_papri']['TYPEDOC']['_prizon']):]
 
 [b__plone_mailtype_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
@@ -663,14 +676,14 @@ related_storage = e_used_mailtype
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: not storage['data'].get('e_mailtype_match') and item.get('_bpk') == 'e_mailtype'
 key = string:_ptype
-value = python:item['_etype'] in (u'E', u'I') and u'te' or (item['_nature'] and u'ts' or (item['_source'] and u'fe' or u''))
+value = python:u'D'
 
 [b__mailtype_match_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_mailtype'
 filename = 0_mailtype_match.csv
-fieldnames = _eid _etype _etitle _nature _source _ptype
+fieldnames = _eid _etype _etitle _empty _empty _ptype
 headers = eid etype etitle nature source type key title active
 bp_key = 0_mailtype_match
 yield = 0
