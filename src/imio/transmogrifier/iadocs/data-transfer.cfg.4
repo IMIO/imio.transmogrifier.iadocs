@@ -36,6 +36,12 @@ pipeline =
     2__mail_read
     2__mail_keep
     2__mail_store
+# 33 definition infos variables (lien entre id field et id libelle)
+    3__need
+    3__pickle_p_w
+    3__papri_read
+    3__papri_keep
+    3__papri_store
 # aa services
     a__service_match_read
     a__service_match_store
@@ -457,6 +463,39 @@ check_key_uniqueness = 0
 fieldnames = _prd
 yield = 0
 
+# = = = = = = =  33  = = = = = = = #
+
+[3__need]
+blueprint = imio.transmogrifier.iadocs.need_other
+parts = 2
+
+[3__pickle_p_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_papri.pkl
+store_key = e_papri
+d_condition = python:storage['commit'] is True and not modules['os'].path.exists(filename)
+
+[3__papri_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('3__pickle_p_w', {}).get('filename', '_not_found_')))
+filename = papri00.csv
+fieldnames = _A _eid _C _D _E _F _G _default _I _J _K _prienc _prizon _N _O _P _Q _R _S _T _U _V _W _X _Y
+bp_key = e_papri_i
+
+[3__papri_keep]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: item.get('_bpk') == u'e_papri_i'
+condition2 = python: item['_eid'] in (u'TYPEDOC', )
+
+[3__papri_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_papri_i'
+bp_key = e_papri
+store_key = _eid
+check_key_uniqueness = 0
+fieldnames = _default _prienc _prizon
+yield = 0
+
 # = = = = = = =  aa  = = = = = = = #
 
 [a__service_match_read]
@@ -517,7 +556,7 @@ blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_service'
 filename = 0_service_match.csv
-fieldnames = _eid _pid _title
+fieldnames = _eid _empty _title
 headers = eid parent_eid etitle uid full_title
 bp_key = 0_service_match
 
