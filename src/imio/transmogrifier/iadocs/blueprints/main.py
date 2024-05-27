@@ -432,7 +432,7 @@ class CommonInputChecks(object):
         self.dates = next(csv.reader([options.get('dates', '').strip()], delimiter=' ', quotechar='"',
                                      skipinitialspace=True))
         self.dates = [cell.decode('utf8') for cell in self.dates]
-        self.dates = [tup for tup in pool_tuples(self.dates, 3, 'dates option') if tup[0] in fieldnames]
+        self.dates = pool_tuples(self.dates, 3, 'dates option')
         self.evals = [key for key in safe_unicode(options.get('evals', '')).split() if key in fieldnames]
 
     def __iter__(self):

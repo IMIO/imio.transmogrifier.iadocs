@@ -23,7 +23,7 @@ to_treat = 10
 profils_donnee = ECH-IN ECH-OUT ENTRANT ENTRANTFER ET-IN ET-NOTE ET-OUT PERS-OUT RA-OUTMED1 RA-OUTMEDR RA-OUTSAN1 RA-OUTSAND
                  RA-OUTSS RE-OUTMED1 RE-OUTMEDR RE-OUTSAN1 RE-OUTSAND RE-OUTSS SORTANT SPINTAY TVX-OUT
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
-permitted_sections = 23abc
+permitted_sections = 23abcf
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -110,7 +110,7 @@ pipeline =
     e__category_full_match_write
     e__stop_category
 # ff  classification folders
-    f__need
+;    f__need
     fF__pickle_w
     fs__1_folder_read
     F__1_folder_created_read
@@ -120,11 +120,12 @@ pipeline =
     f__folder_service_uid_add
     f__folder_service_name_add
     f__folder_match_write
-    f__1_parent_relation_store
-    f__relative_path
-    f__1_existing_folder_store
+;    f__1_parent_relation_store
+;    f__relative_path
+;    f__1_existing_folder_store
+    breakpoint
     f__1_folder_store
-    f__dependency_sorter
+;    f__dependency_sorter
     f__plone_folder_write
     f__1_folder_load
 # only to check if all parents are found
@@ -983,7 +984,7 @@ condition2 = python: False
 
 [f__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = ae
+parts = a
 
 [fF__pickle_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -996,9 +997,8 @@ d_condition = python:storage['commit'] is True and 'f__to_correct_only' not in t
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 ;filename = eClassementDossiers_test.csv
-filename = eClassementDossiers.csv
-fieldnames = _A _eid title archived _archive_date _localisation _remark _service_id _I _category_id _parent_id _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
-             _comment _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO
+filename = dsent00.csv
+fieldnames = _eid _prs _open_date _D _service_id _F _G _archive_date _I _J _K _L _M _N _creation_date _creation_hour _Q _R _S _T
 bp_key = e_folder
 
 [F__1_folder_created_read]
@@ -1011,12 +1011,11 @@ bp_key = e_folder
 # check the folder csv file
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_folder
-clean_value = _localisation python:u'\n' " " "python:[(r'^[""\']+$', u'')]" python:u'\r\n' _remark python:u'\n' " " "python:[(r'^[""\']+$', u'')]" python:u'\r\n' _comment python:u'\n' " " "python:[(r'^[""\']+$', u'')]" python:u'\r\n'
 condition = python: item.get('_bpk') == u'e_folder'
-replace_newline = title " - "
-invalids = _parent_id 0
+invalids = _open_date 0 _archive_date 0
+concatenate = _creation_date _creation_hour creation_date " "
 booleans = archived
-evals = classification_categories
+dates = creation_date "%Y%m%d %H%M%S" 0
 
 [f__folder_matched_uid_add]
 blueprint = imio.transmogrifier.iadocs.add_data_in_item
@@ -1102,7 +1101,7 @@ blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_folder'
 bp_key = e_folder
 store_key = _eid
-fieldnames = _ln title archived _archive_date _localisation _remark _service_id _category_id _parent_id _comment path _mar_ker
+fieldnames = _ln _eid _prs title _archive_date _service_id creation_date
 yield = 0
 
 [f__dependency_sorter]
@@ -1129,7 +1128,7 @@ blueprint = imio.transmogrifier.iadocs.read_from_data
 bp_key = e_folder
 store_key = _eid
 fieldnames =
-sort_value = python:(data[k]['_level'], data[k]['_ln'])
+sort_value = python:(data[k]['creation_date'])
 
 [f__folder_to_create]
 blueprint = imio.transmogrifier.iadocs.condition
@@ -2858,7 +2857,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
 ;condition = python:item.get('_eid', None) in (u'191013', u'')
-;condition = python:True
+condition = python:True
 ;condition = python:storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) % 500 == 0
 
 [stop]
