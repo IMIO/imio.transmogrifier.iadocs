@@ -43,6 +43,17 @@ class TestBluePrintMain(unittest.TestCase):
         self.assertDictEqual(next(iter(bp)), {u'1': u'aa', u'2': None})
         bp.previous = [{u'1': u'0', u'2': u''}]
         self.assertDictEqual(next(iter(bp)), {u'1': None, u'2': u''})
+        # check concatenate
+        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'concatenate': '1 3 4 ,'}, None)
+        bp.previous = [{u'1': u'aa', u'2': u'bb'}]
+        # nothing done because 3 field doesn't exist
+        self.assertDictEqual(next(iter(bp)), {u'1': u'aa', u'2': u'bb'})
+        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'concatenate': '1 2 res ,'}, None)
+        bp.previous = [{u'1': u'aa', u'2': u'bb'}]
+        self.assertDictEqual(next(iter(bp)), {u'1': u'aa', u'2': u'bb', u'res': u'aa,bb'})  # in new field
+        bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'concatenate': '1 2 2 ,'}, None)
+        bp.previous = [{u'1': u'aa', u'2': u'bb'}]
+        self.assertDictEqual(next(iter(bp)), {u'1': u'aa', u'2': u'aa,bb'})  # in existing field
         # check split_text
         bp = CommonInputChecks(self.portal, 'a__cip', {'bp_key': 'cip', 'split_text':
                                '1 11 2 0 python:\'\\n\' python:\'\\r\\n\' "Suite: "'}, None)

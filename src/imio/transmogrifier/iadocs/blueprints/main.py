@@ -377,6 +377,7 @@ class CommonInputChecks(object):
         * replace_newline = O, list of pairs (fieldname value) where newline will be replaced by value
         * invalids = O, list of pairs (fieldname values) for which field content will be replaced with None
           if it is equal to a value. values are | separated
+        * concatenate = 0, list of quartets (field1 field2 dest_field separator)
         * split_text = O, list of septets (field length remainder_field remainder_position isep_expr osep_expr prefix)
           for which fieldname is split at length and remainder is put in remainder field
         * booleans = O, list of fields to transform in booleans
@@ -415,6 +416,11 @@ class CommonInputChecks(object):
                                         skipinitialspace=True))
         self.invalids = [cell.decode('utf8') for cell in self.invalids]
         self.invalids = [tup for tup in pool_tuples(self.invalids, 2, 'invalids option') if tup[0] in fieldnames]
+        self.concats = next(csv.reader([options.get('concatenate', '').strip()], delimiter=' ', quotechar='"',
+                                       skipinitialspace=True))
+        self.concats = [cell.decode('utf8') for cell in self.concats]
+        self.concats = [tup for tup in pool_tuples(self.concats, 4, 'concat option')
+                       if tup[0] in fieldnames and tup[1] in fieldnames]
         self.splits = next(csv.reader([options.get('split_text', '').strip()], delimiter=' ', quotechar='"',
                                       skipinitialspace=True))
         self.splits = [cell.decode('utf8') for cell in self.splits]
@@ -456,6 +462,9 @@ class CommonInputChecks(object):
                         if item[fld] == value:
                             item[fld] = None
                             break
+                # concatenate fields
+                for fld1, fld2, dest_fld, sep in self.concats:
+                    item[dest_fld] = u"{}{}{}".format(item[fld1], sep, item[fld2])
                 # split long value
                 for fld, length, dest_fld, dest_pos, isep, osep, prefix in self.splits:
                     part1, part2 = split_text(item[fld], length)
