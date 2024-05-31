@@ -15,46 +15,49 @@ import sys
 import transaction
 
 
-PIPELINE_ID = 'imio.transmogrifier.iadocs.pipeline'
+PIPELINE_ID = "imio.transmogrifier.iadocs.pipeline"
 USAGE = """
 Usage : bin/instance run -O{plonepath} \
 src/imio.transmogrifier.iadocs/src/imio/transmogrifier/iadocs/execute_pipeline.py \
 {PILELINE_FILE} -c0 -p 
 """
 
-if 'app' not in locals() or 'obj' not in locals():
+if "app" not in locals() or "obj" not in locals():
     stop("This script must be run via 'bin/instance -Oxxx run' !")
 
 
 def main():
     args = sys.argv
-    if len(args) < 3 or args[1] != '-c' or not args[2].endswith('execute_pipeline.py'):
-        stop("Arguments are not formatted as needed. Has the script been run via 'instance run'? "
-             "Args are '{}'".format(args), logger=logger)
+    if len(args) < 3 or args[1] != "-c" or not args[2].endswith("execute_pipeline.py"):
+        stop(
+            "Arguments are not formatted as needed. Has the script been run via 'instance run'? "
+            "Args are '{}'".format(args),
+            logger=logger,
+        )
     args.pop(1)  # remove -c
     args.pop(1)  # remove script name
-    parser = argparse.ArgumentParser(description='Run ia.docs data transfer.')
-    parser.add_argument('pipeline', help='Pipeline file')
-    parser.add_argument('-c', '--commit', dest='commit', choices=('0', '1'), help='To commit changes (0, 1)')
-    parser.add_argument('-p', '--parts', dest='parts', default='', help='Parts to run (abc...)')
+    parser = argparse.ArgumentParser(description="Run ia.docs data transfer.")
+    parser.add_argument("pipeline", help="Pipeline file")
+    parser.add_argument("-c", "--commit", dest="commit", choices=("0", "1"), help="To commit changes (0, 1)")
+    parser.add_argument("-p", "--parts", dest="parts", default="", help="Parts to run (abc...)")
     ns = parser.parse_args()
     if not os.path.exists(ns.pipeline):
         stop("Given pipeline file '{}' doesn't exist".format(ns.pipeline), logger=logger)
-    if ns.commit is None or ns.commit == '0':
+    if ns.commit is None or ns.commit == "0":
         ns.commit = False
     else:
         ns.commit = True
 
-    batch_nb = int(os.getenv('BATCH', '0'))
-    commit_nb = int(os.getenv('COMMIT', '0'))
-    func_part = os.getenv('FUNC_PART', '')
+    batch_nb = int(os.getenv("BATCH", "0"))
+    commit_nb = int(os.getenv("COMMIT", "0"))
+    func_part = os.getenv("FUNC_PART", "")
 
-    options = {'commit': ns.commit, 'parts': ns.parts, 'batch_nb': batch_nb, 'commit_nb': commit_nb}
+    options = {"commit": ns.commit, "parts": ns.parts, "batch_nb": batch_nb, "commit_nb": commit_nb}
 
     portal = obj  # noqa
     # get admin user
     acl_users = app.acl_users  # noqa
-    user = acl_users.getUser('admin')
+    user = acl_users.getUser("admin")
     if user:
         user = user.__of__(acl_users)
         newSecurityManager(None, user)
@@ -64,14 +67,14 @@ def main():
     try:
         configuration_registry.getConfiguration(PIPELINE_ID)
     except KeyError:
-        configuration_registry.registerConfiguration(PIPELINE_ID, u'', u'', ns.pipeline)
+        configuration_registry.registerConfiguration(PIPELINE_ID, u"", u"", ns.pipeline)
     #     try:
-    options['parts'], unpermitted = auto_parts(ns, func_part)
+    options["parts"], unpermitted = auto_parts(ns, func_part)
     if unpermitted:
         stop("The following parts are not permitted: {}".format(unpermitted))
 
     o_logger.info(options)
-    portal.REQUEST.set('_transmo_options_', json.dumps(options))
+    portal.REQUEST.set("_transmo_options_", json.dumps(options))
     transmogrifier = Transmogrifier(portal)
     transmogrifier(PIPELINE_ID)
     #     except Exception as error:
@@ -92,25 +95,28 @@ def auto_parts(ns, func_part):
     :return: (all parts string, unpermitted list)
     """
     config = _load_config(PIPELINE_ID, seen=None)
-    sections = [sec for sec in config['transmogrifier']['pipeline'].splitlines() if sec]
-    needed = ''
+    sections = [sec for sec in config["transmogrifier"]["pipeline"].splitlines() if sec]
+    needed = ""
     all_parts = ns.parts
     # get needed sections for func_part
     if func_part:
         for section in sections:
             # we consider sections starting with func_part __
-            if config[section]['blueprint'] == 'imio.transmogrifier.iadocs.need_other' and \
-                    func_part in get_related_parts(section) or []:
-                needed = config[section]['parts']
+            if (
+                config[section]["blueprint"] == "imio.transmogrifier.iadocs.need_other"
+                and func_part in get_related_parts(section)
+                or []
+            ):
+                needed = config[section]["parts"]
                 break
-        all_parts = ''.join(sorted(set(needed + ns.parts + func_part)))
+        all_parts = "".join(sorted(set(needed + ns.parts + func_part)))
     # check permitted
-    permitted = config['config'].get('permitted_sections')
+    permitted = config["config"].get("permitted_sections")
     if not permitted:
         return all_parts, []
     unpermitted = [part for part in all_parts if part not in permitted]
     return all_parts, unpermitted
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

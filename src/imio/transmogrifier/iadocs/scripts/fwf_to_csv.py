@@ -16,29 +16,29 @@ import re
 
 
 logging.basicConfig()
-logger = logging.getLogger('csv')
+logger = logging.getLogger("csv")
 logger.setLevel(logging.INFO)
-sqlcmd_ext = '.fwf'
+sqlcmd_ext = ".fwf"
 
 
 def main(input_dir, output_dir, counter_col, input_filter, input_sep, only_new, iconv, input_crlf):
     start = datetime.now()
-    logger.info("Start: {}".format(start.strftime('%Y%m%d-%H%M')))
-    if input_crlf == 'crlf':
-        crlf = u'\r\n'
+    logger.info("Start: {}".format(start.strftime("%Y%m%d-%H%M")))
+    if input_crlf == "crlf":
+        crlf = u"\r\n"
     else:
-        crlf = u'\n'
+        crlf = u"\n"
     files = read_dir(input_dir, with_path=False, only_folders=False, only_files=True)
     for filename in files:
         if not filename.endswith(sqlcmd_ext) or (input_filter and not re.match(input_filter, filename)):
             continue
         input_name = os.path.join(input_dir, filename)
-        output_name = os.path.join(output_dir, filename.replace(sqlcmd_ext, '.csv'))
+        output_name = os.path.join(output_dir, filename.replace(sqlcmd_ext, ".csv"))
         if only_new and os.path.exists(output_name):
             continue
         logger.info("Reading '{}'".format(input_name))
         if iconv:
-            new_name = input_name.replace('.fwf', '.fwf.{}'.format(iconv))
+            new_name = input_name.replace(".fwf", ".fwf.{}".format(iconv))
             if not os.path.exists(new_name):
                 logger.info("Renaming '{}' to '{}'".format(input_name, new_name))
                 os.rename(input_name, new_name)
@@ -46,20 +46,20 @@ def main(input_dir, output_dir, counter_col, input_filter, input_sep, only_new, 
                 (out, err, code) = runCommand(cmd)
                 if code != 0:
                     stop(u"Error while converting file '{}' with iconv: {}".format(input_name, err), logger)
-        with codecs.open(input_name, 'r', encoding='utf8') as ifh, open(output_name, 'wb') as ofh:
-            csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC, lineterminator='\n')
+        with codecs.open(input_name, "r", encoding="utf8") as ifh, open(output_name, "wb") as ofh:
+            csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC, lineterminator="\n")
             rec_nb, last_rec_pos = get_records_info(ifh, crlf)
             cols = get_cols(ifh, input_sep, crlf)
             if counter_col:
-                csvh.writerow([u'Line'] + list(cols.keys()))
+                csvh.writerow([u"Line"] + list(cols.keys()))
             else:
                 csvh.writerow(list(cols.keys()))
-            counters = {'read': 0, 'max': rec_nb}
+            counters = {"read": 0, "max": rec_nb}
             ctn, values = get_values(cols, ifh, counters, input_sep)
             writed = 0
             while ctn:
                 if counter_col:
-                    values.insert(0, counters['read'])
+                    values.insert(0, counters["read"])
                 csvh.writerow(values)
                 writed += 1
                 ctn, values = get_values(cols, ifh, counters, input_sep)
@@ -78,7 +78,7 @@ def get_values(cols, fh, count_dic, input_sep):
     :return: continue flag, columns values
     """
     values = []
-    if count_dic['read'] >= count_dic['max']:
+    if count_dic["read"] >= count_dic["max"]:
         return False, values
     for col, clen in cols.items():
         # if fh.tell() >= max_pos:  # tell is not correct after utf8 read
@@ -86,23 +86,23 @@ def get_values(cols, fh, count_dic, input_sep):
         value = fh.read(clen)
         if not value:
             break  # end of file
-        elif value.startswith(u' ') and not value.endswith(u' '):  # number column
-            value = value.lstrip(u' ')
+        elif value.startswith(u" ") and not value.endswith(u" "):  # number column
+            value = value.lstrip(u" ")
             try:
                 value = int(value)
             except Exception:
                 pass
         else:
-            value = value.strip(u' ').replace(u'\r\n', u'\n')
+            value = value.strip(u" ").replace(u"\r\n", u"\n")
         values.append(safe_encode(value))
         next_char = fh.read(1)
         if next_char:
-            if next_char == u'\r':
+            if next_char == u"\r":
                 next_char = fh.read(1)
-            if next_char not in (input_sep, u'\n'):
+            if next_char not in (input_sep, u"\n"):
                 break
     else:
-        count_dic['read'] += 1
+        count_dic["read"] += 1
         return True, values
     return False, values
 
@@ -112,17 +112,17 @@ def get_cols(fh, input_sep, crlf):
     header = fh.readline()
     fh.seek(len(header))  # after readline, pointer is at the end of the file. We pos it correctly
     if not header:
-        stop('File is empty !', logger)
+        stop("File is empty !", logger)
     header = header.rstrip(crlf)
     parts = header.split(input_sep)
     cols = OrderedDict()
     for part in parts:
         cols[part.strip()] = len(part)
     # check second row (does'nt yet contain \n)
-    cont, values = get_values(cols, fh, {'read': 0, 'max': 1}, input_sep)
+    cont, values = get_values(cols, fh, {"read": 0, "max": 1}, input_sep)
     for i, col in enumerate(cols):
         clen = cols[col]
-        if values[i] != u'-' * clen:
+        if values[i] != u"-" * clen:
             stop(u"Wrong length in second line for col '{}'".format(col), logger)
     return cols
 
@@ -134,35 +134,46 @@ def get_records_info(fh, crlf):
     for offset in range(-15, -50, -1):
         fh.seek(offset, 2)
         buf = fh.read()
-        if re.match(u' (rows? affected|lignes? affectées?)', buf):
+        if re.match(u" (rows? affected|lignes? affectées?)", buf):
             break
     else:
         stop(u"End of file not as expected '{}'".format(buf), logger)
     offset -= 3
-    while not re.match(r'{}\(\d+ (rows?|lignes?) '.format(crlf), buf) and abs(offset) <= file_len:
+    while not re.match(r"{}\(\d+ (rows?|lignes?) ".format(crlf), buf) and abs(offset) <= file_len:
         fh.seek(offset, 2)
         buf = fh.read()
         offset -= 1
-    match = re.match(r'{}\((\d+) (rows?|lignes?) '.format(crlf), buf)
+    match = re.match(r"{}\((\d+) (rows?|lignes?) ".format(crlf), buf)
     fh.seek(0)  # start of file
     return int(match.group(1)), file_len + offset  # offset is neg
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Convert sqlcmd files to csv.')
-    parser.add_argument('input_dir', help='Input directory.')
-    parser.add_argument('-if', '--input_filter', dest='input_filter', help='Input filter.')
-    parser.add_argument('-is', '--input_sep', dest='input_sep', help='Input delimiter. Default "|"', default='|')
-    parser.add_argument('-ic', '--iconv', dest='iconv', help='Transform with iconv from given encoding to utf8.')
-    parser.add_argument('-il', '--input_crlf', dest='input_crlf', default='lf', choices=('lf', 'crlf'),
-                        help='Encoding. Default: utf8')
-    parser.add_argument('-od', '--output_dir', dest='output_dir', help='Output directory. Default: same as input')
-    parser.add_argument('-oc', '--count_col', action='store_true', dest='count_col',
-                        help='Add in output a counter column.')
-    parser.add_argument('-on', '--only_new', dest='only_new', action='store_true',
-                        help='Export only not existing csv files.')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Convert sqlcmd files to csv.")
+    parser.add_argument("input_dir", help="Input directory.")
+    parser.add_argument("-if", "--input_filter", dest="input_filter", help="Input filter.")
+    parser.add_argument("-is", "--input_sep", dest="input_sep", help='Input delimiter. Default "|"', default="|")
+    parser.add_argument("-ic", "--iconv", dest="iconv", help="Transform with iconv from given encoding to utf8.")
+    parser.add_argument(
+        "-il", "--input_crlf", dest="input_crlf", default="lf", choices=("lf", "crlf"), help="Encoding. Default: utf8"
+    )
+    parser.add_argument("-od", "--output_dir", dest="output_dir", help="Output directory. Default: same as input")
+    parser.add_argument(
+        "-oc", "--count_col", action="store_true", dest="count_col", help="Add in output a counter column."
+    )
+    parser.add_argument(
+        "-on", "--only_new", dest="only_new", action="store_true", help="Export only not existing csv files."
+    )
     ns = parser.parse_args()
     if not ns.output_dir:
         ns.output_dir = ns.input_dir
-    main(ns.input_dir, ns.output_dir, ns.count_col, ns.input_filter, ns.input_sep.decode(), ns.only_new, ns.iconv,
-         ns.input_crlf)
+    main(
+        ns.input_dir,
+        ns.output_dir,
+        ns.count_col,
+        ns.input_filter,
+        ns.input_sep.decode(),
+        ns.only_new,
+        ns.iconv,
+        ns.input_crlf,
+    )

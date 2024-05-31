@@ -13,22 +13,22 @@ class TestBluePrintHandlers(unittest.TestCase):
     layer = IMIO_TRANSMOGRIFIER_IADOCS_INTEGRATION_TESTING
 
     def setUp(self):
-        self.portal = self.layer['portal']
+        self.portal = self.layer["portal"]
         self.portal.context = self.portal
         self.storage = get_storage(self.portal)
 
     def test_L1SenderAsTextSet(self):
-        eid_key = 'sid'
-        item = {'sid': 12}
+        eid_key = "sid"
+        item = {"sid": 12}
         eids = {}
         expr = "(item[eid_key] and item[eid_key] not in eids) and eid_key or ''"
         # sid value but not in eids
         self.assertEqual(eval(expr), eid_key)
         # sid value and in eids
-        eids[12] = ''
-        self.assertEqual(eval(expr), '')
+        eids[12] = ""
+        self.assertEqual(eval(expr), "")
         # not sid value
-        item['sid'] = None
-        self.assertEqual(eval(expr), '')
+        item["sid"] = None
+        self.assertEqual(eval(expr), "")
         del eids[12]
-        self.assertEqual(eval(expr), '')
+        self.assertEqual(eval(expr), "")

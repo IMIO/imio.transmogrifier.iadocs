@@ -7,27 +7,27 @@ import logging
 
 
 # types shortcuts
-T_S = {'dmsincomingmail': 'IM', 'dmsincoming_email': 'IE', 'dmsoutgoingmail': 'OM'}
+T_S = {"dmsincomingmail": "IM", "dmsincoming_email": "IE", "dmsoutgoingmail": "OM"}
 
 root_logger = logging.getLogger()
-log_format = '%(asctime)s %(levelname).1s (%(name)s) %(message)s'
+log_format = "%(asctime)s %(levelname).1s (%(name)s) %(message)s"
 if root_logger.handlers:  # for sphinx
     root_handler = root_logger.handlers[0]
     root_handler.setFormatter(logging.Formatter(log_format))
-    root_handler.formatter.datefmt = '%y%m%d %H%M%S'
+    root_handler.formatter.datefmt = "%y%m%d %H%M%S"
 
-logger = logging.getLogger('dt')
-setup_logger(logger)   # needed to be displayed with instance run.
+logger = logging.getLogger("dt")
+setup_logger(logger)  # needed to be displayed with instance run.
 
-e_logger = logging.getLogger('dti')
+e_logger = logging.getLogger("dti")
 setup_logger(e_logger)
 
-o_logger = logging.getLogger('dto')
+o_logger = logging.getLogger("dto")
 setup_logger(o_logger)
 
-ANNOTATION_KEY = 'imio.transmogrifier.iadocs'
+ANNOTATION_KEY = "imio.transmogrifier.iadocs"
 
-_ = MessageFactory('imio.transmogrifier.iadocs')
+_ = MessageFactory("imio.transmogrifier.iadocs")
 
 
 def initialize(context):

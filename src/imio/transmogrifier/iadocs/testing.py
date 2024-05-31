@@ -20,28 +20,26 @@ class ImioTransmogrifierIadocsLayer(PloneSandboxLayer):
         # Load any other ZCML that is required for your tests.
         # The z3c.autoinclude feature is disabled in the Plone fixture base
         # layer.
-        self.loadZCML(package=imio.transmogrifier.iadocs, name='configure.zcml')
+        self.loadZCML(package=imio.transmogrifier.iadocs, name="configure.zcml")
 
     def setUpPloneSite(self, portal):
         # applyProfile(portal, 'imio.transmogrifier.iadocs:testing')
-        setRoles(portal, TEST_USER_ID, ['Manager'])
+        setRoles(portal, TEST_USER_ID, ["Manager"])
 
 
 def get_storage(portal):
     annot = IAnnotations(portal)
-    return annot.setdefault(ANNOTATION_KEY, {'course': OrderedDict()})
+    return annot.setdefault(ANNOTATION_KEY, {"course": OrderedDict()})
 
 
 IMIO_TRANSMOGRIFIER_IADOCS_FIXTURE = ImioTransmogrifierIadocsLayer()
 
 
 IMIO_TRANSMOGRIFIER_IADOCS_INTEGRATION_TESTING = IntegrationTesting(
-    bases=(IMIO_TRANSMOGRIFIER_IADOCS_FIXTURE,),
-    name='ImioTransmogrifierIadocsLayer:IntegrationTesting'
+    bases=(IMIO_TRANSMOGRIFIER_IADOCS_FIXTURE,), name="ImioTransmogrifierIadocsLayer:IntegrationTesting"
 )
 
 
 IMIO_TRANSMOGRIFIER_IADOCS_FUNCTIONAL_TESTING = FunctionalTesting(
-    bases=(IMIO_TRANSMOGRIFIER_IADOCS_FIXTURE,),
-    name='ImioTransmogrifierIadocsLayer:FunctionalTesting'
+    bases=(IMIO_TRANSMOGRIFIER_IADOCS_FIXTURE,), name="ImioTransmogrifierIadocsLayer:FunctionalTesting"
 )
