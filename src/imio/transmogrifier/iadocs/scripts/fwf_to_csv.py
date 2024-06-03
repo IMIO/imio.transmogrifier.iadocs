@@ -155,7 +155,12 @@ if __name__ == "__main__":
     parser.add_argument("-is", "--input_sep", dest="input_sep", help='Input delimiter. Default "|"', default="|")
     parser.add_argument("-ic", "--iconv", dest="iconv", help="Transform with iconv from given encoding to utf8.")
     parser.add_argument(
-        "-il", "--input_crlf", dest="input_crlf", default="lf", choices=("lf", "crlf"), help="Encoding. Default: utf8"
+        "-il",
+        "--input_crlf",
+        dest="input_crlf",
+        default="lf",
+        choices=("lf", "crlf"),
+        help="Line termination. Default: lf",
     )
     parser.add_argument("-od", "--output_dir", dest="output_dir", help="Output directory. Default: same as input")
     parser.add_argument(
