@@ -18,6 +18,7 @@ default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
 default_creation_date = 20140327-1200
 default_tg = 7
+default_category =
 to_treat = 10
 permitted_sections = 0abcdefFhilmp1qrstuxy
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
