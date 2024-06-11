@@ -17,7 +17,7 @@ default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
 default_creation_date = 20130911-1200
-default_tg = 3
+default_tg = 220344
 to_treat = 10
 permitted_sections = 0abdlmpq
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
@@ -699,7 +699,8 @@ condition2 = python: item.get('_etype') == 'S'
 
 [d__2_service_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-filename = 11_Liste_Services.csv
+;filename = 11_Liste_Services.csv
+filename = Liste_Services.csv
 fieldnames = _eid _title
 bp_key = e_mail_sender
 
