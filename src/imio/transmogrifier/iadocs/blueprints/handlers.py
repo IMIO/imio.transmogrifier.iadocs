@@ -735,6 +735,7 @@ class ECategoryUpdate(object):
         * title_replace_slash = O, replace / by - if 1 (default 1)
         * decimal_import = O, identifier is decimal code if 1 (default 1)
         * parent_relation = O, parent_relation dictionary name containing (key: {'_parent_id': 'xx'}
+        * category_code_eid = 0, dict containing category code and eid value (usefull if _eid is e_category main key)
     """
 
     classProvides(ISectionBlueprint)
@@ -754,6 +755,7 @@ class ECategoryUpdate(object):
         self.replace_slash = bool(int(options.get("title_replace_slash") or "1"))
         self.decimal_import = bool(int(options.get("decimal_import") or "1"))
         self.parent_relation = self.storage["data"].get(options.get("parent_relation", ""), {})
+        self.category_code_eid = self.storage["data"].get(options.get("category_code_eid", ""), {})
         self.p_category = self.storage["data"]["p_category"]
 
     def __iter__(self):
@@ -790,7 +792,10 @@ class ECategoryUpdate(object):
                         parts = get_parents(item["_ecode"])
                         for part in parts[:-1]:
                             if part not in self.p_category:  # not already in Plone
-                                title = self.storage["data"]["e_category"].get(part, {}).get("_etitle", part)
+                                _p_key = part
+                                if self.category_code_eid:
+                                    _p_key = self.category_code_eid.get(part, {}).get("_eid")
+                                title = self.storage["data"]["e_category"].get(_p_key, {}).get("_etitle", part)
                                 # if title != part:
                                 #     o_logger.info(u"P:{}, {}".format(item['_ecode'], item['_etitle']))
                                 parent = create_category(
@@ -818,9 +823,11 @@ class ECategoryUpdate(object):
                             )
                             code = get_correct_id(self.p_category, code, with_letter=True)
                     else:
-                        code = item["_ecode"]
-                        if item["_ecode"] in self.parent_relation:  # we have a parent
-                            parent_id = self.parent_relation[item["_ecode"]]["_parent_id"]
+                        code = _p_key = item["_ecode"]
+                        if self.category_code_eid:
+                            _p_key = self.category_code_eid.get(code, {}).get("_eid")
+                        if _p_key in self.parent_relation:  # we have a parent
+                            parent_id = self.parent_relation[_p_key]["_parent_id"]
                             if parent_id not in self.p_category:
                                 log_error(item, u"The parent '{}' is not in the created categories.".format(parent_id))
                             else:
@@ -828,7 +835,7 @@ class ECategoryUpdate(object):
                     node = create_category(
                         parent,
                         {
-                            "identifier": code,
+                            "identifier": item["_ecode"],
                             "title": self.replace_slash and item["_etitle"].replace("/", "-") or item["_etitle"],
                             "enabled": item["_eactive"],
                         },

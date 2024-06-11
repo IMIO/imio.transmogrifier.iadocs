@@ -19,7 +19,7 @@ generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise d
 default_creation_date = 20130911-1200
 default_tg = 220344
 to_treat = 10
-permitted_sections = 0abdlmpq
+permitted_sections = 0abdelmpq
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -73,15 +73,21 @@ pipeline =
     e__category_full_match_store
     e__category_match_read
     e__1_category_match_check
-    e__1_mail_read
+    e__pickle_cc_parents_w
+    e__2_E_mail_read
+    e__2_S_mail_read
     e__1_folder_read
     e__1_category_reject
     e__1_store_used_category
     e__1_category_read
     e__plone_category_write
+    e__3_active_insert
 #    e__1_category_code_modify  # comblain
     e__1_category_check
+    e__3_parent_relation_store
+    e__category_code_eid_store
     e__category_store
+    e__dependency_sorter
     e__category_load
     e__category_used_only
 #    e__category_not_in_plone
@@ -742,35 +748,48 @@ bp_key = e_category_match
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_category_match
 condition = python: item.get('_bpk') == u'e_category_match'
-strip_chars = _ecode .
+strip_chars = _ecode . r
 booleans = _eactive
 
-[e__1_mail_read]
+[e__pickle_cc_parents_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_cc_parents.pkl
+store_key = e_cc_parent_relation
+condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
+            and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
+
+[e__2_E_mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
-filename = eCourriers.csv
-fieldnames = _A _eid _C _D _E _F _G _H _I _J _K _L _M _N _O _category_id _Q _R _S _T _U _V _W _X _Y _Z
-             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
-bp_key = e_mail_category
+filename = Courriers_E.csv
+fieldnames = _A _eid _C _category_id _E _enabled _G _H _I _J _K _L _M _N _O _P _Q
+bp_key = e_mail_category_E
+
+[e__2_S_mail_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
+              and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
+filename = Courriers_S.csv
+fieldnames = _A _eid _C _category_id _E _enabled _G _H _I _J _K _L _M _N
+bp_key = e_mail_category_S
 
 [e__1_folder_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
-filename = eClassementDossiers.csv
-fieldnames = _A _eid _C _D _E _F _G _H _I _category_id _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO
+filename = Inventaire_Farde_Chemise.csv
+fieldnames = _category_id _eid _C _D _E _F _G _H _I _J _K _L _M
 bp_key = e_folder_category
 
 [e__1_category_reject]
 blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'e') and item.get('_bpk') in (u'e_mail_category', u'e_folder_category')
-condition2 = python: item.get('_category_id') not in (None, u'0')
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'e') and item.get('_bpk') in (u'e_mail_category_E', u'e_mail_category_S', u'e_folder_category')
+condition2 = python: item.get('_category_id') not in (None, u'0', u'?', u'Y', u'DELANNOY Carl')
 
 [e__1_store_used_category]
 blueprint = imio.transmogrifier.iadocs.store_in_data
-condition = python: item.get('_bpk') in (u'e_mail_category', u'e_folder_category')
+condition = python: item.get('_bpk') in (u'e_mail_category_E', u'e_mail_category_S', u'e_folder_category')
 bp_key = e_used_category
 store_key = _category_id
 store_subkey = _bpk
@@ -785,8 +804,8 @@ b_condition = python: modules['os'].path.exists(filename)
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
 ;filename = eClassement_test.csv
-filename = eClassement.csv
-fieldnames = _A _eid _C _ecode _etitle _eactive _G _H _I _J _K _L
+filename = Liste_CDU.csv
+fieldnames = _eid _ecode _etitle _parent_id
 bp_key = e_category
 
 [e__plone_category_write]
@@ -801,6 +820,12 @@ store_key = _pcode
 store_key_sort =
 yield = 1
 
+[e__3_active_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'e') and item.get('_bpk') == u'e_category'
+key = string:_eactive
+value = python:True
+
 [e__1_category_code_modify]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'e') and item.get('_bpk') == u'e_category'
@@ -812,29 +837,55 @@ value = python:item['_ecode'].replace('/', '.')
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_category
 condition = python: item.get('_bpk') == u'e_category'
-strip_chars = _ecode .
+invalids = _parent_id 56684
+strip_chars = _ecode . r
 booleans = _eactive
+
+[e__3_parent_relation_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_category' and item['_parent_id'] and item['_parent_id'] != item['_eid']
+bp_key = e_cc_parent_relation
+store_key = _eid
+fieldnames = _parent_id
+yield = 1
+
+[e__category_code_eid_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_category'
+bp_key = e_category_code_eid
+store_key = _ecode
+fieldnames = _eid
+yield = 1
 
 [e__category_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_category'
 bp_key = e_category
-store_key = _ecode
-store_subkey = _eid
-fieldnames = _etitle _eactive
+store_key = _eid
+;store_subkey = _eid
+fieldnames = _ln _etitle _ecode _parent_id _eactive
 yield = 0
+
+[e__dependency_sorter]
+blueprint = imio.transmogrifier.iadocs.dependency_sorter
+# condition = python: item['_type'] == u'organization'
+condition =
+bp_key = e_category
+store_key = _eid
+parent_relation = e_cc_parent_relation
 
 [e__category_load]
 blueprint = imio.transmogrifier.iadocs.read_from_data
 bp_key = e_category
-store_key = _ecode
-store_subkey = _eid
-fieldnames = _etitle _eactive
+store_key = _eid
+;store_subkey = _eid
+fieldnames = _etitle _ecode _parent_id _eactive
+sort_value = python:(data[k]['_level'], data[k]['_ln'])
 
 [e__category_used_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'e') and item.get('_bpk') == u'e_category'
-condition2 = python: item['_ecode'] and item.get('_eid') in storage['data'].get('e_used_category', [])
+condition2 = python: item['_ecode'] and item.get('_ecode') in storage['data'].get('e_used_category', [])
 
 [e__category_not_in_plone]
 blueprint = imio.transmogrifier.iadocs.condition
@@ -868,13 +919,19 @@ yield = 0
 blueprint = imio.transmogrifier.iadocs.e_category_update
 b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_category_match'
+decimal_import = 1
 bp_key = e_category_update
+parent_relation = e_cc_parent_relation
+category_code_eid = e_category_code_eid
 
 [e__category_create]
 blueprint = imio.transmogrifier.iadocs.e_category_update
 b_condition = python: len(transmogrifier.storage['data']['p_category']) == 0
 condition = python: item.get('_bpk') == 'e_category'
+decimal_import = 1
 bp_key = e_category_create
+parent_relation = e_cc_parent_relation
+category_code_eid = e_category_code_eid
 
 [e__category_full_match_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
