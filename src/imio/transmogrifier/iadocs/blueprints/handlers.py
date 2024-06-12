@@ -944,6 +944,7 @@ class F3TextCategoriesToId(object):
     Parameters:
         * condition = O, condition expression
         * bp_key = M, key of categories data dict
+        * categories_field_name = O, field name containing categories text
         * txt_field_name = M, textfield field name where the text value will be added
     """
 
@@ -958,6 +959,7 @@ class F3TextCategoriesToId(object):
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.bp_key = safe_unicode(options["bp_key"])
+        self.cat_fld_name = options.get("categories_field_name") or "_classification_categories_text"
         self.fld_name = safe_unicode(options["txt_field_name"])
         self.categories = self.storage["data"][self.bp_key]
 
@@ -967,7 +969,7 @@ class F3TextCategoriesToId(object):
                 yield item
                 continue
             course_store(self, item)
-            txt = item["_classification_categories_text"]
+            txt = item[self.cat_fld_name]
             if txt.startswith(u"0"):
                 txt = u".{}".format(txt)
             elif txt.startswith(u"1"):
@@ -978,7 +980,7 @@ class F3TextCategoriesToId(object):
                 # log_error(item, u"Category '{}' not found".format(txt))
                 item["classification_categories"] = [self.storage["plone"]["def_category"]]
             desc = self.fld_name in item and item[self.fld_name].split("\r\n") or []
-            desc.append(u"CLASSEMENT: {}".format(item["_classification_categories_text"]))
+            desc.append(u"CLASSEMENT: {}".format(item[self.cat_fld_name]))
             item[self.fld_name] = u"\r\n".join(desc)
             yield item
 
