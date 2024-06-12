@@ -872,7 +872,6 @@ class F1Level3Handler(object):
 
     Parameters:
         * condition = O, condition expression
-        * bp_key = M, key of parents data dict
     """
 
     classProvides(ISectionBlueprint)
@@ -901,6 +900,42 @@ class F1Level3Handler(object):
             # set type
             item["_type"] = "ClassificationSubfolder"
             yield item
+
+
+class F2FolderSubfolderSplit(object):
+    """Handles level 3 folder.
+
+    Parameters:
+        * condition = O, condition expression
+        * bp_key = M, blueprint key
+        * prefix = M, prefix to replace
+    """
+
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
+        self.bp_key = safe_unicode(options["bp_key"])
+        self.prefix = safe_unicode(options["prefix"])
+
+    def __iter__(self):
+        for item in self.previous:
+            yield item
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                continue
+            course_store(self, item)
+            # create new item for subfolder, moving fields with prefix
+            item2 = item.copy()
+            for key in item:
+                if key.startswith(self.prefix):
+                    item2[key[len(self.prefix) :]] = item[key]
+            yield item2
 
 
 class F3TextCategoriesToId(object):

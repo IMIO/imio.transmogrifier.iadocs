@@ -110,6 +110,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.f_2_folder_subfolder_split"
+    component=".handlers.F2FolderSubfolderSplit"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.f_3_text_categories"
     component=".handlers.F3TextCategoriesToId"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
