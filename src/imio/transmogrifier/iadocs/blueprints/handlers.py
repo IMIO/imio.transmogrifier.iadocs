@@ -977,7 +977,7 @@ class F3TextCategoriesToId(object):
             if txt in self.categories:
                 item["classification_categories"] = [self.categories[txt]["uid"]]
             else:
-                # log_error(item, u"Category '{}' not found".format(txt))
+                log_error(item, u"Category '{}' not found".format(txt))
                 item["classification_categories"] = [self.storage["plone"]["def_category"]]
             desc = self.fld_name in item and item[self.fld_name].split("\r\n") or []
             desc.append(u"CLASSEMENT: {}".format(item[self.cat_fld_name]))
