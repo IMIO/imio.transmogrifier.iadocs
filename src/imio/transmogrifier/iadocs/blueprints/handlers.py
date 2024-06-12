@@ -806,6 +806,7 @@ class ECategoryUpdate(object):
                                     "uid": parent.UID(),
                                     "enabled": parent.enabled,
                                     "obj": parent,
+                                    "case": "parent",
                                 }
                                 item["_act"] = "N"
                             else:
@@ -821,35 +822,45 @@ class ECategoryUpdate(object):
                                     self.p_category[code]["title"],
                                 ),
                             )
-                            code = get_correct_id(self.p_category, code, with_letter=True)
+                            if self.p_category[code].get("case", "") == "parent":
+                                self.p_category[code]["obj"].enabled = item["_eactive"]
+                                self.p_category[code]["enabled"] = item["_eactive"]
+                                code = None
+                            else:
+                                code = get_correct_id(self.p_category, code, with_letter=True)
                     else:
                         code = _p_key = item["_ecode"]
                         if self.category_code_eid:
-                            _p_key = self.category_code_eid.get(code, {}).get("_eid")
+                            _p_key = item[u"_eid"]
                         if _p_key in self.parent_relation:  # we have a parent
-                            parent_id = self.parent_relation[_p_key]["_parent_id"]
-                            if parent_id not in self.p_category:
+                            parent_id = parent_code = self.parent_relation[_p_key]["_parent_id"]
+                            if self.category_code_eid:
+                                parent_code = (
+                                    self.storage["data"]["e_category"].get(parent_id, {}).get("_ecode", parent_id)
+                                )
+                            if parent_code not in self.p_category:
                                 log_error(item, u"The parent '{}' is not in the created categories.".format(parent_id))
                             else:
-                                parent = self.p_category[parent_id]["obj"]
-                    node = create_category(
-                        parent,
-                        {
-                            "identifier": item["_ecode"],
-                            "title": self.replace_slash and item["_etitle"].replace("/", "-") or item["_etitle"],
-                            "enabled": item["_eactive"],
-                        },
-                        event=True,
-                    )
-                    self.p_category[node.identifier] = {
-                        "title": node.title,
-                        "uid": node.UID(),
-                        "enabled": node.enabled,
-                        "obj": node,
-                    }
-                    item["_pcode"], item["_ptitle"] = node.identifier, node.title
-                    item["_puid"], item["_pactive"] = node.UID(), node.enabled
-                    item["_act"] = "N"
+                                parent = self.p_category[parent_code]["obj"]
+                    if code:
+                        node = create_category(
+                            parent,
+                            {
+                                "identifier": code,
+                                "title": self.replace_slash and item["_etitle"].replace("/", "-") or item["_etitle"],
+                                "enabled": item["_eactive"],
+                            },
+                            event=True,
+                        )
+                        self.p_category[node.identifier] = {
+                            "title": node.title,
+                            "uid": node.UID(),
+                            "enabled": node.enabled,
+                            "obj": node,
+                        }
+                        item["_pcode"], item["_ptitle"] = node.identifier, node.title
+                        item["_puid"], item["_pactive"] = node.UID(), node.enabled
+                        item["_act"] = "N"
                 item["_type"] = "ClassificationCategory"
                 item["title"] = item.get("_ptitle", "")
                 o_logger.info(short_log(item))
