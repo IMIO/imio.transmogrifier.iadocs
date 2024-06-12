@@ -19,7 +19,8 @@ generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise d
 default_creation_date = 20130911-1200
 default_tg = 220344
 to_treat = 10
-permitted_sections = 0abdelmpq
+default_category = -9 "Classement indéfini"
+permitted_sections = 0abdeflmpq
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -101,6 +102,10 @@ pipeline =
     f__need
     fF__pickle_w
     fs__1_folder_read
+    f__2_parent_id_insert
+    f__2_parent_relation_store
+    f__2_folder_subfolder
+    f__2_duplicated_folder_reject
     F__1_folder_created_read
     fsF__1_folder_check
     f__folder_matched_uid_add
@@ -108,7 +113,6 @@ pipeline =
     f__folder_service_uid_add
     f__folder_service_name_add
     f__folder_match_write
-    f__1_parent_relation_store
     f__relative_path
     f__1_existing_folder_store
     f__1_folder_store
@@ -123,11 +127,11 @@ pipeline =
     f__internal_ref_no_insert
     f__creation_date_insert
     f__modification_date_insert
-    f__1_category_id_insert
+    f__3_category_id_insert
     f__1_empty_title_insert
-    f__1_localisation_insert
-    f__1_remark_insert
-    f__1_comment_insert
+;    f__1_localisation_insert
+;    f__1_remark_insert
+;    f__1_comment_insert
     f__1_archive_date_insert
     f__treating_groups_insert
     fF__deactivate_insert
@@ -733,8 +737,10 @@ bp_key = e_category_full_match
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_category_full_match'
 bp_key = e_category_full_match
-store_key = _eid
-fieldnames = _ecode _etitle _pcode _puid
+;store_key = _eid
+;fieldnames = _ecode _etitle _pcode _puid
+store_key = _ecode
+fieldnames = _eid _etitle _pcode _puid
 yield = 0
 
 [e__category_match_read]
@@ -963,11 +969,37 @@ d_condition = python:storage['commit'] is True and 'f__to_correct_only' not in t
 [fs__1_folder_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
-;filename = eClassementDossiers_test.csv
-filename = eClassementDossiers.csv
-fieldnames = _A _eid title archived _archive_date _localisation _remark _service_id _I _category_id _parent_id _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
-             _comment _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO
+filename = Inventaire_Farde_Chemise.csv
+;fieldnames = _category_id _eid title archived _archive_date _service_id _G _H _I _J _K _L _M
+fieldnames = _category_id _eid title archived _archive_date _service_id _G _s__eid _s_title _s_archived _s__archive_date _s__service_id _M
+;fieldnames = _A _eid title archived _archive_date _localisation _remark _service_id _I _category_id _parent_id _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
+;             _comment _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO
 bp_key = e_folder
+
+[f__2_parent_id_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
+key = string:_parent_id
+value = python:item['_eid']
+
+[f__2_parent_relation_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_folder' and item.get('_s__eid')
+bp_key = e_f_parent_relation
+store_key = _s__eid
+fieldnames = _parent_id
+yield = 1
+
+[f__2_folder_subfolder]
+blueprint = imio.transmogrifier.iadocs.f_2_folder_subfolder_split
+condition = python: item.get('_bpk') == u'e_folder' and item.get('_s__eid')
+bp_key = e_folder_subfolder
+prefix = _s_
+
+[f__2_duplicated_folder_reject]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
+condition2 = python: item['_eid'] not in storage['data']['e_folder']
 
 [F__1_folder_created_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -978,7 +1010,7 @@ bp_key = e_folder
 [fsF__1_folder_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_folder
-clean_value = _localisation python:u'\n' " " "python:[(r'^[""\']+$', u'')]" python:u'\r\n' _remark python:u'\n' " " "python:[(r'^[""\']+$', u'')]" python:u'\r\n' _comment python:u'\n' " " "python:[(r'^[""\']+$', u'')]" python:u'\r\n'
+clean_value =
 condition = python: item.get('_bpk') == u'e_folder'
 replace_newline = title " - "
 booleans = archived
@@ -1041,14 +1073,6 @@ headers = eid etitle earchive eparent eservice puid ptitle pparent origin
 bp_key = 0_folder_match
 yield = 1
 
-[f__1_parent_relation_store]
-blueprint = imio.transmogrifier.iadocs.store_in_data
-condition = python: item.get('_bpk') == u'e_folder' and item['_parent_id'] and item['_parent_id'] != item['_eid']
-bp_key = e_f_parent_relation
-store_key = _eid
-fieldnames = _parent_id
-yield = 1
-
 [f__relative_path]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
@@ -1068,7 +1092,8 @@ blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_folder'
 bp_key = e_folder
 store_key = _eid
-fieldnames = _ln title archived _archive_date _localisation _remark _service_id _category_id _parent_id _comment path _mar_ker
+;fieldnames = _ln title archived _archive_date _localisation _remark _service_id _category_id _parent_id _comment path _mar_ker
+fieldnames = _ln title archived _archive_date _service_id _category_id _parent_id path _mar_ker
 yield = 0
 
 [f__dependency_sorter]
@@ -1130,13 +1155,12 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:modification_date
 value = python:storage['creation_date']
 
-[f__1_category_id_insert]
-blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
-            and item['_category_id'] not in (None, u'0')
-key = string:classification_categories
-value = python:[storage['data']['e_category_full_match'][item['_category_id']]['_puid']]
-error = python:u"category '{}' not found for eid '{}'".format(item['_category_id'], item['_eid'])
+[f__3_category_id_insert]
+blueprint = imio.transmogrifier.iadocs.f_3_text_categories
+condition = python: item.get('_bpk') == u'e_folder' and item['_category_id']
+bp_key = p_category
+categories_field_name = _category_id
+txt_field_name = classification_informations
 
 [f__1_empty_title_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -2786,7 +2810,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [breakpoint]
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
-condition = python:item.get('_eid', None) in ('A58470', '9455', '53901')
+;condition = python:item.get('_eid', None) in ('694689', '694690')
 ;condition = python:True
 # condition = python:item.get('_bpk') == u'e_category' and item['_code'].startswith('1.824.508')
 

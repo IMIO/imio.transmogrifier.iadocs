@@ -248,6 +248,7 @@ class Initialization(object):
                     id=params[0].split("/")[-1],
                     title=params[1].decode("utf8"),
                 )
+                o_logger.info("Created object '{}'".format(param))
             if service:
                 selected_orgs = get_registry_organizations()
                 if obj.UID() not in selected_orgs:
