@@ -56,6 +56,7 @@ pipeline =
     b__mailtype_update
 # cc  users
     c__1_user_match_read
+    c__2_user_id_insert
     c__user_match_store
 ;    c__1_user_read
     c__2_E_mail_read
@@ -70,10 +71,12 @@ pipeline =
 ;    dm__1_contacts_read
 ;    dm__1_contacts_userid_only
 ;    dm__1_contacts_store
-;    d__1_mail_read
+    d__2_S_mail_read
 ;    d__1_S_only
-    d__2_service_read
-    d__2_service_insert
+    d__2_mail_check
+    d__2_service_keep
+;    d__2_service_read
+;    d__2_service_insert
     d__om_sender_creation
 # ee  classification categories
     e__category_full_match_read
@@ -618,22 +621,28 @@ condition = python: item['_bpk'] == u'e_mailtype_match'
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: modules['os'].path.exists(filename)
 filename = 1_user_match.csv
-fieldnames = _eid _lastname _firstname _p_userid _fullname
+fieldnames = _eid _nom _prenom _p_userid _fullname
 bp_key = e_user_match
+
+[c__2_user_id_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: item.get('_bpk') == u'e_user_match'
+key = string:_user_id
+value = python:item['_eid']
 
 [c__user_match_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_user_match'
 bp_key = e_user_match
 store_key = _eid
-fieldnames = _lastname _firstname _p_userid _fullname
+fieldnames = _nom _prenom _p_userid _fullname _user_id
 yield = 0
 
 [c__1_user_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
 filename = eUsers.csv
-fieldnames = _A _user_id _elogin _D _active _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _lastname _firstname _W _X _Y _Z
+fieldnames = _A _user_id _elogin _D _active _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _nom _prenom _W _X _Y _Z
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
              _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR _BS _BT _BU _BV _BW _BX _BY _BZ
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
@@ -647,7 +656,7 @@ bp_key = e_user
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
 filename = Courriers_E.csv
-fieldnames = _A _eid _C _D _E _enabled _G _H _I _J _K _lastname _firstname _N _O _P _Q
+fieldnames = _A _eid _C _D _E _enabled _G _H _I _J _K _nom _prenom _N _O _P _Q
 bp_key = e_user
 csv_key = e_user_E
 
@@ -655,16 +664,16 @@ csv_key = e_user_E
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
 filename = Courriers_S.csv
-fieldnames = _A _eid _C _D _E _enabled _G _H _I _J _K _lastname _firstname _N
+fieldnames = _A _eid _C _D _E _enabled _G _H _I _J _K _nom _prenom _N
 bp_key = e_user
 csv_key = e_user_S
 
 [c__2_user_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
-condition = python: item.get('_bpk') == u'e_user' and item.get('_lastname') and item.get('_firstname')
+condition = python: item.get('_bpk') == u'e_user' and item.get('_nom') and item.get('_prenom')
 bp_key = e_user
 csv_key = e_user_S
-concatenate = _lastname _firstname _user_id "_"
+concatenate = _nom _prenom _user_id "_"
 raise_on_error = ${config:raise_on_error}
 
 [c__2_user_store]
@@ -673,7 +682,7 @@ condition = python: item.get('_bpk', '') == u'e_user'
 bp_key = e_user
 store_key = _user_id
 check_key_uniqueness = 0
-fieldnames = _lastname _firstname
+fieldnames = _nom _prenom
 yield = 0
 
 [c__plone_user_write]
@@ -691,14 +700,14 @@ blueprint = imio.transmogrifier.iadocs.read_from_data
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
 bp_key = e_user
 store_key = _user_id
-fieldnames = _lastname _firstname
+fieldnames = _nom _prenom
 
 [c__1_user_match_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_user'
 filename = 0_user_match.csv
-fieldnames = _user_id _lastname _firstname
+fieldnames = _user_id _nom _prenom
 headers = eid nom prenom p_uid p_fullname
 bp_key = 0_user_match
 yield = 0
@@ -707,8 +716,7 @@ yield = 0
 
 [d__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-;parts = c
-parts =
+parts = c
 
 [dm__1_contacts_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -736,19 +744,30 @@ store_key = _eid
 fieldnames = _user_id
 yield = 0
 
-[d__1_mail_read]
+[d__2_S_mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
-filename = eCourriers.csv
-fieldnames = _A _eid _C _D _E _F _G _H _sender_id _sender _service _L _M _etype _O _P _Q _R _S _T _U _V _W _X _Y _Z
-             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
+filename = Courriers_S.csv
+fieldnames = _A _eid _C _D _E _enabled _G _H _I _J _service _nom _prenom _N
 bp_key = e_mail_sender
 
 [d__1_S_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'd') and item.get('_bpk') == u'e_mail_sender'
 condition2 = python: item.get('_etype') == 'S'
+
+[d__2_mail_check]
+blueprint = imio.transmogrifier.iadocs.common_input_checks
+condition = python: item.get('_bpk') == u'e_mail_sender'
+bp_key = e_mail_sender
+invalids = _service 0|220523
+concatenate = _nom _prenom _sender_id "_"
+raise_on_error = ${config:raise_on_error}
+
+[d__2_service_keep]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'd') and item.get('_bpk') == u'e_mail_sender'
+condition2 = python: item.get('_service')
 
 [d__2_service_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -766,6 +785,7 @@ value = python:item['_eid']
 [d__om_sender_creation]
 blueprint = imio.transmogrifier.iadocs.d_om_sender_creation
 condition = python: item.get('_bpk') == u'e_mail_sender'
+sender_user_dic = e_user_match
 
 # = = = = = = =  ee  = = = = = = = #
 
@@ -1609,7 +1629,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 ;filename = 01_Courriers_E.csv
 filename = Courriers_E.csv
 ;filename = Courriers_E_test.csv
-fieldnames = _etype _eid original_mail_date _category_id internal_reference_no _F _G creation_date  title _source_id _service_id _lastname _firstname _N reception_date _P external_reference_no
+fieldnames = _etype _eid original_mail_date _category_id internal_reference_no _F _G creation_date  title _source_id _service_id _nom _prenom _N reception_date _P external_reference_no
 bp_key = e_mail_i
 
 [l__pickle_i_w]
@@ -1968,7 +1988,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 ;filename = Courriers_S.csv
 filename = Courriers_S_test.csv
 ;fieldnames = _etype _eid mail_date _category_id internal_reference_no _F _G creation_date title _source_id _service_id _L _M  waz
-fieldnames = _etype _eid mail_date _category_id internal_reference_no _F _G creation_date title _source_id _service_id _lastname _firstname _N
+fieldnames = _etype _eid mail_date _category_id internal_reference_no _F _G creation_date title _source_id _service_id _nom _prenom _N
 bp_key = e_mail_o
 
 [p__pickle_o_w]
@@ -2009,7 +2029,7 @@ blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_o
 condition = python: item.get('_bpk') == u'e_mail_o' and '_service_id' in item
 replace_newline =
-invalids = external_reference_no -
+invalids = external_reference_no - _service_id 0
 clean_value = title python:u'\n' " " "python:[(r'^-+$', u'')]" python:u'\n'
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans =
