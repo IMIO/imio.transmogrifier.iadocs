@@ -57,8 +57,13 @@ pipeline =
 # cc  users
     c__1_user_match_read
     c__user_match_store
-    c__1_user_read
+;    c__1_user_read
+    c__2_E_mail_read
+    c__2_S_mail_read
+    c__2_user_check
+    c__2_user_store
     c__plone_user_write
+    c__2_user_load
     c__1_user_match_write
 # dd  personnel held_position for OM sender
     d__need
@@ -613,7 +618,7 @@ condition = python: item['_bpk'] == u'e_mailtype_match'
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: modules['os'].path.exists(filename)
 filename = 1_user_match.csv
-fieldnames = _eid _nom _prenom _p_userid _fullname
+fieldnames = _eid _lastname _firstname _p_userid _fullname
 bp_key = e_user_match
 
 [c__user_match_store]
@@ -621,14 +626,14 @@ blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_user_match'
 bp_key = e_user_match
 store_key = _eid
-fieldnames = _nom _prenom _p_userid _fullname
+fieldnames = _lastname _firstname _p_userid _fullname
 yield = 0
 
 [c__1_user_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
 filename = eUsers.csv
-fieldnames = _A _eid _elogin _D _active _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _nom _prenom _W _X _Y _Z
+fieldnames = _A _user_id _elogin _D _active _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _lastname _firstname _W _X _Y _Z
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
              _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR _BS _BT _BU _BV _BW _BX _BY _BZ
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
@@ -637,6 +642,39 @@ fieldnames = _A _eid _elogin _D _active _F _G _H _I _J _K _L _M _N _O _P _Q _R _
              _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU _FV _FW _FX _FY _FZ
              _GA _GB _GC _GD
 bp_key = e_user
+
+[c__2_E_mail_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
+filename = Courriers_E.csv
+fieldnames = _A _eid _C _D _E _enabled _G _H _I _J _K _lastname _firstname _N _O _P _Q
+bp_key = e_user
+csv_key = e_user_E
+
+[c__2_S_mail_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
+filename = Courriers_S.csv
+fieldnames = _A _eid _C _D _E _enabled _G _H _I _J _K _lastname _firstname _N
+bp_key = e_user
+csv_key = e_user_S
+
+[c__2_user_check]
+blueprint = imio.transmogrifier.iadocs.common_input_checks
+condition = python: item.get('_bpk') == u'e_user' and item.get('_lastname') and item.get('_firstname')
+bp_key = e_user
+csv_key = e_user_S
+concatenate = _lastname _firstname _user_id "_"
+raise_on_error = ${config:raise_on_error}
+
+[c__2_user_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk', '') == u'e_user'
+bp_key = e_user
+store_key = _user_id
+check_key_uniqueness = 0
+fieldnames = _lastname _firstname
+yield = 0
 
 [c__plone_user_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
@@ -648,12 +686,19 @@ bp_key = p_user
 store_key = uid
 store_key_sort = fullname
 
+[c__2_user_load]
+blueprint = imio.transmogrifier.iadocs.read_from_data
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
+bp_key = e_user
+store_key = _user_id
+fieldnames = _lastname _firstname
+
 [c__1_user_match_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_user'
 filename = 0_user_match.csv
-fieldnames = _eid _nom _prenom
+fieldnames = _fullname _lastname _firstname
 headers = eid nom prenom p_uid p_fullname
 bp_key = 0_user_match
 yield = 0
