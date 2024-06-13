@@ -558,6 +558,7 @@ class DOMSenderCreation(object):
 
     Parameters:
         * condition = O, condition expression
+        * sender_user_dic = M, sender user dictionary
     """
 
     classProvides(ISectionBlueprint)
@@ -577,7 +578,8 @@ class DOMSenderCreation(object):
         self.euid_to_pers = self.storage["data"]["p_euid_to_pers"]
         self.p_hps = self.storage["data"]["p_hps"]
         self.eid_to_orgs = self.storage["data"]["p_eid_to_orgs"]
-        self.e_c_s = self.storage["data"].get("e_contacts_sender", {})
+        sender_user_dic = options.get("sender_user_dic") or "e_contacts_sender"
+        self.e_c_s = self.storage["data"].get(sender_user_dic, {})  # matching _sender_id - _user_id
         self.e_u_m = self.storage["data"].get("e_user_match", {})
         self.intids = getUtility(IIntIds)
 
