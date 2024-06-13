@@ -20,7 +20,7 @@ default_creation_date = 20130911-1200
 default_tg = 220344
 to_treat = 10
 default_category = -9 "Classement indéfini"
-permitted_sections = 0abdeflmpq
+permitted_sections = 0abcdeflmpq
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -698,7 +698,7 @@ blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_user'
 filename = 0_user_match.csv
-fieldnames = _fullname _lastname _firstname
+fieldnames = _user_id _lastname _firstname
 headers = eid nom prenom p_uid p_fullname
 bp_key = 0_user_match
 yield = 0
