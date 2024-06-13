@@ -945,7 +945,7 @@ class F3TextCategoriesToId(object):
         * condition = O, condition expression
         * bp_key = M, key of categories data dict
         * categories_field_name = O, field name containing categories text
-        * txt_field_name = M, textfield field name where the text value will be added
+        * txt_field_name = M, textfield field name where the text value will be added if not found in categories
     """
 
     classProvides(ISectionBlueprint)
@@ -979,9 +979,9 @@ class F3TextCategoriesToId(object):
             else:
                 log_error(item, u"Category '{}' not found".format(txt))
                 item["classification_categories"] = [self.storage["plone"]["def_category"]]
-            desc = self.fld_name in item and item[self.fld_name].split("\r\n") or []
-            desc.append(u"CLASSEMENT: {}".format(item[self.cat_fld_name]))
-            item[self.fld_name] = u"\r\n".join(desc)
+                desc = self.fld_name in item and item[self.fld_name].split("\r\n") or []
+                desc.append(u"CLASSEMENT: {}".format(item[self.cat_fld_name]))
+                item[self.fld_name] = u"\r\n".join(desc)
             yield item
 
 
