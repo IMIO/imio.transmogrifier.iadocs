@@ -822,6 +822,7 @@ class ReadFromData(object):
     """Read items from a dictionary.
 
     Parameters:
+        * b_condition = O, blueprint condition expression
         * bp_key = M, blueprint key for item
         * store_key = M, storing keys for item. The item is read from storage[{bp_key}][{store_key}]
         * store_subkey = O, storing sub keys for item. If defined, the item is read from
@@ -842,6 +843,10 @@ class ReadFromData(object):
         self.parts = get_related_parts(name)
         if not is_in_part(self, self.parts):
             return
+        b_condition = Condition(options.get("b_condition") or "python:True", transmogrifier, name, options)
+        if not b_condition(None, storage=self.storage):
+            self.store_key = None
+            return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         # self.store_key = safe_unicode(options['store_key']).split()
         self.store_key = safe_unicode(options["store_key"])
@@ -856,7 +861,7 @@ class ReadFromData(object):
     def __iter__(self):
         for item in self.previous:
             yield item
-        if not is_in_part(self, self.parts):
+        if not is_in_part(self, self.parts) or self.store_key is None:
             return
         o_logger.info(u"Reading data from '{}'".format(self.bp_key))
         data = self.storage["data"][self.bp_key]
