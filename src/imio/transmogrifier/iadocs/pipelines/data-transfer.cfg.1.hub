@@ -197,10 +197,10 @@ pipeline =
     l__1_category_id_insert
     l__contact_set
     l__1_sender_as_text_set
-    l__mail_type_source_insert
-    l__1_source_insert
     l__mail_type_nature_insert
     l__1_nature_insert
+    l__mail_type_source_insert
+    l__1_source_insert
     l__mail_type_default_insert
     l__1_meetingitem_link_insert
     l__1_confidential_insert
@@ -2323,7 +2323,7 @@ bp_key = e_mail
 [t__1_E_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 't') and item.get('_bpk') == u'e_mail'
-condition2 = python: item.get('_etype') in ('E', 'S') and str(item['_to_del']) != '1'
+condition2 = python: item.get('_etype') in ('E', 'I') and str(item['_to_del']) != '1'
 # condition2 = python: item.get('_etype') in ('E',) and str(item['_to_del']) != '1'
 
 [t__1_store_mail]
