@@ -151,7 +151,7 @@ pipeline =
     i__1_needed_userid_only
     i__1_creation_date_modify
     i__1_modification_date_modify
-    i__1_contacts_check
+    ilpq__1_contacts_check
     i__empty_modification_date_insert
     i__empty_creation_date_insert
     i__type_insert
@@ -1276,7 +1276,7 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:modification_date
 value = python:item[key][:-4]
 
-[i__1_contacts_check]
+[ilpq__1_contacts_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_contact
 condition = python: item.get('_bpk') == u'e_contact'
