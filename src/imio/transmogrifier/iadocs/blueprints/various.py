@@ -223,6 +223,9 @@ class EnhancedManipulator(object):
         self.delete = Matcher(*options.get("delete", "").splitlines())
         self.condition = Condition(options.get("condition", "python:True"), transmogrifier, name, options)
         self.previous = previous
+        self.portal = transmogrifier.context
+        self.name = name
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
 
     def __iter__(self):
         for item in self.previous:
