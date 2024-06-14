@@ -1161,7 +1161,7 @@ class HContactTypeUpdate(object):
                     p_types[item["_pid"]] = {"name": item["_ptitle"], "_used": True}
                 else:
                     p_types[item["_pid"]]["_used"] = True
-                    # p_types[item['_pid']]['_ptitle'] = item['_ptitle']
+                    p_types[item["_pid"]]["name"] = item["_ptitle"]
                 continue
             yield item
 
