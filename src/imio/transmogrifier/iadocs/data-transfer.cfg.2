@@ -1531,7 +1531,7 @@ key = string:organization_type
 value = python: item['_level'] == 1 and storage['data']['e_contact_type_match'][item['_ctyp']]['_pid'] or u'non-defini'
 
 [i__org_title_insert]
-blueprint = collective.transmogrifier.sections.manipulator
+blueprint = imio.transmogrifier.iadocs.manipulator
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact' and item['_type'] == u'organization'
 keys = lastname
 delete = lastname

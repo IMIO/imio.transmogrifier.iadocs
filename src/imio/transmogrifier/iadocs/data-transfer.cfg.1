@@ -1384,7 +1384,7 @@ key = string:organization_type
 value = python: item['_level'] == 1 and storage['data']['e_contact_type_match'][item['_ctyp']]['_pid'] or u'non-defini'
 
 [i__org_title_insert]
-blueprint = collective.transmogrifier.sections.manipulator
+blueprint = imio.transmogrifier.iadocs.manipulator
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact' and item['_type'] == u'organization'
 keys = lastname
 delete = lastname
@@ -2558,7 +2558,7 @@ condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in sto
              and storage.get('count', {}).get('y__count', {}).get('e_mail', {}).get('c', 0) < storage['batch_nb'])
 
 [y__rename_path]
-blueprint = collective.transmogrifier.sections.manipulator
+blueprint = imio.transmogrifier.iadocs.manipulator
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'y') and item.get('_bpk') == u'e_mail'
 keys = path
 destination = string:_path
