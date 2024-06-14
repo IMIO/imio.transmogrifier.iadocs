@@ -257,18 +257,34 @@ class ContactAsTextUpdate(object):
                 desc = mail.description and mail.description.split("\r\n") or []
                 d_t = mail.data_transfer and mail.data_transfer.split("\r\n") or []
             # if there is no contact_id, we pass the item or yield it following yield_original
-            if not item.get(self.contact_id_key):
+            # if not item.get(self.contact_id_key):
+            #     if self.yield_original:
+            #         yield item
+            #     continue
+            # we pass a contact considered as already created as object if found in contact_store
+            # contact_id_param = self.contact_id_key
+            # if item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
+            #     if self.skip_real_contact or (
+            #         self.skip_contact_user and self.e_c[item[self.contact_id_key]]["_is_user"]
+            #     ):
+            #         contact_id_param = ""
+            #         continue  # is it necessary to consider free field only when there is a contact_id ?
+
+            # MUST BE TESTED !!!!!
+            contact_id_param = ""
+            if item.get(self.contact_id_key):
+                # we pass a contact considered as already created as object if found in contact_store
+                contact_id_param = self.contact_id_key
+                if item[self.contact_id_key] in self.e_c:
+                    if self.skip_real_contact or (
+                        self.skip_contact_user and self.e_c[item[self.contact_id_key]]["_is_user"]
+                    ):
+                        continue  # is it necessary to consider free field only when there is a contact_id ?
+            elif not item.get(self.contact_free_key):
                 if self.yield_original:
                     yield item
                 continue
-            # we pass a contact considered as already created as object if found in contact_store
-            contact_id_param = self.contact_id_key
-            if item[self.contact_id_key] and item[self.contact_id_key] in self.e_c:
-                if self.skip_real_contact or (
-                    self.skip_contact_user and self.e_c[item[self.contact_id_key]]["_is_user"]
-                ):
-                    contact_id_param = ""
-                    continue  # is it necessary to consider free field only when there is a contact_id ?
+
             if get_contact_info(
                 self,
                 item,
