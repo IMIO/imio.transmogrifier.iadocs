@@ -2203,7 +2203,7 @@ class XmlContactStore(object):
         * bp_key = M, blueprint key used as main storage key
         * condition = O, condition expression
         * source_key = M, item key name with xml
-        * xml_contact_key = M, xml tag name containing contact info
+        * xml_contact_keys = M, xml tag names containing contact info
         * xml_contact_cols = M, list of sequences separated by "|". Each sequence contains a first parameter and
           a list of pairs (xml_tag dic_col).
           The first parameter contains a triplet separated by ":"; level1 tag name (optional), id tag name,
@@ -2227,7 +2227,7 @@ class XmlContactStore(object):
         if not is_in_part(self, self.parts):
             return
         self.source_key = safe_unicode(options["source_key"])
-        self.xml_contact_key = safe_unicode(options["xml_contact_key"])
+        self.xml_contact_keys = safe_unicode(options["xml_contact_keys"]).strip().split(u"|")
         # separate first levels
         self.xml_ct_cols = safe_unicode(options["xml_contact_cols"]).strip().split(u"|")
         res = {}
@@ -2241,7 +2241,7 @@ class XmlContactStore(object):
             res[values[0]] = [tup for tup in pool_tuples(values[1:], 2, "xml_contact_cols option")]
         self.xml_ct_cols = res
         self.empty_store = bool(int(options.get("empty_store") or "0"))
-        self.contact_id_key = safe_unicode(options["contact_id_key"])
+        self.contact_id_key = safe_unicode(options.get("contact_id_key") or "")
         self.cku = bool(int(options.get("check_key_uniqueness") or "1"))
         if self.bp_key not in self.storage["data"]:
             self.storage["data"][self.bp_key] = {}
@@ -2253,42 +2253,39 @@ class XmlContactStore(object):
                 continue
             course_store(self, item)
             xml = Soup(item[self.source_key], "lxml-xml")
-            contacts_tags = xml.find_all(self.xml_contact_key)
-            if not contacts_tags:
-                yield item
-                continue
-            for contact_tag in contacts_tags:
-                if self.empty_store:
-                    self.storage["data"][self.bp_key] = {}
-                current_tag = contact_tag
-                links = {}
-                for key in self.xml_ct_cols:
-                    level1, skey, link = key.split(u":")
-                    if level1:
-                        current_tag = contact_tag.find(level1)
-                    dic = {}
-                    has_val = False
-                    for c_tag, c_key in self.xml_ct_cols[key]:
-                        found = current_tag.find(c_tag)
-                        if found and found.text.strip():
-                            dic[c_key] = found.text.strip()
-                            has_val = True
-                        else:
-                            dic[c_key] = u""
-                    if has_val:  # we consider only if value in
-                        skey_val = current_tag.find(skey).text
-                        # we save link if defined
-                        if link:
-                            links[link] = skey_val
-                        else:  # we store link on main contact
-                            dic.update(links)
-                        if self.cku and skey_val in self.storage["data"][self.bp_key]:
-                            if skey_val == u"0":  # customer 2
-                                skey_val = u"1"
+            for xml_contact_key in self.xml_contact_keys:
+                for contact_tag in xml.find_all(xml_contact_key):
+                    if self.empty_store:
+                        self.storage["data"][self.bp_key] = {}
+                    current_tag = contact_tag
+                    links = {}
+                    for key in self.xml_ct_cols:
+                        level1, skey, link = key.split(u":")
+                        if level1:
+                            current_tag = contact_tag.find(level1)
+                        dic = {}
+                        has_val = False
+                        for c_tag, c_key in self.xml_ct_cols[key]:
+                            found = current_tag.find(c_tag)
+                            if found and found.text.strip():
+                                dic[c_key] = found.text.strip()
+                                has_val = True
                             else:
-                                log_error(item, u"Key '{}' already in '{}' data dict".format(skey_val, self.bp_key))
-                        # we store id key on item
-                        if self.contact_id_key:
-                            item[self.contact_id_key] = skey_val
-                        self.storage["data"][self.bp_key][skey_val] = dic
+                                dic[c_key] = u""
+                        if has_val:  # we consider only if value in
+                            skey_val = current_tag.find(skey).text
+                            # we save link if defined
+                            if link:
+                                links[link] = skey_val
+                            else:  # we store link on main contact
+                                dic.update(links)
+                            if self.cku and skey_val in self.storage["data"][self.bp_key]:
+                                if skey_val == u"0":  # customer 2
+                                    skey_val = u"1"
+                                else:
+                                    log_error(item, u"Key '{}' already in '{}' data dict".format(skey_val, self.bp_key))
+                            # we store id key on item
+                            if self.contact_id_key:
+                                item[self.contact_id_key] = skey_val
+                            self.storage["data"][self.bp_key][skey_val] = dic
                 yield item
