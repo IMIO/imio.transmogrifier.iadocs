@@ -1291,6 +1291,33 @@ class I1ContactUpdate(object):
             yield item
 
 
+class I2ContactUpdate(object):
+    """Handles contact _type, adds contact fields
+
+    Parameters:
+        * condition = O, condition expression
+    """
+
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
+
+    def __iter__(self):
+        for item in self.previous:
+            if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
+                course_store(self, item)
+            yield item
+
+
 class L1RecipientGroupsSet(object):
     """Handles recipient_groups.
 
