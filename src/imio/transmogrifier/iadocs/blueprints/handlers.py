@@ -1310,12 +1310,33 @@ class I2ContactUpdate(object):
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
+        self.contacts = self.storage["data"]["e_contact"]
 
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
                 course_store(self, item)
-            yield item
+                if item.get("_organization"):  # real organization
+                    item["_type"] = "organization"
+                    item["zip_code"] = item.pop("_pc")
+                    item["city"] = item.pop("_city")
+                    item["street"] = item.pop("_street")
+                    item["title"] = item.pop("_organization")  # _division, _service ?
+                    item["email"] = item.pop("_email1")
+                    item["phone"] = item.pop("_phone1")
+                    item["cell_phone"] = item.pop("_phone2")
+                    self.contacts[item["_eid"]] = item["_type"]
+                    yield item
+                elif u"_organization" in item:  # not a real organization
+                    continue
+                else:
+                    item["_type"] = "person"
+                    import ipdb
+
+                    ipdb.set_trace()
+
+                item["creation_date"] = self.storage["creation_date"]
+                item["modification_date"] = self.storage["creation_date"]
 
 
 class L1RecipientGroupsSet(object):
@@ -2315,4 +2336,5 @@ class XmlContactStore(object):
                             if self.contact_id_key:
                                 item[self.contact_id_key] = skey_val
                             self.storage["data"][self.bp_key][skey_val] = dic
+                            # print(u"{}: {}".format(item["_eid"], skey_val))
                 yield item
