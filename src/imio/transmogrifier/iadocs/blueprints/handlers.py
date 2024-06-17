@@ -2196,8 +2196,8 @@ class WorkflowHistoryUpdate(object):
             yield item
 
 
-class XmlContactHandling(object):
-    """Handles xml contact column.
+class XmlContactStore(object):
+    """Handles xml contact column and stores infos in bp_key.
 
     Parameters:
         * bp_key = M, blueprint key used as main storage key
