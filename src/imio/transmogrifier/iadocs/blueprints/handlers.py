@@ -18,6 +18,7 @@ from imio.helpers.transmogrifier import Condition
 from imio.helpers.transmogrifier import get_correct_id
 from imio.helpers.transmogrifier import get_obj_from_path
 from imio.helpers.transmogrifier import pool_tuples
+from imio.helpers.transmogrifier import relative_path
 from imio.pyutils.system import full_path
 from imio.pyutils.utils import all_of_dict_values
 from imio.pyutils.utils import one_of_dict_values
@@ -1311,32 +1312,102 @@ class I2ContactUpdate(object):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.contacts = self.storage["data"]["e_contact"]
+        self.eids = self.storage["data"][options["paths_key"]]
+        self.plonegroup_org_id = options["plonegroup_org_id"]
+        self.e_u_m = self.storage["data"].get("e_user_match", {})
+        self.e_s_m = self.storage["data"].get("e_service_match", {})
+        self.e_s_m[self.plonegroup_org_id] = {
+            "uid": get_obj_from_path(self.portal, path=u"/contacts/plonegroup-organization").UID()
+        }
+        self.puid_to_pers = self.storage["data"]["p_userid_to_pers"]
+        self.p_hps = self.storage["data"]["p_hps"]
+        self.intids = getUtility(IIntIds)
 
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
                 course_store(self, item)
+                item["use_parent_address"] = False
+                item["creation_date"] = self.storage["creation_date"]
+                item["modification_date"] = self.storage["creation_date"]
                 if item.get("_organization"):  # real organization
+                    if item["_eid"] in self.e_s_m:
+                        org = uuidToObject(self.e_s_m[item["_eid"]]["uid"])
+                        self.eids[item["_eid"]] = {"path": relative_path(self.portal, "/".join(org.getPhysicalPath()))}
+                        self.contacts[item["_eid"]]["_type"] = "organization"
+                        continue
+                    item["_id"] = item["_eid"]
                     item["_type"] = "organization"
+                    item["_parenth"] = u"/contacts"
+                    item["internal_number"] = item["_eid"]
                     item["zip_code"] = item.pop("_pc")
                     item["city"] = item.pop("_city")
                     item["street"] = item.pop("_street")
                     item["title"] = item.pop("_organization")  # _division, _service ?
                     item["email"] = item.pop("_email1")
                     item["phone"] = item.pop("_phone1")
-                    item["cell_phone"] = item.pop("_phone2")
-                    self.contacts[item["_eid"]] = item["_type"]
+                    item["fax"] = item.pop("_phone2")
+                    self.contacts[item["_eid"]]["_type"] = item["_type"]
                     yield item
-                elif u"_organization" in item:  # not a real organization
+                elif u"_organization" in item:  # not a real organization, just address
                     continue
                 else:
-                    item["_type"] = "person"
-                    import ipdb
+                    if item.get("_parent_id"):
+                        if self.contacts[item["_parent_id"]].get("_type") == "organization":
+                            pdic = {
+                                "_bpk": u"e_contact",
+                                "_type": "person",
+                                "lastname": item["lastname"],
+                                "firstname": item["firstname"],
+                            }
+                            if item["_parent_id"] in self.e_s_m:
+                                user_key = u"{}_{}".format(pdic["lastname"], pdic["firstname"])
+                                if user_key in self.e_u_m and self.e_u_m[user_key]["_p_userid"] in self.puid_to_pers:
+                                    pers = uuidToObject(self.puid_to_pers[self.e_u_m[user_key]["_p_userid"]])
+                                    pdic["_path"] = relative_path(self.portal, "/".join(pers.getPhysicalPath()))
+                                    pdic["_parenth"] = u"/contacts/personnel-folder"
+                                    pdic["_pers"] = pers.UID()
+                                else:
+                                    pdic["_parenth"] = u"/contacts/personnel-folder"
+                            if "_parenth" not in pdic:
+                                pdic["_parenth"] = u"/contacts"
+                                yield pdic
+                            org = get_obj_from_path(self.portal, path=self.eids[item["_parent_id"]]["path"])
+                            if (
+                                "_pers" in pdic
+                                and pdic["_pers"] in self.p_hps
+                                and org.UID() in self.p_hps[pdic["_pers"]]["hps"]
+                            ):
+                                self.eids[item["_eid"]] = {
+                                    "path": self.p_hps[pdic["_pers"]]["hps"][org.UID()]["path"],
+                                    "_is_user": True,
+                                }
+                                continue
+                            item["_type"] = "held_position"
+                            item["_parenth"] = pdic["_path"]
+                            item["use_parent_address"] = True
+                            item["_is_user"] = pdic["_parenth"] == u"/contacts/personnel-folder"
+                            item["position"] = RelationValue(self.intids.getId(org))
+                        else:  # a person
+                            item["_type"] = "person"
+                            item["_parenth"] = u"/contacts"
+                            item["_is_user"] = False
+                            # address from parent
+                            item["zip_code"] = self.contacts[item["_parent_id"]].get("_pc")
+                            item["city"] = self.contacts[item["_parent_id"]].get("_city")
+                            item["street"] = self.contacts[item["_parent_id"]].get("_street")
+                    else:
+                        item["_type"] = "person"
+                        item["_parenth"] = u"/contacts"
+                        item["_is_user"] = False
 
-                    ipdb.set_trace()
-
-                item["creation_date"] = self.storage["creation_date"]
-                item["modification_date"] = self.storage["creation_date"]
+                    item["cell_phone"] = item.pop("_cell1")
+                    item["phone"] = item.pop("_phone1")
+                    item["fax"] = item.pop("_phone2")
+                    item["email"] = item.pop("_email1")
+                    item["_id"] = item["_eid"]
+                    item["internal_number"] = item["_eid"]
+                    yield item
 
 
 class L1RecipientGroupsSet(object):

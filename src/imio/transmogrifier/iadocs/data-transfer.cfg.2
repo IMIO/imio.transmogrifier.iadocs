@@ -179,13 +179,6 @@ pipeline =
     i__batched
     i__count
     i__2_contact_update
-    short_log
-    continue
-    i__internal_number_insert
-    i__1_ctyp_insert
-    i__1_empty_org_title_insert
-    i__1_id_insert
-    i__1_parent_insert
     i__1_path_insert
     i__is_user_store
 
@@ -1377,7 +1370,7 @@ clean_unused = 1
 [i__need]
 blueprint = imio.transmogrifier.iadocs.need_other
 ;parts = h
-parts =
+parts = ac
 
 [ilpq__1_contacts_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -1456,41 +1449,14 @@ condition = python: item.get('_bpk') == u'e_contact'
 
 [i__2_contact_update]
 blueprint = imio.transmogrifier.iadocs.i_2_contact_update
-
-[i__internal_number_insert]
-blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact'
-key = string:internal_number
-value = python:item['_eid']
-
-[i__1_ctyp_insert]
-blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact'
-key = string:organization_type
-value = python: item['_level'] == 1 and storage['data']['e_contact_type_match'][item['_ctyp']]['_pid'] or u'non-defini'
-
-[i__1_empty_org_title_insert]
-blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact' and item['_type'] == u'organization'
-            and not item.get('title')
-key = string:title
-value = python: u'Sans titre'
-
-[i__1_id_insert]
-blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact'
-key = string:_id
-value = python:item['_eid']
-
-[i__1_parent_insert]
-blueprint = imio.transmogrifier.iadocs.parent_path_insert
-bp_key = e_contact_path
+paths_key = e_contact_path
+plonegroup_org_id = -3
 
 [i__1_path_insert]
 blueprint = imio.transmogrifier.iadocs.path_insert
 condition = python: item.get('_bpk') == u'e_contact'
 bp_key = e_contact_path
-id_keys = _eid
+id_keys = lastname firstname
 
 [i__is_user_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
