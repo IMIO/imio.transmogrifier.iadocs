@@ -714,7 +714,7 @@ class InsertPath(object):
                 if "title" in item and item["title"]:
                     title = item["title"]
                 else:
-                    title = u"-".join([item[key] for key in self.id_keys if item[key]])
+                    title = u"-".join([item[key] for key in self.id_keys if item.get(key)])
                 if not title:
                     log_error(item, u"cannot get an id from id keys {}".format(self.id_keys), level="critical")
                     if self.roe:
