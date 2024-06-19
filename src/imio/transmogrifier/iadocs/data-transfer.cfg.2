@@ -165,8 +165,9 @@ pipeline =
 
 # ii  contacts
     i__need
+    i__pickle_x_w
 ;    ilpq__1_contacts_read  waz commenté
-    ilpq__1_contacts_read
+    i__2_contacts_read
     i__pickle_c_w
     i__2_xml_contact_store
     continue
@@ -1365,14 +1366,20 @@ blueprint = imio.transmogrifier.iadocs.h_contact_type_update
 condition = python: item['_bpk'] == u'e_contact_type_match'
 clean_unused = 1
 
-# = = = = = = =  ii  = = = = = = = #
+# = = = = = = =  ii orig  = = = = = = = #
 
 [i__need]
 blueprint = imio.transmogrifier.iadocs.need_other
 ;parts = h
 parts = ac
 
-[ilpq__1_contacts_read]
+[i__pickle_x_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_contact_xml.pkl
+store_key = e_contact_xml
+d_condition = python:storage['commit'] is True
+
+[i__2_contacts_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
 filename = Infos_exp_dest.csv
@@ -1393,7 +1400,7 @@ condition = python: item.get('_bpk') == u'e_contact' and '_xml' in item
 source_key = _xml
 xml_contact_keys = Sender|Addressee
 xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _division Level2 _service Level3 _level3 Level4 _level4 Level5 _level5 Address _street ZipCode _pc City _city PhoneNumber _phone1 FaxNumber _phone2 Email _email1 |
-                   Contact:PersId: FirstName firstname LastName lastname PhoneNumber _phone1 FaxNumber _phone2 Email _email1 Gsm _cell1
+                   Contact:PersId: FirstName firstname LastName lastname Title person_title PhoneNumber _phone1 FaxNumber _phone2 Email _email1 Gsm _cell1
 check_key_uniqueness = 0
 empty_store = 0
 
@@ -1440,7 +1447,7 @@ raise_on_error = ${config:raise_on_error}
 [i__batched]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact'
-condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_contact_path'] and storage.get('count', {}).get('i__count', {}).get('e_contact', {}).get('c', 0) < storage['batch_nb'])
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_contact_xml'] and storage.get('count', {}).get('i__count', {}).get('e_contact', {}).get('c', 0) < storage['batch_nb'])
 
 [i__count]
 blueprint = imio.transmogrifier.iadocs.count

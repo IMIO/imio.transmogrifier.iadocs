@@ -1297,6 +1297,8 @@ class I2ContactUpdate(object):
 
     Parameters:
         * condition = O, condition expression
+        * paths_key = M, key containing paths
+        * plonegroup_org_id = M, plonegroup organization id
     """
 
     classProvides(ISectionBlueprint)
@@ -1322,11 +1324,13 @@ class I2ContactUpdate(object):
         self.puid_to_pers = self.storage["data"]["p_userid_to_pers"]
         self.p_hps = self.storage["data"]["p_hps"]
         self.intids = getUtility(IIntIds)
+        self.done = self.storage["data"]["e_contact_xml"]
 
     def __iter__(self):
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
                 course_store(self, item)
+                self.done[item["_eid"]] = True
                 item["use_parent_address"] = False
                 item["creation_date"] = self.storage["creation_date"]
                 item["modification_date"] = self.storage["creation_date"]
@@ -1335,6 +1339,7 @@ class I2ContactUpdate(object):
                         org = uuidToObject(self.e_s_m[item["_eid"]]["uid"])
                         self.eids[item["_eid"]] = {"path": relative_path(self.portal, "/".join(org.getPhysicalPath()))}
                         self.contacts[item["_eid"]]["_type"] = "organization"
+                        e_logger.info(u"Passed internal organization: {}".format(item["_eid"]))
                         continue
                     item["_id"] = item["_eid"]
                     item["_type"] = "organization"
@@ -1355,6 +1360,7 @@ class I2ContactUpdate(object):
                     self.contacts[item["_eid"]]["_type"] = item["_type"]
                     yield item
                 elif u"_organization" in item:  # not a real organization, just address
+                    # e_logger.warn('Empty organization for "{}"'.format(item["_eid"]))
                     continue
                 else:
                     if item.get("_parent_id"):
@@ -1373,6 +1379,7 @@ class I2ContactUpdate(object):
                                     pdic["_path"] = relative_path(self.portal, "/".join(pers.getPhysicalPath()))
                                     pdic["_parenth"] = u"/contacts/personnel-folder"
                                     pdic["_pers"] = pers.UID()
+                                    e_logger.info(u"Passed internal person: {}".format(item["_eid"]))
                                 else:
                                     pdic["_parenth"] = u"/contacts/personnel-folder"
                                     yield pdic
@@ -1389,6 +1396,7 @@ class I2ContactUpdate(object):
                                     "path": self.p_hps[pdic["_pers"]]["hps"][org.UID()]["path"],
                                     "_is_user": True,
                                 }
+                                e_logger.info(u"Passed internal hp: {}".format(item["_eid"]))
                                 continue
                             item["_type"] = "held_position"
                             item["_parenth"] = pdic["_path"]
