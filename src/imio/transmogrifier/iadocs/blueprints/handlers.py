@@ -1343,7 +1343,12 @@ class I2ContactUpdate(object):
                     item["zip_code"] = item.pop("_pc")
                     item["city"] = item.pop("_city")
                     item["street"] = item.pop("_street")
-                    item["title"] = item.pop("_organization")  # _division, _service ?
+                    if item["_division"]:
+                        item["title"] = u" - ".join(
+                            all_of_dict_values(item, ["_organization", "_division", "_service"])
+                        )
+                    else:
+                        item["title"] = item.pop("_organization")  # _division, _service ?
                     item["email"] = item.pop("_email1")
                     item["phone"] = item.pop("_phone1")
                     item["fax"] = item.pop("_phone2")
@@ -1356,6 +1361,7 @@ class I2ContactUpdate(object):
                         if self.contacts[item["_parent_id"]].get("_type") == "organization":
                             pdic = {
                                 "_bpk": u"e_contact",
+                                "_eid": u"{}a".format(item["_eid"]),
                                 "_type": "person",
                                 "lastname": item["lastname"],
                                 "firstname": item["firstname"],
@@ -1369,6 +1375,7 @@ class I2ContactUpdate(object):
                                     pdic["_pers"] = pers.UID()
                                 else:
                                     pdic["_parenth"] = u"/contacts/personnel-folder"
+                                    yield pdic
                             if "_parenth" not in pdic:
                                 pdic["_parenth"] = u"/contacts"
                                 yield pdic
