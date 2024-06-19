@@ -1324,7 +1324,7 @@ class I2ContactUpdate(object):
         self.puid_to_pers = self.storage["data"]["p_userid_to_pers"]
         self.p_hps = self.storage["data"]["p_hps"]
         self.intids = getUtility(IIntIds)
-        self.done = self.storage["data"]["e_contact_xml"]
+        self.done = self.storage["data"]["e_contact_i"]
 
     def __iter__(self):
         for item in self.previous:
@@ -1338,7 +1338,6 @@ class I2ContactUpdate(object):
                     if item["_eid"] in self.e_s_m:
                         org = uuidToObject(self.e_s_m[item["_eid"]]["uid"])
                         self.eids[item["_eid"]] = {"path": relative_path(self.portal, "/".join(org.getPhysicalPath()))}
-                        self.contacts[item["_eid"]]["_type"] = "organization"
                         e_logger.info(u"Passed internal organization: {}".format(item["_eid"]))
                         continue
                     item["_id"] = item["_eid"]
@@ -1357,7 +1356,6 @@ class I2ContactUpdate(object):
                     item["email"] = item.pop("_email1")
                     item["phone"] = item.pop("_phone1")
                     item["fax"] = item.pop("_phone2")
-                    self.contacts[item["_eid"]]["_type"] = item["_type"]
                     yield item
                 elif u"_organization" in item:  # not a real organization, just address
                     # e_logger.warn('Empty organization for "{}"'.format(item["_eid"]))

@@ -165,7 +165,7 @@ pipeline =
 
 # ii  contacts
     i__need
-    i__pickle_x_w
+    i__pickle_i_w
 ;    ilpq__1_contacts_read  waz commenté
     i__2_contacts_read
     i__pickle_c_w
@@ -174,9 +174,10 @@ pipeline =
     i__2_contacts_load
     i__1_parent_relation_store
     i__dependency_sorter
-    continue
+    i__2_organization_type_insert
+    i__2_org_type_store
     i__2_sorted_contacts_load
-    i__1_contacts_check
+;    i__1_contacts_check
     i__batched
     i__count
     i__2_contact_update
@@ -1373,10 +1374,10 @@ blueprint = imio.transmogrifier.iadocs.need_other
 ;parts = h
 parts = ac
 
-[i__pickle_x_w]
+[i__pickle_i_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
-filename = 2_e_contact_xml.pkl
-store_key = e_contact_xml
+filename = 2_e_contact_i.pkl
+store_key = e_contact_i
 d_condition = python:storage['commit'] is True
 
 [i__2_contacts_read]
@@ -1426,6 +1427,21 @@ bp_key = e_contact
 store_key = _eid
 parent_relation = e_i_parent_relation
 
+[i__2_organization_type_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: item.get('_bpk') == u'e_contact' and item.get("_organization")
+key = string:_type
+value = python:u"organization"
+
+[i__2_org_type_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_contact'
+bp_key = e_contact
+store_key = _eid
+fieldnames = _type
+check_key_uniqueness = 0
+yield = 0
+
 [i__2_sorted_contacts_load]
 blueprint = imio.transmogrifier.iadocs.read_from_data
 bp_key = e_contact
@@ -1436,7 +1452,7 @@ sort_value = python:data[k]['_level']
 [i__1_contacts_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_contact
-condition = python: item.get('_bpk') == u'e_contact2'
+condition = python: item.get('_bpk') == u'e_contact'
 clean_value = lastname python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" "python:u', '"
 replace_newline = firstname " - " _street " - " _city " - "
 invalids = lastname 0 -fname 0 _street ",|0, 0|0, 23" _pc 0 _city 0 _org 0
@@ -1447,7 +1463,7 @@ raise_on_error = ${config:raise_on_error}
 [i__batched]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact'
-condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_contact_xml'] and storage.get('count', {}).get('i__count', {}).get('e_contact', {}).get('c', 0) < storage['batch_nb'])
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_contact_i'] and storage.get('count', {}).get('i__count', {}).get('e_contact', {}).get('c', 0) < storage['batch_nb'])
 
 [i__count]
 blueprint = imio.transmogrifier.iadocs.count
