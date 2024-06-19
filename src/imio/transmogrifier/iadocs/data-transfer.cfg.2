@@ -20,7 +20,7 @@ default_creation_date = 20130911-1200
 default_tg = 220344
 to_treat = 10
 default_category = -9 "Classement indéfini"
-permitted_sections = 0abcdefilmpq
+permitted_sections = 0abcdefijlmpq
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -183,6 +183,17 @@ pipeline =
     i__2_contact_update
     i__1_path_insert
     i__is_user_store
+
+# jj  contacts
+    j__need
+    jl__pickle_c_r
+    j__pickle_j_w
+    j__2_contacts_read
+    j__2_contacts_check
+    j__batched
+    j__count
+    j__2_contact_update
+    j__1_path_insert
 
 # ll  IM & IEM handling
     l__need
@@ -1367,7 +1378,7 @@ blueprint = imio.transmogrifier.iadocs.h_contact_type_update
 condition = python: item['_bpk'] == u'e_contact_type_match'
 clean_unused = 1
 
-# = = = = = = =  ii orig  = = = = = = = #
+# = = = = = = =  ii  = = = = = = = #
 
 [i__need]
 blueprint = imio.transmogrifier.iadocs.need_other
@@ -1490,17 +1501,70 @@ fieldnames = _is_user
 check_key_uniqueness = 0
 yield = 1
 
+# = = = = = = =  jj  = = = = = = = #
+
+[j__need]
+blueprint = imio.transmogrifier.iadocs.need_other
+;parts = h
+parts =
+
+[jl__pickle_c_r]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_contact.pkl
+store_key = e_contact_path
+
+[j__pickle_j_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_contact_j.pkl
+store_key = e_contact_j
+d_condition = python:storage['commit'] is True
+
+[j__2_contacts_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition =
+filename = Complement_Liste_Signaletiques_Organismes.csv
+;filename = Infos_exp_dest_test.csv
+fieldnames = _eid lastname firstname _function person_title phone _phone2 fax email cell_phone _K _L _p_enabled _o_eid _o_title street number _box zip_code city _o_phone _V
+             _o_fax _o_email enterprise_number _o_enabled country
+bp_key = e_contact_c
+
+[j__2_contacts_check]
+blueprint = imio.transmogrifier.iadocs.common_input_checks
+bp_key = e_contact
+condition = python: item.get('_bpk') == u'e_contact_c'
+clean_value =
+replace_newline =
+invalids = person_title ?
+booleans = _p_enabled _o_enabled
+dates =
+raise_on_error = ${config:raise_on_error}
+
+[j__batched]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'j') and item.get('_bpk') == u'e_contact_c'
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_contact_j'] and storage.get('count', {}).get('j__count', {}).get('e_contact_c', {}).get('c', 0) < storage['batch_nb'])
+
+[j__count]
+blueprint = imio.transmogrifier.iadocs.count
+group_key = _bpk
+condition = python: item.get('_bpk') == u'e_contact_c'
+
+[j__2_contact_update]
+blueprint = imio.transmogrifier.iadocs.j_2_contact_update
+paths_key = e_contact_path
+
+[j__1_path_insert]
+blueprint = imio.transmogrifier.iadocs.path_insert
+condition = python: item.get('_bpk') == u'e_contact_c'
+bp_key = e_contact_path
+id_keys = _eid
+
 # = = = = = = =  ll  = = = = = = = #
 
 [l__need]
 blueprint = imio.transmogrifier.iadocs.need_other
 ;parts = abce
 parts = ab
-
-[l__pickle_c_r]
-blueprint = imio.transmogrifier.iadocs.pickle_data
-filename = 2_e_contact.pkl
-store_key = e_contact_path
 
 [lpq__1_contacts_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks

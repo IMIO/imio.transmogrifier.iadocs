@@ -1423,6 +1423,138 @@ class I2ContactUpdate(object):
                     yield item
 
 
+class J2ContactUpdate(object):
+    """Completes contact information
+
+    Parameters:
+        * condition = O, condition expression
+        * paths_key = M, key containing paths
+    """
+
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
+        self.eids = self.storage["data"][options["paths_key"]]
+        self.p_hps = self.storage["data"]["p_hps"]
+        self.intids = getUtility(IIntIds)
+        self.done = self.storage["data"]["e_contact_j"]
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item, storage=self.storage):
+                yield item
+            if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
+                self.done[item["_eid"]] = True
+                course_store(self, item)
+                # fieldnames = _eid lastname firstname _function person_title phone _phone2 fax email cell_phone _K _L
+                #              _p_enabled _o_eid _o_title street number _box zip_code city _o_phone _V _o_fax _o_email
+                #              enterprise_number _o_enabled country
+                base_item = {
+                    "_bpk": item["_bpk"],
+                    "street": item["street"],
+                    "number": u" ".join(all_of_dict_values(item, ["number", "_box"])),
+                    "zip_code": item["zip_code"],
+                    "city": item["city"],
+                    "country": item["country"] and item["country"].lower() != u"belgique" and item["country"] or u"",
+                }
+                item2 = base_item.copy()
+                if item["_o_title"]:  # real org
+                    # update real org
+                    item2.update(
+                        {
+                            "_eid": item["_o_eid"],
+                            "_type": "organization",
+                            "title": item["_o_title"],
+                            "phone": item["_o_phone"],
+                            "fax": item["_o_fax"],
+                            "email": item["_o_email"],
+                            "enterprise_number": item["enterprise_number"],
+                        }
+                    )
+                    if item["_o_eid"] not in self.eids:
+                        log_error(item, u"Organization not found: {}".format(item["_o_eid"]))
+                        item2.update(
+                            {
+                                "use_parent_address": True,
+                                "_id": item["_eid"],
+                                "_parenth": u"/contacts",
+                                "creation_date": self.storage["creation_date"],
+                                "modification_date": self.storage["creation_date"],
+                            }
+                        )
+                        continue
+                    else:
+                        item2["_path"] = self.eids[item["_o_eid"]]["path"]
+                    yield item2
+                    # update hp
+                    item2 = base_item.copy()
+                    item2.update(
+                        {
+                            "_eid": item["_eid"],
+                            "_type": "held_position",
+                            "label": item["_function"],
+                            "phone": item["phone"],
+                            "fax": item["fax"],
+                            "email": item["email"],
+                            "cell_phone": item["cell_phone"],
+                        }
+                    )
+                    if item["_eid"] not in self.eids:
+                        log_error(item, u"HP not found: {}".format(item["_eid"]))
+                        # person
+                        item3 = item2.copy()
+                        item3.update(
+                            {
+                                "firstname": item["firstname"],
+                                "lastname": item["lastname"],
+                                "creation_date": self.storage["creation_date"],
+                                "modification_date": self.storage["creation_date"],
+                                "_parenth": u"/contacts",
+                            }
+                        )
+                        # yield item3
+                        # item2.update({"use_parent_address": True, "_id": item["_eid"], "_parenth": item3["_path"]})
+                        continue
+                    else:
+                        item["_path"] = (self.eids[item["_eid"]]["path"],)
+                    yield item2
+                else:  # person
+                    item2.update(
+                        {
+                            "_eid": item["_eid"],
+                            "_type": "person",
+                            "phone": item["phone"],
+                            "cell_phone": item["cell_phone"],
+                            "fax": item["fax"],
+                            "email": item["email"],
+                        }
+                    )
+                    if item["_eid"] not in self.eids:
+                        log_error(item, u"Person not found: {}".format(item["_eid"]))
+                        item2.update(
+                            {
+                                "use_parent_address": True,
+                                "_id": item["_eid"],
+                                "_parenth": u"/contacts",
+                                "creation_date": self.storage["creation_date"],
+                                "modification_date": self.storage["creation_date"],
+                            }
+                        )
+                        continue
+                    else:
+                        item["_path"] = (self.eids[item["_eid"]]["path"],)
+                    yield item2
+
+
 class L1RecipientGroupsSet(object):
     """Handles recipient_groups.
 
