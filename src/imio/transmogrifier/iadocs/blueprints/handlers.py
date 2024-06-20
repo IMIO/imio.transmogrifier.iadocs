@@ -25,6 +25,7 @@ from imio.pyutils.utils import one_of_dict_values
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
+from imio.transmogrifier.iadocs.utils import add_key_if_value
 from imio.transmogrifier.iadocs.utils import course_store
 from imio.transmogrifier.iadocs.utils import full_name
 from imio.transmogrifier.iadocs.utils import get_file_content
@@ -1458,14 +1459,16 @@ class J2ContactUpdate(object):
                 # fieldnames = _eid lastname firstname _function person_title phone _phone2 fax email cell_phone _K _L
                 #              _p_enabled _o_eid _o_title street number _box zip_code city _o_phone _V _o_fax _o_email
                 #              enterprise_number _o_enabled country
-                base_item = {
-                    "_bpk": item["_bpk"],
-                    "street": item["street"],
-                    "number": u" ".join(all_of_dict_values(item, ["number", "_box"])),
-                    "zip_code": item["zip_code"],
-                    "city": item["city"],
-                    "country": item["country"] and item["country"].lower() != u"belgique" and item["country"] or u"",
-                }
+                base_item = {"_bpk": item["_bpk"]}
+                add_key_if_value(base_item, "street", item["street"])
+                add_key_if_value(base_item, "number", u" ".join(all_of_dict_values(item, ["number", "_box"])))
+                add_key_if_value(base_item, "city", item["city"])
+                add_key_if_value(base_item, "zip_code", item["zip_code"])
+                add_key_if_value(
+                    base_item,
+                    "country",
+                    item["country"] and item["country"].lower() != u"belgique" and item["country"] or u"",
+                )
                 item2 = base_item.copy()
                 if item["_o_title"]:  # real org
                     # update real org
@@ -1474,12 +1477,12 @@ class J2ContactUpdate(object):
                             "_eid": item["_o_eid"],
                             "_type": "organization",
                             "title": item["_o_title"],
-                            "phone": item["_o_phone"],
-                            "fax": item["_o_fax"],
-                            "email": item["_o_email"],
                             "enterprise_number": item["enterprise_number"],
                         }
                     )
+                    add_key_if_value(item2, "phone", item["_o_phone"])
+                    add_key_if_value(item2, "fax", item["_o_fax"])
+                    add_key_if_value(item2, "email", item["_o_email"])
                     if item["_o_eid"] not in self.eids:
                         log_error(item, u"Organization not found: {}".format(item["_o_eid"]))
                         item2.update(
@@ -1502,12 +1505,12 @@ class J2ContactUpdate(object):
                             "_eid": item["_eid"],
                             "_type": "held_position",
                             "label": item["_function"],
-                            "phone": item["phone"],
-                            "fax": item["fax"],
-                            "email": item["email"],
-                            "cell_phone": item["cell_phone"],
                         }
                     )
+                    add_key_if_value(item2, "phone", item["phone"])
+                    add_key_if_value(item2, "fax", item["fax"])
+                    add_key_if_value(item2, "email", item["email"])
+                    add_key_if_value(item2, "cell_phone", item["cell_phone"])
                     if item["_eid"] not in self.eids:
                         log_error(item, u"HP not found: {}".format(item["_eid"]))
                         # person
@@ -1532,12 +1535,12 @@ class J2ContactUpdate(object):
                         {
                             "_eid": item["_eid"],
                             "_type": "person",
-                            "phone": item["phone"],
-                            "cell_phone": item["cell_phone"],
-                            "fax": item["fax"],
-                            "email": item["email"],
                         }
                     )
+                    add_key_if_value(item2, "phone", item["phone"])
+                    add_key_if_value(item2, "fax", item["fax"])
+                    add_key_if_value(item2, "email", item["email"])
+                    add_key_if_value(item2, "cell_phone", item["cell_phone"])
                     if item["_eid"] not in self.eids:
                         log_error(item, u"Person not found: {}".format(item["_eid"]))
                         item2.update(

@@ -32,6 +32,22 @@ MAILTYPES = {
 }
 
 
+# TODO use imio.pyutils function
+def add_key_if_value(dic, key, value, strict=False):
+    """Add a key to a dict only if a value.
+
+    :param dic: input dictionary
+    :param key: key to add
+    :param value: value to add
+    :param strict: if True, add only if value is considered boolean True
+    """
+    if strict:
+        if value:
+            dic[key] = value
+    elif value is not None:
+        dic[key] = value
+
+
 def course_store(section, item):
     """Stores course in blueprints.  Needs storage and name as section attributes"""
     # if item and item.get('_eid') in (u'76872', ):
