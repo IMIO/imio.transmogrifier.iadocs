@@ -49,6 +49,7 @@ from zope.intid import IIntIds
 
 import cPickle
 import os
+import re
 import transaction
 
 
@@ -965,6 +966,8 @@ class F3TextCategoriesToId(object):
         * bp_key = M, key of categories data dict
         * categories_field_name = O, field name containing categories text
         * txt_field_name = M, textfield field name where the text value will be added if not found in categories
+        * separator = M, separator to split field
+        * part_pattern = O, pattern to check accepted part (default none)
     """
 
     classProvides(ISectionBlueprint)
@@ -980,6 +983,8 @@ class F3TextCategoriesToId(object):
         self.bp_key = safe_unicode(options["bp_key"])
         self.cat_fld_name = options.get("categories_field_name") or "_classification_categories_text"
         self.fld_name = safe_unicode(options["txt_field_name"])
+        self.sep = safe_unicode(options.get("separator") or "")
+        self.pattern = options.get("part_pattern") or u""
         self.categories = self.storage["data"][self.bp_key]
 
     def __iter__(self):
@@ -989,14 +994,27 @@ class F3TextCategoriesToId(object):
                 continue
             course_store(self, item)
             txt = item[self.cat_fld_name]
-            if txt.startswith(u"0"):
-                txt = u".{}".format(txt)
-            elif txt.startswith(u"1"):
-                txt = u"-{}".format(txt)
-            if txt in self.categories:
-                item["classification_categories"] = [self.categories[txt]["uid"]]
+            # if separator, we split
+            if self.sep:
+                parts = [part.strip() for part in txt.split(self.sep)]
+                # if pattern we check each parts
+                if self.pattern and len(parts) != len([part for part in parts if re.match(self.pattern, part)]):
+                    parts = [txt]
             else:
-                log_error(item, u"Category '{}' not found".format(txt))
+                parts = [txt]
+            # if txt.startswith(u"0"):
+            #     txt = u".{}".format(txt)
+            # elif txt.startswith(u"1"):
+            #     txt = u"-{}".format(txt)
+            error = False
+            for part in parts:
+                if part in self.categories:
+                    item.setdefault("classification_categories", []).append(self.categories[part]["uid"])
+                else:
+                    error = True
+                    break
+            if error:
+                log_error(item, u"Category part '{}' not found ('{}')".format(part, txt))
                 item["classification_categories"] = [self.storage["plone"]["def_category"]]
                 desc = self.fld_name in item and item[self.fld_name].split("\r\n") or []
                 desc.append(u"CLASSEMENT: {}".format(item[self.cat_fld_name]))

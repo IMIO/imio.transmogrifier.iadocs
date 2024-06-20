@@ -1031,6 +1031,7 @@ d_condition = python:storage['commit'] is True and 'f__to_correct_only' not in t
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 filename = Inventaire_Farde_Chemise.csv
+;filename = Inventaire_Farde_Chemise_test.csv
 ;fieldnames = _category_id _eid title archived _archive_date _service_id _G _H _I _J _K _L _M
 fieldnames = _category_id _eid title archived _archive_date _service_id _G _s__eid _s_title _s_archived _s__archive_date _s__service_id _M
 ;fieldnames = _A _eid title archived _archive_date _localisation _remark _service_id _I _category_id _parent_id _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
@@ -1222,6 +1223,8 @@ condition = python: item.get('_bpk') == u'e_folder' and item['_category_id']
 bp_key = p_category
 categories_field_name = _category_id
 txt_field_name = classification_informations
+separator = /
+part_pattern = ^-[.\d]+$
 
 [f__1_empty_title_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
