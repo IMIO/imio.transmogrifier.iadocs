@@ -2,8 +2,6 @@
 from bs4 import BeautifulSoup as Soup
 from collective.classification.tree.utils import create_category
 from collective.classification.tree.utils import get_parents
-from collective.contact.plonegroup.config import get_registry_organizations
-from collective.contact.plonegroup.config import set_registry_organizations
 from collective.contact.plonegroup.utils import get_selected_org_suffix_principal_ids
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
@@ -235,7 +233,7 @@ class ContactAsTextUpdate(object):
         self.e_c = self.storage["data"][options["contact_store_key"]]
         self.batch_store = self.storage["data"].setdefault(self.bp_key, {})
 
-    def __iter__(self):
+    def __iter__(self):  # noqa
         for item in self.previous:
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
@@ -379,7 +377,7 @@ class ContactSet(object):
         self.e_c = self.storage["data"].setdefault(options["contact_store_key"], {})
         self.batch_store = self.storage["data"].setdefault(self.bp_key, {})
 
-    def __iter__(self):
+    def __iter__(self):  # noqa
         for item in self.previous:
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
@@ -776,7 +774,7 @@ class ECategoryUpdate(object):
         self.category_code_eid = self.storage["data"].get(options.get("category_code_eid", ""), {})
         self.p_category = self.storage["data"]["p_category"]
 
-    def __iter__(self):
+    def __iter__(self):  # noqa
         for item in self.previous:
             if is_in_part(self, self.parts) and self.b_cond and self.condition(item):
                 course_store(self, item)
@@ -794,6 +792,9 @@ class ECategoryUpdate(object):
                         node.title = self.replace_slash and item["_etitle"].replace("/", "-") or item["_etitle"]
                         self.p_category[item["_pcode"]]["title"] = node.title
                         item["_ptitle"] = node.title
+                        node.enabled = True
+                        self.p_category[item["_pcode"]]["enabled"] = True
+                        item["_pactive"] = True
                         item["_act"] = "U"
                     # # when pcode is different (new matching) and title is different
                     # new_title = self.replace_slash and item['_etitle'].replace('/', '-') or item['_etitle']
@@ -952,7 +953,7 @@ class F2FolderSubfolderSplit(object):
             item2 = item.copy()
             for key in item:
                 if key.startswith(self.prefix):
-                    item2[key[len(self.prefix) :]] = item[key]
+                    item2[key[len(self.prefix) :]] = item[key]  # noqa E203
             yield item2
 
 
@@ -1212,7 +1213,7 @@ class I1ContactUpdate(object):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
 
-    def __iter__(self):
+    def __iter__(self):  # noqa
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
                 course_store(self, item)
@@ -2513,7 +2514,7 @@ class XmlContactStore(object):
             self.storage["data"][self.bp_key] = {}
         self.yield_original = bool(int(options.get("yield_original") or "1"))
 
-    def __iter__(self):
+    def __iter__(self):  # noqa C901
         for item in self.previous:
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
