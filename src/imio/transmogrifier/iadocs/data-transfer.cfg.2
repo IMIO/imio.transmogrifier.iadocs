@@ -170,7 +170,6 @@ pipeline =
     i__2_contacts_read
     i__pickle_c_w
     i__2_xml_contact_store
-    continue
     i__2_contacts_load
     i__1_parent_relation_store
     i__dependency_sorter
@@ -1415,6 +1414,7 @@ xml_contact_cols = Organization:OrgId:_parent_id Name _organization Level1 _divi
                    Contact:PersId: FirstName firstname LastName lastname Title person_title PhoneNumber _phone1 FaxNumber _phone2 Email _email1 Gsm _cell1
 check_key_uniqueness = 0
 empty_store = 0
+yield_original = 0
 
 [i__2_contacts_load]
 blueprint = imio.transmogrifier.iadocs.read_from_data

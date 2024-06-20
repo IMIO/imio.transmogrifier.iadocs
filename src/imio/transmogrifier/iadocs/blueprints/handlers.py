@@ -534,12 +534,10 @@ def person_dic(
                 u"title": title,
             }
             pdic.setdefault(u"_post_actions", {})[u"store_internal_person_info"] = ""
-            if p_userid:  # avoid None causing error in schemaupdater converter
-                pdic["userid"] = p_userid
-            if firstname is not None:
-                pdic[u"firstname"] = firstname
-            if lastname is not None:
-                pdic[u"lastname"] = lastname
+            # avoid None causing error in schemaupdater converter
+            add_key_if_value(pdic, "userid", p_userid, strict=True)
+            add_key_if_value(pdic, "firstname", firstname)
+            add_key_if_value(pdic, "lastname", lastname)
         section.change = True
         return [pdic]
     return []
@@ -923,7 +921,7 @@ class F1Level3Handler(object):
 
 
 class F2FolderSubfolderSplit(object):
-    """Handles level 3 folder.
+    """Yield part of current item as new item.
 
     Parameters:
         * condition = O, condition expression
@@ -1329,99 +1327,99 @@ class I2ContactUpdate(object):
 
     def __iter__(self):
         for item in self.previous:
-            if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
-                course_store(self, item)
-                self.done[item["_eid"]] = True
-                item["use_parent_address"] = False
-                item["creation_date"] = self.storage["creation_date"]
-                item["modification_date"] = self.storage["creation_date"]
-                if item.get("_organization"):  # real organization
-                    if item["_eid"] in self.e_s_m:
-                        org = uuidToObject(self.e_s_m[item["_eid"]]["uid"])
-                        self.eids[item["_eid"]] = {"path": relative_path(self.portal, "/".join(org.getPhysicalPath()))}
-                        e_logger.info(u"Passed internal organization: {}".format(item["_eid"]))
-                        continue
-                    item["_id"] = item["_eid"]
-                    item["_type"] = "organization"
-                    item["_parenth"] = u"/contacts"
-                    item["internal_number"] = item["_eid"]
-                    item["zip_code"] = item.pop("_pc")
-                    item["city"] = item.pop("_city")
-                    item["street"] = item.pop("_street")
-                    if item["_division"]:
-                        item["title"] = u" - ".join(
-                            all_of_dict_values(item, ["_organization", "_division", "_service"])
-                        )
-                    else:
-                        item["title"] = item.pop("_organization")  # _division, _service ?
-                    item["email"] = item.pop("_email1")
-                    item["phone"] = item.pop("_phone1")
-                    item["fax"] = item.pop("_phone2")
-                    yield item
-                elif u"_organization" in item:  # not a real organization, just address
-                    # e_logger.warn('Empty organization for "{}"'.format(item["_eid"]))
+            if not is_in_part(self, self.parts) or not self.condition(item, storage=self.storage):
+                yield item
+                continue
+            course_store(self, item)
+            self.done[item["_eid"]] = True
+            item["use_parent_address"] = False
+            item["creation_date"] = self.storage["creation_date"]
+            item["modification_date"] = self.storage["creation_date"]
+            if item.get("_organization"):  # real organization
+                if item["_eid"] in self.e_s_m:
+                    org = uuidToObject(self.e_s_m[item["_eid"]]["uid"])
+                    self.eids[item["_eid"]] = {"path": relative_path(self.portal, "/".join(org.getPhysicalPath()))}
+                    e_logger.info(u"Passed internal organization: {}".format(item["_eid"]))
                     continue
+                item["_id"] = item["_eid"]
+                item["_type"] = "organization"
+                item["_parenth"] = u"/contacts"
+                item["internal_number"] = item["_eid"]
+                item["zip_code"] = item.pop("_pc")
+                item["city"] = item.pop("_city")
+                item["street"] = item.pop("_street")
+                if item["_division"]:
+                    item["title"] = u" - ".join(all_of_dict_values(item, ["_organization", "_division", "_service"]))
                 else:
-                    if item.get("_parent_id"):
-                        if self.contacts[item["_parent_id"]].get("_type") == "organization":
-                            pdic = {
-                                "_bpk": u"e_contact",
-                                "_eid": u"{}a".format(item["_eid"]),
-                                "_type": "person",
-                                "lastname": item["lastname"],
-                                "firstname": item["firstname"],
-                            }
-                            if item["_parent_id"] in self.e_s_m:
-                                user_key = u"{}_{}".format(pdic["lastname"], pdic["firstname"])
-                                if user_key in self.e_u_m and self.e_u_m[user_key]["_p_userid"] in self.puid_to_pers:
-                                    pers = uuidToObject(self.puid_to_pers[self.e_u_m[user_key]["_p_userid"]])
-                                    pdic["_path"] = relative_path(self.portal, "/".join(pers.getPhysicalPath()))
-                                    pdic["_parenth"] = u"/contacts/personnel-folder"
-                                    pdic["_pers"] = pers.UID()
-                                    e_logger.info(u"Passed internal person: {}".format(item["_eid"]))
-                                else:
-                                    pdic["_parenth"] = u"/contacts/personnel-folder"
-                                    yield pdic
-                            if "_parenth" not in pdic:
-                                pdic["_parenth"] = u"/contacts"
+                    item["title"] = item.pop("_organization")  # _division, _service ?
+                item["email"] = item.pop("_email1")
+                item["phone"] = item.pop("_phone1")
+                item["fax"] = item.pop("_phone2")
+                yield item
+            elif u"_organization" in item:  # not a real organization, just address
+                # e_logger.warn('Empty organization for "{}"'.format(item["_eid"]))
+                continue
+            else:
+                if item.get("_parent_id"):
+                    if self.contacts[item["_parent_id"]].get("_type") == "organization":
+                        pdic = {
+                            "_bpk": u"e_contact",
+                            "_eid": u"{}a".format(item["_eid"]),
+                            "_type": "person",
+                            "lastname": item["lastname"],
+                            "firstname": item["firstname"],
+                        }
+                        if item["_parent_id"] in self.e_s_m:
+                            user_key = u"{}_{}".format(pdic["lastname"], pdic["firstname"])
+                            if user_key in self.e_u_m and self.e_u_m[user_key]["_p_userid"] in self.puid_to_pers:
+                                pers = uuidToObject(self.puid_to_pers[self.e_u_m[user_key]["_p_userid"]])
+                                pdic["_path"] = relative_path(self.portal, "/".join(pers.getPhysicalPath()))
+                                pdic["_parenth"] = u"/contacts/personnel-folder"
+                                pdic["_pers"] = pers.UID()
+                                e_logger.info(u"Passed internal person: {}".format(item["_eid"]))
+                            else:
+                                pdic["_parenth"] = u"/contacts/personnel-folder"
                                 yield pdic
-                            org = get_obj_from_path(self.portal, path=self.eids[item["_parent_id"]]["path"])
-                            if (
-                                "_pers" in pdic
-                                and pdic["_pers"] in self.p_hps
-                                and org.UID() in self.p_hps[pdic["_pers"]]["hps"]
-                            ):
-                                self.eids[item["_eid"]] = {
-                                    "path": self.p_hps[pdic["_pers"]]["hps"][org.UID()]["path"],
-                                    "_is_user": True,
-                                }
-                                e_logger.info(u"Passed internal hp: {}".format(item["_eid"]))
-                                continue
-                            item["_type"] = "held_position"
-                            item["_parenth"] = pdic["_path"]
-                            item["use_parent_address"] = True
-                            item["_is_user"] = pdic["_parenth"] == u"/contacts/personnel-folder"
-                            item["position"] = RelationValue(self.intids.getId(org))
-                        else:  # a person
-                            item["_type"] = "person"
-                            item["_parenth"] = u"/contacts"
-                            item["_is_user"] = False
-                            # address from parent
-                            item["zip_code"] = self.contacts[item["_parent_id"]].get("_pc")
-                            item["city"] = self.contacts[item["_parent_id"]].get("_city")
-                            item["street"] = self.contacts[item["_parent_id"]].get("_street")
-                    else:
+                        if "_parenth" not in pdic:
+                            pdic["_parenth"] = u"/contacts"
+                            yield pdic
+                        org = get_obj_from_path(self.portal, path=self.eids[item["_parent_id"]]["path"])
+                        if (
+                            "_pers" in pdic
+                            and pdic["_pers"] in self.p_hps
+                            and org.UID() in self.p_hps[pdic["_pers"]]["hps"]
+                        ):
+                            self.eids[item["_eid"]] = {
+                                "path": self.p_hps[pdic["_pers"]]["hps"][org.UID()]["path"],
+                                "_is_user": True,
+                            }
+                            e_logger.info(u"Passed internal hp: {}".format(item["_eid"]))
+                            continue
+                        item["_type"] = "held_position"
+                        item["_parenth"] = pdic["_path"]
+                        item["use_parent_address"] = True
+                        item["_is_user"] = pdic["_parenth"] == u"/contacts/personnel-folder"
+                        item["position"] = RelationValue(self.intids.getId(org))
+                    else:  # a person
                         item["_type"] = "person"
                         item["_parenth"] = u"/contacts"
                         item["_is_user"] = False
+                        # address from parent
+                        item["zip_code"] = self.contacts[item["_parent_id"]].get("_pc")
+                        item["city"] = self.contacts[item["_parent_id"]].get("_city")
+                        item["street"] = self.contacts[item["_parent_id"]].get("_street")
+                else:
+                    item["_type"] = "person"
+                    item["_parenth"] = u"/contacts"
+                    item["_is_user"] = False
 
-                    item["cell_phone"] = item.pop("_cell1")
-                    item["phone"] = item.pop("_phone1")
-                    item["fax"] = item.pop("_phone2")
-                    item["email"] = item.pop("_email1")
-                    item["_id"] = item["_eid"]
-                    item["internal_number"] = item["_eid"]
-                    yield item
+                item["cell_phone"] = item.pop("_cell1")
+                item["phone"] = item.pop("_phone1")
+                item["fax"] = item.pop("_phone2")
+                item["email"] = item.pop("_email1")
+                item["_id"] = item["_eid"]
+                item["internal_number"] = item["_eid"]
+                yield item
 
 
 class J2ContactUpdate(object):
@@ -1453,109 +1451,109 @@ class J2ContactUpdate(object):
         for item in self.previous:
             if not is_in_part(self, self.parts) or not self.condition(item, storage=self.storage):
                 yield item
-            if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
-                self.done[item["_eid"]] = True
-                course_store(self, item)
-                # fieldnames = _eid lastname firstname _function person_title phone _phone2 fax email cell_phone _K _L
-                #              _p_enabled _o_eid _o_title street number _box zip_code city _o_phone _V _o_fax _o_email
-                #              enterprise_number _o_enabled country
-                base_item = {"_bpk": item["_bpk"]}
-                add_key_if_value(base_item, "street", item["street"])
-                add_key_if_value(base_item, "number", u" ".join(all_of_dict_values(item, ["number", "_box"])))
-                add_key_if_value(base_item, "city", item["city"])
-                add_key_if_value(base_item, "zip_code", item["zip_code"])
-                add_key_if_value(
-                    base_item,
-                    "country",
-                    item["country"] and item["country"].lower() != u"belgique" and item["country"] or u"",
+                continue
+            self.done[item["_eid"]] = True
+            course_store(self, item)
+            # fieldnames = _eid lastname firstname _function person_title phone _phone2 fax email cell_phone _K _L
+            #              _p_enabled _o_eid _o_title street number _box zip_code city _o_phone _V _o_fax _o_email
+            #              enterprise_number _o_enabled country
+            base_item = {"_bpk": item["_bpk"]}
+            add_key_if_value(base_item, "street", item["street"])
+            add_key_if_value(base_item, "number", u" ".join(all_of_dict_values(item, ["number", "_box"])))
+            add_key_if_value(base_item, "city", item["city"])
+            add_key_if_value(base_item, "zip_code", item["zip_code"])
+            add_key_if_value(
+                base_item,
+                "country",
+                item["country"] and item["country"].lower() != u"belgique" and item["country"] or u"",
+            )
+            item2 = base_item.copy()
+            if item["_o_title"]:  # real org
+                # update real org
+                item2.update(
+                    {
+                        "_eid": item["_o_eid"],
+                        "_type": "organization",
+                        "title": item["_o_title"],
+                        "enterprise_number": item["enterprise_number"],
+                    }
                 )
+                add_key_if_value(item2, "phone", item["_o_phone"])
+                add_key_if_value(item2, "fax", item["_o_fax"])
+                add_key_if_value(item2, "email", item["_o_email"])
+                if item["_o_eid"] not in self.eids:
+                    log_error(item, u"Organization not found: {}".format(item["_o_eid"]))
+                    item2.update(
+                        {
+                            "use_parent_address": True,
+                            "_id": item["_eid"],
+                            "_parenth": u"/contacts",
+                            "creation_date": self.storage["creation_date"],
+                            "modification_date": self.storage["creation_date"],
+                        }
+                    )
+                    continue
+                else:
+                    item2["_path"] = self.eids[item["_o_eid"]]["path"]
+                yield item2
+                # update hp
                 item2 = base_item.copy()
-                if item["_o_title"]:  # real org
-                    # update real org
-                    item2.update(
+                item2.update(
+                    {
+                        "_eid": item["_eid"],
+                        "_type": "held_position",
+                        "label": item["_function"],
+                    }
+                )
+                add_key_if_value(item2, "phone", item["phone"])
+                add_key_if_value(item2, "fax", item["fax"])
+                add_key_if_value(item2, "email", item["email"])
+                add_key_if_value(item2, "cell_phone", item["cell_phone"])
+                if item["_eid"] not in self.eids:
+                    log_error(item, u"HP not found: {}".format(item["_eid"]))
+                    # person
+                    item3 = item2.copy()
+                    item3.update(
                         {
-                            "_eid": item["_o_eid"],
-                            "_type": "organization",
-                            "title": item["_o_title"],
-                            "enterprise_number": item["enterprise_number"],
+                            "firstname": item["firstname"],
+                            "lastname": item["lastname"],
+                            "creation_date": self.storage["creation_date"],
+                            "modification_date": self.storage["creation_date"],
+                            "_parenth": u"/contacts",
                         }
                     )
-                    add_key_if_value(item2, "phone", item["_o_phone"])
-                    add_key_if_value(item2, "fax", item["_o_fax"])
-                    add_key_if_value(item2, "email", item["_o_email"])
-                    if item["_o_eid"] not in self.eids:
-                        log_error(item, u"Organization not found: {}".format(item["_o_eid"]))
-                        item2.update(
-                            {
-                                "use_parent_address": True,
-                                "_id": item["_eid"],
-                                "_parenth": u"/contacts",
-                                "creation_date": self.storage["creation_date"],
-                                "modification_date": self.storage["creation_date"],
-                            }
-                        )
-                        continue
-                    else:
-                        item2["_path"] = self.eids[item["_o_eid"]]["path"]
-                    yield item2
-                    # update hp
-                    item2 = base_item.copy()
+                    # yield item3
+                    # item2.update({"use_parent_address": True, "_id": item["_eid"], "_parenth": item3["_path"]})
+                    continue
+                else:
+                    item["_path"] = (self.eids[item["_eid"]]["path"],)
+                yield item2
+            else:  # person
+                item2.update(
+                    {
+                        "_eid": item["_eid"],
+                        "_type": "person",
+                    }
+                )
+                add_key_if_value(item2, "phone", item["phone"])
+                add_key_if_value(item2, "fax", item["fax"])
+                add_key_if_value(item2, "email", item["email"])
+                add_key_if_value(item2, "cell_phone", item["cell_phone"])
+                if item["_eid"] not in self.eids:
+                    log_error(item, u"Person not found: {}".format(item["_eid"]))
                     item2.update(
                         {
-                            "_eid": item["_eid"],
-                            "_type": "held_position",
-                            "label": item["_function"],
+                            "use_parent_address": True,
+                            "_id": item["_eid"],
+                            "_parenth": u"/contacts",
+                            "creation_date": self.storage["creation_date"],
+                            "modification_date": self.storage["creation_date"],
                         }
                     )
-                    add_key_if_value(item2, "phone", item["phone"])
-                    add_key_if_value(item2, "fax", item["fax"])
-                    add_key_if_value(item2, "email", item["email"])
-                    add_key_if_value(item2, "cell_phone", item["cell_phone"])
-                    if item["_eid"] not in self.eids:
-                        log_error(item, u"HP not found: {}".format(item["_eid"]))
-                        # person
-                        item3 = item2.copy()
-                        item3.update(
-                            {
-                                "firstname": item["firstname"],
-                                "lastname": item["lastname"],
-                                "creation_date": self.storage["creation_date"],
-                                "modification_date": self.storage["creation_date"],
-                                "_parenth": u"/contacts",
-                            }
-                        )
-                        # yield item3
-                        # item2.update({"use_parent_address": True, "_id": item["_eid"], "_parenth": item3["_path"]})
-                        continue
-                    else:
-                        item["_path"] = (self.eids[item["_eid"]]["path"],)
-                    yield item2
-                else:  # person
-                    item2.update(
-                        {
-                            "_eid": item["_eid"],
-                            "_type": "person",
-                        }
-                    )
-                    add_key_if_value(item2, "phone", item["phone"])
-                    add_key_if_value(item2, "fax", item["fax"])
-                    add_key_if_value(item2, "email", item["email"])
-                    add_key_if_value(item2, "cell_phone", item["cell_phone"])
-                    if item["_eid"] not in self.eids:
-                        log_error(item, u"Person not found: {}".format(item["_eid"]))
-                        item2.update(
-                            {
-                                "use_parent_address": True,
-                                "_id": item["_eid"],
-                                "_parenth": u"/contacts",
-                                "creation_date": self.storage["creation_date"],
-                                "modification_date": self.storage["creation_date"],
-                            }
-                        )
-                        continue
-                    else:
-                        item["_path"] = (self.eids[item["_eid"]]["path"],)
-                    yield item2
+                    continue
+                else:
+                    item["_path"] = (self.eids[item["_eid"]]["path"],)
+                yield item2
 
 
 class L1RecipientGroupsSet(object):
@@ -2478,6 +2476,7 @@ class XmlContactStore(object):
         * contact_id_key = M, item contact key name
         * check_key_uniqueness = O, flag (0 or 1: default 1)
         * empty_store = O, flag to know if the storage must be initially emptied (0 or 1: default 0)
+        * yield_original = O, flag to know if original item must be yielded (0 or 1: default 1)
     """
 
     classProvides(ISectionBlueprint)
@@ -2512,6 +2511,7 @@ class XmlContactStore(object):
         self.cku = bool(int(options.get("check_key_uniqueness") or "1"))
         if self.bp_key not in self.storage["data"]:
             self.storage["data"][self.bp_key] = {}
+        self.yield_original = bool(int(options.get("yield_original") or "1"))
 
     def __iter__(self):
         for item in self.previous:
@@ -2556,4 +2556,5 @@ class XmlContactStore(object):
                                 item[self.contact_id_key] = skey_val
                             self.storage["data"][self.bp_key][skey_val] = dic
                             # print(u"{}: {}".format(item["_eid"], skey_val))
-                yield item
+                if self.yield_original:
+                    yield item
