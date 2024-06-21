@@ -2158,6 +2158,7 @@ class S1ClassificationFoldersUpdate(object):
     Parameters:
         * condition = O, condition expression
         * store_key = M, storage main key to find mail path
+        * fill_empty_mail_category = O, fill empty mail category with folder one (1 or 0, default: 1)
     """
 
     classProvides(ISectionBlueprint)
@@ -2172,6 +2173,7 @@ class S1ClassificationFoldersUpdate(object):
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
+        self.f_e_m_c = bool(int(options.get("fill_empty_mail_category") or "1"))
         store_key = safe_unicode(options["store_key"])
         self.paths = self.storage["data"][store_key]
 
@@ -2195,7 +2197,7 @@ class S1ClassificationFoldersUpdate(object):
             change = False
             folder_id = item["_folder_id"]
             # Fill empty mail category with folder one
-            if not mail.classification_categories:
+            if self.f_e_m_c and not mail.classification_categories:
                 folder_category_id = self.storage["data"]["e_folder"][item[u"_folder_id"]]["_category_id"]
                 cat_uid = self.storage["data"]["e_category_full_match"].get(folder_category_id, {}).get("_puid")
                 if cat_uid:
