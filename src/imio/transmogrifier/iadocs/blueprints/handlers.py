@@ -337,7 +337,7 @@ class ContactSet(object):
         * bp_key = M, blueprint key used on new item if not yield
         * fieldname = M, field to set
         * is_list = M, int for boolean (1 if the field is a list)
-        * mail_id_key = O, mail id item key name
+        * mail_id_key = O, mail id item key name (default _mail_id)
         * mail_store_key = O, storage main key to find mail path
         * contact_id_key = M, item key name containing contact external id
         * contact_store_key = M, storage main key to find contact
@@ -361,7 +361,7 @@ class ContactSet(object):
         if not is_in_part(self, self.parts):
             return
         self.fieldname = safe_unicode(options["fieldname"])
-        self.mail_id_key = safe_unicode(options.get("mail_id_key", u""))
+        self.mail_id_key = safe_unicode(options.get("mail_id_key") or "_mail_id")
         self.contact_id_key = safe_unicode(options["contact_id_key"])
         self.is_list = bool(int(options.get("is_list") or "1"))
         self.original_item = bool(int(options["original_item"]))
@@ -2571,6 +2571,8 @@ class XmlContactStore(object):
                 for contact_tag in xml.find_all(xml_contact_key):
                     if self.empty_store:
                         self.storage["data"][self.bp_key] = {}
+                    if self.contact_id_key:
+                        item[self.contact_id_key] = None
                     current_tag = contact_tag
                     links = {}
                     for key in self.xml_ct_cols:
@@ -2594,7 +2596,7 @@ class XmlContactStore(object):
                             else:  # we store link on main contact
                                 dic.update(links)
                             if self.cku and skey_val in self.storage["data"][self.bp_key]:
-                                if skey_val == u"0":  # customer 2
+                                if skey_val == u"0":  # customer 2 ???
                                     skey_val = u"1"
                                 else:
                                     log_error(item, u"Key '{}' already in '{}' data dict".format(skey_val, self.bp_key))
@@ -2603,5 +2605,5 @@ class XmlContactStore(object):
                                 item[self.contact_id_key] = skey_val
                             self.storage["data"][self.bp_key][skey_val] = dic
                             # print(u"{}: {}".format(item["_eid"], skey_val))
-                if self.yield_original:
-                    yield item
+                    if self.yield_original:
+                        yield item
