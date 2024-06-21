@@ -1769,6 +1769,7 @@ class POMSenderSet(object):
 
     Parameters:
         * condition = O, condition expression
+        * contact_sender_key = O, contacts sender storage key (default: e_contact)
     """
 
     classProvides(ISectionBlueprint)
@@ -1787,7 +1788,8 @@ class POMSenderSet(object):
         self.euid_to_pers = self.storage["data"]["p_euid_to_pers"]
         self.p_hps = self.storage["data"]["p_hps"]
         self.eid_to_orgs = self.storage["data"]["p_eid_to_orgs"]
-        self.e_c_s = self.storage["data"].get("e_contact", {})
+        csk = options.get("contact_sender_key", "e_contact") or "e_contact"
+        self.e_c_s = self.storage["data"].get(csk, {})
         self.e_u_m = self.storage["data"].get("e_user_match", {})
 
     def __iter__(self):

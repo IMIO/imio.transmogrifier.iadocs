@@ -256,7 +256,6 @@ pipeline =
 
 # pp  OM handling
     p__need
-#     lp__1_contacts_read
 ;    p__2_archives_mail_read  waz
 ;    p__2_archives_eid_update  waz
     p__2_mail_read
@@ -1952,9 +1951,7 @@ skip_contact_user = 0
 [p__need]
 blueprint = imio.transmogrifier.iadocs.need_other
 ;parts = abce
-parts = ab
-
-# TODO gérer nom prénom
+parts = abc
 
 [p__2_archives_mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -2018,10 +2015,11 @@ blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_o
 condition = python: item.get('_bpk') == u'e_mail_o' and '_service_id' in item
 replace_newline =
-invalids = external_reference_no - _service_id 0|220523
+invalids = _service_id 0|220523
 clean_value = title python:u'\n' " " "python:[(r'^-+$', u'')]" python:u'\n'
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans =
+concatenate = _nom _prenom _sender_id "_"
 dates = outgoing_date "%Y-%m-%d %H:%M:%S" 0 mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
 
 [p__creation_date_insert]
@@ -2079,6 +2077,7 @@ global_recipient_tg_exceptions =
 [p__1_sender_set]
 blueprint = imio.transmogrifier.iadocs.p_om_sender_set
 condition = python: item.get('_bpk') == u'e_mail_o'
+contact_sender_key = e_user_match
 
 [p__default_contact_set]
 blueprint = imio.transmogrifier.iadocs.default_contact_set
