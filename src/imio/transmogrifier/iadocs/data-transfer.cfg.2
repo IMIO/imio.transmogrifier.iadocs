@@ -1823,7 +1823,7 @@ parts = ac
 [m__pickle_imail_sender_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_i_sender.pkl
-store_key = e_mail_sender_text
+store_key = e_mail_i_sender
 d_condition = python:storage['commit'] is True
 
 [m__user_service_read]
@@ -1901,7 +1901,7 @@ condition2 = python: item['_principal']
 [m__batched]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
-condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_mail_sender_text'] and storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) < storage['batch_nb'])
+condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['e_mail_i_sender'] and storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) < storage['batch_nb'])
 
 [m__count]
 blueprint = imio.transmogrifier.iadocs.count
@@ -1937,7 +1937,7 @@ empty_store = 1
 [m__contact_set]
 blueprint = imio.transmogrifier.iadocs.contact_set
 condition = python: item.get('_bpk') == u'e_mail_recip_i'
-bp_key = e_mail_sender
+bp_key = e_mail_i_sender
 fieldname = sender
 is_list = 1
 mail_store_key = e_mail_i
@@ -1948,7 +1948,7 @@ skip_contact_user = 0
 
 [m__2_sender_as_text]
 blueprint = imio.transmogrifier.iadocs.contact_as_text_update
-bp_key = e_mail_sender_text
+bp_key = e_mail_i_sender
 condition = python: item.get('_bpk') == u'e_mail_recip_i'
 mail_store_key = e_mail_i
 contact_store_key = e_contact
