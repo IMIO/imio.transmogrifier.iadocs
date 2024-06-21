@@ -2405,6 +2405,8 @@ class X1ReplyToUpdate(object):
     Parameters:
         * condition = O, condition expression
         * store_key = M, storage main key to find mail path
+        * batch_store = O, store_key where to store batch info
+        * batch_key = O, item batch key to use
     """
 
     classProvides(ISectionBlueprint)
@@ -2423,6 +2425,8 @@ class X1ReplyToUpdate(object):
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         store_key = safe_unicode(options["store_key"])
         self.paths = self.storage["data"][store_key]
+        self.batch_store = self.storage["data"].setdefault(options.get("batch_store") or "reply_to", {})
+        self.batch_key = safe_unicode(options.get("batch_key") or u"")
 
     def __iter__(self):
         for item in self.previous:
@@ -2430,6 +2434,8 @@ class X1ReplyToUpdate(object):
                 yield item
                 continue
             course_store(self, item)
+            if self.batch_key:
+                self.batch_store[item[self.batch_key]] = True
             source_path = self.paths[item["_eid"]]["path"]  # source is the om
             target_path = self.paths[item["_target_id"]]["path"]  # target is the im
             source = get_obj_from_path(self.portal, path=source_path)
