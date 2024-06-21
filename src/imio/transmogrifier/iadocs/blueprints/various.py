@@ -22,6 +22,7 @@ from zope.interface import implements
 
 import copy
 import ipdb
+import re
 
 
 class Breakpoint(object):
@@ -268,6 +269,56 @@ class FilterItem(object):
                 yield filter_keys(item, self.kept_keys + [fld for fld in item if fld.startswith("_")])
                 continue
             yield item
+
+
+class ItemFieldSplit(object):
+    """Splits an item field and yield multiple item.
+
+    Parameters:
+        * condition = O, condition to filter (default True)
+        * field = M, item field
+        * separator = M, separator to split field
+        * part_pattern = O, pattern to check accepted part (default none)
+    """
+
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.transmogrifier = transmogrifier
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
+        self.field = safe_unicode(options["field"])
+        self.sep = safe_unicode(options["separator"])
+        self.pattern = options.get("part_pattern") or u""
+
+    def __iter__(self):
+        for item in self.previous:
+            # TO BE TESTED
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                yield item
+                continue
+            if self.sep not in item.get(self.field, ""):
+                yield item
+                continue
+            parts = item[self.field].split(self.sep)
+            if self.pattern:
+                error = False
+                for part in parts:
+                    if not re.match(self.pattern, part):
+                        yield item
+                        error = True
+                        break
+                if error:
+                    continue
+            model_item = item.copy()
+            for part in parts:
+                item = model_item.copy()
+                item[self.field] = part
+                yield item
 
 
 class NeedOther(object):
