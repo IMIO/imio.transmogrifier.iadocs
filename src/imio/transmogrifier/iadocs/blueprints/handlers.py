@@ -1661,6 +1661,8 @@ class M1AssignedUserHandling(object):
     Parameters:
         * store_key = M, storage main key to find mail path
         * condition = O, condition expression
+        * original_item = 0, is item the email item (default 0)
+        * contact_sender_key = O, contacts sender storage key (default: e_contacts_sender)
     """
 
     classProvides(ISectionBlueprint)
@@ -1673,11 +1675,13 @@ class M1AssignedUserHandling(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
+        self.original_item = bool(int(options.get("original_item") or "0"))
         if not is_in_part(self, self.parts):
             return
         store_key = safe_unicode(options["store_key"])
         self.im_paths = self.storage["data"][store_key]
-        self.contacts = self.storage["data"]["e_contacts_sender"]  # user only
+        csk = options.get("contact_sender_key", "e_contacts_sender") or "e_contacts_sender"
+        self.contacts = self.storage["data"][csk]  # user only
         self.user_match = self.storage["data"]["e_user_match"]
         # self.e_user_service = self.storage['data']['e_user_service']
         self.p_user_service = self.storage["data"]["p_user_service"]  # plone user service
@@ -1702,36 +1706,52 @@ class M1AssignedUserHandling(object):
                 continue
             e_userid = self.contacts[item["_contact_id"]]["_user_id"]
             p_userid = self.user_match[e_userid]["_p_userid"]
-            o_logger.debug("mail %s: euser %s, puser %s", item["_mail_id"], self.user_match[e_userid]["_nom"], p_userid)
-            imail = get_obj_from_path(self.portal, path=self.im_paths[item["_mail_id"]]["path"])
-            if imail is None:
-                o_logger.warning(
-                    "mail %s: path '%s' not found", item["_mail_id"], self.im_paths[item["_mail_id"]]["path"]
+            o_logger.debug(
+                "mail %s: euser %s, puser %s",
+                item.get("_mail_id", item["_eid"]),
+                self.user_match[e_userid]["_nom"],
+                p_userid,
+            )
+            if self.original_item:
+                t_g = item.get("treating_groups")
+                a_u = None
+                item2 = item
+            else:
+                imail = get_obj_from_path(self.portal, path=self.im_paths[item["_mail_id"]]["path"])
+                if imail is None:
+                    o_logger.warning(
+                        "mail %s: path '%s' not found", item["_mail_id"], self.im_paths[item["_mail_id"]]["path"]
+                    )
+                    continue
+                t_g = imail.treating_groups
+                a_u = imail.assigned_user
+                item2 = {
+                    "_eid": item["_eid"],
+                    "_path": self.im_paths[item["_mail_id"]]["path"],
+                    "_type": imail.portal_type,
+                    "_bpk": "i_assigned_user",
+                    "_act": "U",
+                    "modification_date": imail.creation_date,
+                }
+                # store info in data_transfer
+                d_t = (imail.data_transfer or u"").split("\r\n")
+                r_name = u" ".join(all_of_dict_values(self.user_match[e_userid], ["_nom", "_prenom"]))
+                r_messages = u", ".join(
+                    all_of_dict_values(
+                        item, [u"_action", u"_message", u"_response"], labels=[u"", u"message", u"réponse"]
+                    )
                 )
-                continue
-            item2 = {
-                "_eid": item["_eid"],
-                "_path": self.im_paths[item["_mail_id"]]["path"],
-                "_type": imail.portal_type,
-                "_bpk": "i_assigned_user",
-                "_act": "U",
-                "modification_date": imail.creation_date,
-            }
-            # store info in data_transfer
-            d_t = (imail.data_transfer or u"").split("\r\n")
-            r_name = u" ".join(all_of_dict_values(self.user_match[e_userid], ["_nom", "_prenom"]))
-            r_messages = u", ".join(
-                all_of_dict_values(item, [u"_action", u"_message", u"_response"], labels=[u"", u"message", u"réponse"])
-            )
-            r_infos = u"DESTINATAIRE{}: {}{}".format(
-                item["_principal"] and u" PRINCIPAL" or u"", r_name, r_messages and u", {}".format(r_messages) or u""
-            )
-            if r_infos not in d_t:
-                d_t.append(r_infos)
-                item2["data_transfer"] = u"\r\n".join(d_t)
+                r_infos = u"DESTINATAIRE{}: {}{}".format(
+                    item["_principal"] and u" PRINCIPAL" or u"",
+                    r_name,
+                    r_messages and u", {}".format(r_messages) or u"",
+                )
+                if r_infos not in d_t:
+                    d_t.append(r_infos)
+                    item2["data_transfer"] = u"\r\n".join(d_t)
             # plone user is in the treating_group
-            if p_userid and imail.treating_groups and imail.treating_groups in self.p_u_s_editor[p_userid]:
-                if item["_principal"] or not imail.assigned_user:
+            if p_userid and t_g and t_g in self.p_u_s_editor[p_userid]:
+                if item.get("_principal") or not a_u:
                     item2["assigned_user"] = p_userid
             elif p_userid:
                 # comblain: cannot put user service in copy because most users have more than one service
@@ -1739,7 +1759,7 @@ class M1AssignedUserHandling(object):
             else:
                 # comblain: cannot put user service in copy because most users have more than one service
                 pass
-            if "data_transfer" in item2 or "assigned_user" in item2:
+            if "data_transfer" in item2 or "assigned_user" in item2 or self.original_item:
                 # o_logger.debug(item)
                 yield item2
 
