@@ -8,6 +8,7 @@ from collective.transmogrifier.interfaces import ISectionBlueprint
 from ftw.labels.interfaces import ILabeling
 from imio.dms.mail import IM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail import IM_READER_SERVICE_FUNCTIONS
+from imio.dms.mail import OM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail.utils import create_period_folder
 from imio.dms.mail.utils import separate_fullname
 from imio.helpers.content import uuidToObject
@@ -1663,6 +1664,8 @@ class M1AssignedUserHandling(object):
         * condition = O, condition expression
         * original_item = 0, is item the email item (default 0)
         * contact_sender_key = O, contacts sender storage key (default: e_contacts_sender)
+        * functions = O, functions group (IM or OM. Default IM)
+        * contact_id_key = O, contact field name (default: _contact_id)
     """
 
     classProvides(ISectionBlueprint)
@@ -1676,6 +1679,7 @@ class M1AssignedUserHandling(object):
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.original_item = bool(int(options.get("original_item") or "0"))
+        self.contact_id_key = options.get("contact_id_key") or "_contact_id"
         if not is_in_part(self, self.parts):
             return
         store_key = safe_unicode(options["store_key"])
@@ -1687,10 +1691,12 @@ class M1AssignedUserHandling(object):
         self.p_user_service = self.storage["data"]["p_user_service"]  # plone user service
         # calculate once the editor services for each user
         self.p_u_s_editor = {}
+        fct_group = options.get("functions", "IM") or "IM"
+        functions = fct_group == "IM" and IM_EDITOR_SERVICE_FUNCTIONS or OM_EDITOR_SERVICE_FUNCTIONS
         for user in self.p_user_service:
             self.p_u_s_editor[user] = []
             for fct in self.p_user_service[user]:
-                if fct in IM_EDITOR_SERVICE_FUNCTIONS:
+                if fct in functions:
                     for org in self.p_user_service[user][fct]:
                         if org not in self.p_u_s_editor[user]:
                             self.p_u_s_editor[user].append(org)
@@ -1701,10 +1707,10 @@ class M1AssignedUserHandling(object):
                 yield item
                 continue
             course_store(self, item)
-            if item["_contact_id"] not in self.contacts:
-                o_logger.warning("eid '%s', contact id not a user '%s'", item["_eid"], item["_contact_id"])
+            if item[self.contact_id_key] not in self.contacts:
+                o_logger.warning("eid '%s', contact id not a user '%s'", item["_eid"], item[self.contact_id_key])
                 continue
-            e_userid = self.contacts[item["_contact_id"]]["_user_id"]
+            e_userid = self.contacts[item[self.contact_id_key]]["_user_id"]
             p_userid = self.user_match[e_userid]["_p_userid"]
             o_logger.debug(
                 "mail %s: euser %s, puser %s",

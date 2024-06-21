@@ -276,6 +276,7 @@ pipeline =
 #    p__assigned_user ?
     p__1_sender_set
 ;    p__default_contact_set
+;    p__2_assigned_user  ??
     p__3_category_id_insert
     p__mail_type_insert
     p__1_nature_insert
@@ -2084,6 +2085,15 @@ blueprint = imio.transmogrifier.iadocs.default_contact_set
 fieldname = recipients
 is_list = 1
 condition = python: item.get('_bpk') == u'e_mail_o'
+
+[p__2_assigned_user]
+blueprint = imio.transmogrifier.iadocs.m_1_assigned_user
+condition = python: item.get('_bpk') == u'e_mail_o'
+original_item = 1
+contact_sender_key = e_user_match
+store_key = e_mail_o
+functions = OM
+contact_id_key = _sender_id
 
 [p__3_category_id_insert]
 blueprint = imio.transmogrifier.iadocs.f_3_text_categories
