@@ -20,8 +20,10 @@ default_creation_date = 20090922-1200
 default_tg = 3
 default_category =
 to_treat = 10
-profils_donnee = ECH-IN ECH-OUT ENTRANT ENTRANTFER ET-IN ET-NOTE ET-OUT PERS-OUT RA-OUTMED1 RA-OUTMEDR RA-OUTSAN1 RA-OUTSAND
-                 RA-OUTSS RE-OUTMED1 RE-OUTMEDR RE-OUTSAN1 RE-OUTSAND RE-OUTSS SORTANT SPINTAY TVX-OUT
+;profils_donnee = ECH-IN ECH-OUT ENTRANT ENTRANTFER ET-IN ET-NOTE ET-OUT PERS-OUT RA-OUTMED1 RA-OUTMEDR RA-OUTSAN1 RA-OUTSAND
+;                 RA-OUTSS RE-OUTMED1 RE-OUTMEDR RE-OUTSAN1 RE-OUTSAND RE-OUTSS SORTANT SPINTAY TVX-OUT
+profils_donnee =  C_ENTR_CJ C_SORTANT C_SORT_CJ ENTRANT FACTURE FAX SORTANT
+date_entree_min = 20140101
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
 permitted_sections = 23abcf
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
@@ -450,13 +452,13 @@ d_condition = python:storage['commit'] is True and not modules['os'].path.exists
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('2__pickle_m_w', {}).get('filename', '_not_found_')))
 filename = dodon00.csv
-fieldnames = _eid _prd _C _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T
+fieldnames = _eid _prd _dt_ent _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T
 bp_key = e_mails
 
 [2__mail_keep]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_mails'
-condition2 = python: item['_prd'] in transmogrifier['config']['profils_donnee'].split()
+condition2 = python: item['_prd'] in transmogrifier['config']['profils_donnee'].split() and item['_dt_ent'] >= '${config:date_entree_min}'
 
 [2__mail_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
