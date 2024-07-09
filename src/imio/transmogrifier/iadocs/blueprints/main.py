@@ -824,6 +824,7 @@ class ReadFromData(object):
     Parameters:
         * b_condition = O, blueprint condition expression
         * bp_key = M, blueprint key for item
+        * related_storage = O, storage to get data (otherwise bp_key)
         * store_key = M, storing keys for item. The item is read from storage[{bp_key}][{store_key}]
         * store_subkey = O, storing sub keys for item. If defined, the item is read from
           storage[{bp_key}][{store_key}][{store_subkey}]
@@ -852,19 +853,20 @@ class ReadFromData(object):
         self.store_key = safe_unicode(options["store_key"])
         self.store_subkey = safe_unicode(options.get("store_subkey"))
         self.bp_key = safe_unicode(options["bp_key"])
+        self.related_storage = safe_unicode(options.get("related_storage") or self.bp_key)
         self.fieldnames = safe_unicode(options.get("fieldnames") or "").split()
         # Using a lambda in expression is not working when a local var is used, even if given in context
         self.sort_value = Expression(options.get("sort_value") or "k", transmogrifier, name, options)
-        if self.bp_key not in self.storage["data"]:
-            self.storage["data"][self.bp_key] = {}
+        if self.related_storage not in self.storage["data"]:
+            self.storage["data"][self.related_storage] = {}
 
     def __iter__(self):
         for item in self.previous:
             yield item
         if not is_in_part(self, self.parts) or self.store_key is None:
             return
-        o_logger.info(u"Reading data from '{}'".format(self.bp_key))
-        data = self.storage["data"][self.bp_key]
+        o_logger.info(u"Reading data from '{}'".format(self.related_storage))
+        data = self.storage["data"][self.related_storage]
 
         def sort_method(k):
             return self.sort_value(None, k=k, data=data)
@@ -875,7 +877,7 @@ class ReadFromData(object):
                     item = {"_bpk": self.bp_key, self.store_key: key, self.store_subkey: skey}
                     item.update(filter_keys(data[key][skey], self.fieldnames))
                     course_store(self, item)
-                    if self.condition(item):
+                    if self.condition(item, storage=self.storage):
                         yield item
             else:
                 item = {"_bpk": self.bp_key, self.store_key: key}
