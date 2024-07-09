@@ -25,7 +25,7 @@ to_treat = 10
 profils_donnee =  C_ENTR_CJ C_SORTANT C_SORT_CJ ENTRANT FACTURE FAX SORTANT
 date_entree_min = 20140101
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
-permitted_sections = 234abcf
+permitted_sections = 2349abcf
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -52,6 +52,11 @@ pipeline =
     4__palib_check
     4__palib_keep_mail
     4__palib_store
+# 99 réécriture gros fichiers sans lignes inutiles
+    9__need
+    9__maval_read
+    9__maval_reject
+    9__maval_cleaned_write
 # aa services
     a__service_match_read
     a__service_match_store
@@ -553,6 +558,34 @@ store_key = _typ
 store_subkey = _eid
 check_key_uniqueness = 0
 fieldnames = _val
+yield = 0
+
+# = = = = = = =  99  = = = = = = = #
+
+[9__need]
+blueprint = imio.transmogrifier.iadocs.need_other
+parts = 2
+
+[9__maval_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
+filename = maval00_orig.csv
+fieldnames = _etype _m_id _fld _val _E _F _G _H _I _J
+bp_key = e_maval
+
+[9__maval_reject]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval'
+condition2 = python: item.get('_etype') == u'D' and item['_m_id'] in storage['data']['e_mails_prd']
+
+[9__maval_cleaned_write]
+blueprint = imio.transmogrifier.iadocs.csv_writer
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
+condition = python: item.get('_bpk') == 'e_maval'
+filename = maval00.csv
+fieldnames = _etype _m_id _fld _val
+headers = VALTYP VALSEQ VALPRI VALVAL
+bp_key = 9_maval
 yield = 0
 
 # = = = = = = =  aa  = = = = = = = #
