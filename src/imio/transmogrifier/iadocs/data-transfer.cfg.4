@@ -26,8 +26,25 @@ profils_donnee_E =  C_ENTR_CJ ENTRANT FACTURE FAX
 profils_donnee_S =  C_SORTANT C_SORT_CJ SORTANT
 profils_donnee =  ${config:profils_donnee_E} ${config:profils_donnee_S}
 date_entree_min = 20140101
+fields = C_ENTR_CJ TYPEDOC mail_type ""
+         C_ENTR_CJ SERVTRAIT treating_groups ""
+         C_ENTR_CJ AGTTRAIT assigned_user ""
+         C_ENTR_CJ DATE_DOC original_mail_date "date:%Y%m%d"
+         C_ENTR_CJ REFERENCE external_reference_no ""
+         C_ENTR_CJ CONT_NOM description,data_transfer ""
+         C_ENTR_CJ FORMAT_DOC data_transfer ""
+         C_ENTR_CJ ACK data_transfer ""
+         C_ENTR_CJ AGENT "" ""
+         C_ENTR_CJ CONFI "" ""
+         C_ENTR_CJ CONFI2 "" ""
+         C_ENTR_CJ CONT_MEM "" ""
+         C_ENTR_CJ COUR_REC2 "" ""
+         C_ENTR_CJ COUR_RECU "" ""
+         C_ENTR_CJ REFENT "" ""
+         C_ENTR_CJ REGCE "" ""
+
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
-permitted_sections = 2349abcfl
+permitted_sections = 2349abcflm
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -100,7 +117,7 @@ pipeline =
     c__1_user_match_write
 # dd  personnel held_position for OM sender
     d__need
-    dm__1_contacts_read
+;    dm__1_contacts_read
     dm__1_contacts_userid_only
     dm__1_contacts_store
     d__1_mail_read
@@ -232,7 +249,7 @@ pipeline =
 ;    l__creation_date_insert
     l__modification_date_insert
     l__reception_date_insert
-    l__original_mail_date_insert
+;    l__original_mail_date_insert
     l__1_internal_number_insert
 ;    l__custom_service_id_correct
     l__treating_groups_insert
@@ -259,18 +276,15 @@ pipeline =
 
 # mm  IM & IEM recipients
     m__need
-#     m__user_service_read
-#     m__user_service_store
     mt__pickle_i_r
-    m__pickle_mail_assigned_user_w
-    m__1_mail_recipient_read
+    m__pickle_E_maval_w
+    m__maval_read
     m__1_already_only
     m__batched
-    m__1_mail_recipient_check
-#    m__1_principal_only
+;    m__1_mail_recipient_check
     m__count
-    m__1_batch_store
-    m__1_assigned_user
+;    m__1_batch_store
+    m__4_maval_i
 
 # pp  OM handling
     p__need
@@ -1911,27 +1925,7 @@ kept_keys = modification_date original_mail_date reception_date
 
 [m__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = ac
-
-[m__user_service_read]
-# read users services csv file
-blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: modules['os'].path.exists(filename)
-# filename is relative to csvpath
-filename = eUsersServices.csv
-fieldnames = _A _euserid _eserviceid _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
-             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ _BA _BB _BC
-bp_key = e_user_service
-
-[m__user_service_store]
-# store users services in data
-blueprint = imio.transmogrifier.iadocs.store_in_data
-condition = python: item.get('_bpk') == u'e_user_service'
-bp_key = e_user_service
-store_key = _euserid
-store_subkey = _eserviceid
-fieldnames =
-yield = 0
+parts = 24a
 
 [mt__pickle_i_r]
 # read plone loaded im
@@ -1940,69 +1934,59 @@ filename = 2_e_mail_i.pkl
 store_key = e_mail_i
 d_condition = python:False
 
-[m__pickle_mail_assigned_user_w]
-# write already treated IM assigned users
+[m__pickle_E_maval_w]
+# write already treated IM fields
 blueprint = imio.transmogrifier.iadocs.pickle_data
-filename = 2_e_mail_ass_user.pkl
-store_key = assigned_users
+filename = 2_e_maval_i.pkl
+store_key = e_maval_i
 d_condition = python:storage['commit'] is True
 
-[m__1_mail_recipient_read]
-# read mail recipients links csv file
+[m__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-#b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = eCourriersDestinataires.csv
-fieldnames = _A _eid _mail_id _contact_id _action _due_date _trm_date _H _trm_user_id _message _response _L _trt_date _N _O _P _principal _comment _S _T _U _V _W
-bp_key = e_mail_recip_i
+b_condition =
+filename = maval00_i.csv
+fieldnames = _A _eid _fld _val
+bp_key = e_mail_maval_i
 
 [m__1_already_only]
-# keep plone loaded IM mails recipients
+# keep plone loaded IM mails
 blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_maval_i'
 condition2 = python: item['_mail_id'] in storage['data']['e_mail_i']
 
 [m__batched]
 # keep only not already treated recipients
 blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
-condition2 = python:not storage['batch_nb'] and True or (item['_eid'] not in storage['data']['assigned_users']
-             and storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) < storage['batch_nb'])
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_maval_i'
+condition2 = python:not storage['batch_nb'] and True or (u"{}|{}".format(item['_eid'], item['_fld']) not in storage['data']['e_maval_i']
+             and storage.get('count', {}).get('m__count', {}).get('e_mail_maval_i', {}).get('c', 0) < storage['batch_nb'])
 
-[m__1_mail_recipient_check]
-# check mail recipients
+[m__1_maval_check]
+# check maval
 blueprint = imio.transmogrifier.iadocs.common_input_checks
-bp_key = e_mail_recip_i
-condition = python: item.get('_bpk') == u'e_mail_recip_i'
-replace_newline = _action " - " _message " - " _response " - " _comment " - "
-invalids = _due_date 0
-booleans = _principal
-dates = _due_date %Y%m%d 1 _trm_date %Y%m%d 1
-
-[m__1_principal_only]
-# keep only principal recipients
-blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
-condition2 = python: item['_principal']
+bp_key = e_mail_maval_i
+condition = python: item.get('_bpk') == u'e_mail_maval_i'
+concatenate = _eid _fld _b_k "|"
 
 [m__count]
 # IM recipients counter
 blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
-condition = python: item.get('_bpk') == u'e_mail_recip_i'
+condition = python: item.get('_bpk') == u'e_mail_maval_i'
 
 [m__1_batch_store]
 # store treated recipients links in pickle dic
 blueprint = imio.transmogrifier.iadocs.store_in_data
-condition = python: item.get('_bpk') == u'e_mail_recip_i'
-bp_key = assigned_users
-store_key = _eid
-fieldnames = _mail_id
+condition = python: item.get('_bpk') == u'e_mail_maval_i'
+bp_key = e_maval_i
+store_key = _b_k
+fieldnames = _none
 yield = 1
 
-[m__1_assigned_user]
-# put assigned user on item and add it also in data_transfer
-blueprint = imio.transmogrifier.iadocs.m_1_assigned_user
-condition = python: item.get('_bpk') == u'e_mail_recip_i'
+[m__4_maval_i]
+blueprint = imio.transmogrifier.iadocs.m_4_maval_i
+condition = python: item.get('_bpk') == u'e_mail_maval_i'
+bp_key = e_maval_i
 store_key = e_mail_i
 
 # = = = = = = =  pp  = = = = = = = #
