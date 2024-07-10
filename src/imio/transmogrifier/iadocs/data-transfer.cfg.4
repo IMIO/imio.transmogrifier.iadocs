@@ -56,9 +56,13 @@ pipeline =
     4__palib_store
 # 99 réécriture gros fichiers sans lignes inutiles
     9__need
+    9l__pickle_i_w
     9__maval_read
+    9__maval_read_i
     9__maval_reject
+    9__maval_reject_i
     9__maval_cleaned_write
+    9__maval_cleaned_write_i
 # aa services
     a__service_match_read
     a__service_match_store
@@ -220,8 +224,7 @@ pipeline =
 # dont know if really used ??
 ;    lpq__1_contacts_check
     l__1_mail_read
-    l__pickle_i_w
-    l__1_E_only
+    l__1_i_only
     l__batched
     l__count
     l__4__title_insert
@@ -571,23 +574,53 @@ yield = 0
 blueprint = imio.transmogrifier.iadocs.need_other
 parts = 2
 
+[9l__pickle_i_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_mail_i.pkl
+store_key = e_mail_i
+d_condition = python:storage['commit'] is True and 'l__to_correct_only' not in transmogrifier['transmogrifier']['pipeline'].split('\n')
+
 [9__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
+b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_orig.csv')) and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
 filename = maval00_orig.csv
 fieldnames = _etype _eid _fld _val _E _F _G _H _I _J
 bp_key = e_maval
+
+[9__maval_read_i]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_orig.csv')) and
+              modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv')) and
+              not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_i.csv'))
+filename = maval00.csv
+fieldnames = _etype _eid _fld _val
+bp_key = e_maval_i
 
 [9__maval_reject]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval'
 condition2 = python: item.get('_etype') == u'D' and item['_eid'] in storage['data']['e_mails_prd']
 
+[9__maval_reject_i]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval_i'
+condition2 = python: item['_eid'] in storage['data']['e_mail_i']
+
 [9__maval_cleaned_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
-condition = python: item.get('_bpk') == 'e_maval'
+condition = python: item.get('_bpk') in 'e_maval'
 filename = maval00.csv
+fieldnames = _etype _eid _fld _val
+headers = VALTYP VALSEQ VALPRI VALVAL
+bp_key = 9_maval
+yield = 0
+
+[9__maval_cleaned_write_i]
+blueprint = imio.transmogrifier.iadocs.csv_writer
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_i.csv'))
+condition = python: item.get('_bpk') in 'e_maval_i'
+filename = maval00_i.csv
 fieldnames = _etype _eid _fld _val
 headers = VALTYP VALSEQ VALPRI VALVAL
 bp_key = 9_maval
@@ -1669,13 +1702,7 @@ filename = dodon00.csv
 fieldnames = _eid _prd reception_date _dt_pec _service_id _user_id _G _path_id _path_typ _J _K _L _filename _typ_don _cr_dt _cr_hr _Q _R _S _T
 bp_key = e_mail_i
 
-[l__pickle_i_w]
-blueprint = imio.transmogrifier.iadocs.pickle_data
-filename = 2_e_mail_i.pkl
-store_key = e_mail_i
-d_condition = python:storage['commit'] is True and 'l__to_correct_only' not in transmogrifier['transmogrifier']['pipeline'].split('\n')
-
-[l__1_E_only]
+[l__1_i_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 condition2 = python: item['_prd'] in transmogrifier['config']['profils_donnee_E'].split() and item['_eid'] in storage['data']['e_mails_prd']
