@@ -618,7 +618,8 @@ yield = 0
 
 [9__maval_cleaned_write_i]
 blueprint = imio.transmogrifier.iadocs.csv_writer
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_i.csv'))
+b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv')) and
+              not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_i.csv'))
 condition = python: item.get('_bpk') in 'e_maval_i'
 filename = maval00_i.csv
 fieldnames = _etype _eid _fld _val
