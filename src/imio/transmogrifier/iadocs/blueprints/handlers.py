@@ -49,6 +49,7 @@ from zope.interface import implements
 from zope.intid import IIntIds
 
 import cPickle
+import csv
 import os
 import re
 import transaction
@@ -1766,6 +1767,78 @@ class M1AssignedUserHandling(object):
                 # comblain: cannot put user service in copy because most users have more than one service
                 pass
             if "data_transfer" in item2 or "assigned_user" in item2 or self.original_item:
+                # o_logger.debug(item)
+                yield item2
+
+
+class M4MavalIHandling(object):
+    """Handles IM fields from maval file.
+
+    Parameters:
+        * bk_key = M, storage key to set batch record
+        * store_key = M, storage main key to find mail path
+        * condition = O, condition expression
+    """
+
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
+        self.bp_key = safe_unicode(options["bp_key"])
+        if not is_in_part(self, self.parts):
+            return
+        store_key = safe_unicode(options["store_key"])
+        self.im_paths = self.storage["data"][store_key]
+        self.batch_store = self.storage["data"].setdefault(self.bp_key, {})
+        self.fields = transmogrifier["config"]["fields"].replace("\n", " ")
+        self.fields = next(csv.reader([self.fields.strip()], delimiter=" ", quotechar='"', skipinitialspace=True))
+        self.fields = [cell.decode("utf8") for cell in self.fields]
+        self.fields = [tup for tup in pool_tuples(self.fields, 4, "fields option")]
+        TO BE CONTINUED
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.condition(item):
+                # yield item
+                continue
+            course_store(self, item)
+            imail = get_obj_from_path(self.portal, path=self.im_paths[item["_mail_id"]]["path"])
+            if imail is None:
+                o_logger.warning(
+                    "mail %s: path '%s' not found", item["_mail_id"], self.im_paths[item["_mail_id"]]["path"]
+                )
+                continue
+            item2 = {
+                "_eid": item["_eid"],
+                "_path": self.im_paths[item["_mail_id"]]["path"],
+                "_type": imail.portal_type,
+                "_bpk": "i_maval_{}".format(item["_fld"]),
+                "_act": "U",
+                "modification_date": imail.creation_date,
+            }
+            # # store info in data_transfer
+            # d_t = (imail.data_transfer or u"").split("\r\n")
+            # r_name = u" ".join(all_of_dict_values(self.user_match[e_userid], ["_nom", "_prenom"]))
+            # r_messages = u", ".join(
+            #     all_of_dict_values(
+            #         item, [u"_action", u"_message", u"_response"], labels=[u"", u"message", u"réponse"]
+            #     )
+            # )
+            # r_infos = u"DESTINATAIRE{}: {}{}".format(
+            #     item["_principal"] and u" PRINCIPAL" or u"",
+            #     r_name,
+            #     r_messages and u", {}".format(r_messages) or u"",
+            # )
+            # if r_infos not in d_t:
+            #     d_t.append(r_infos)
+            #     item2["data_transfer"] = u"\r\n".join(d_t)
+            if "data_transfer" in item2 or "assigned_user" in item2:
                 # o_logger.debug(item)
                 yield item2
 
