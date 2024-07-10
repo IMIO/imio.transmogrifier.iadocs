@@ -545,7 +545,7 @@ bp_key = e_palib_i
 [4__palib_keep]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_palib_i'
-condition2 = python: item['_lng'] == 'FRA' and item['_typ'] in ('DONNEE', 'INFOVAR', 'PARAMUTIL', 'PROFILDON', 'SERVICE', 'TYPEDONNEE') and item['_eid'] is not None
+condition2 = python: item['_lng'] == 'FRA' and item['_typ'] in ('DONNEE', 'INFOVAR', 'PARAMUTIL', 'PROFILDON', 'PROFILINF0', 'SERVICE', 'TYPEDONNEE') and item['_eid'] is not None
 
 [4__palib_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -687,7 +687,7 @@ blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_service'
 filename = 0_service_match.csv
-fieldnames = _eid _empty _title
+fieldnames = _eid _none _title
 headers = eid parent_eid etitle uid full_title
 bp_key = 0_service_match
 
@@ -824,7 +824,7 @@ blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_mailtype'
 filename = 0_mailtype_match.csv
-fieldnames = _eid _etype _val _empty _empty _ptype
+fieldnames = _eid _etype _val _none _none _ptype
 headers = eid etype etitle nature source type key title active
 bp_key = 0_mailtype_match
 yield = 0
