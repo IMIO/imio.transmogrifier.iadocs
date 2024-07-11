@@ -443,6 +443,7 @@ pipeline =
     f__uid_insert
     f__created_write
     short_log
+    print_item
     post_actions
     breakpoint
     lastsection
@@ -2970,6 +2971,11 @@ blueprint = imio.transmogrifier.iadocs.last_section
 
 [short_log]
 blueprint = imio.transmogrifier.iadocs.short_log
+
+[print_item]
+blueprint = imio.transmogrifier.iadocs.print_item
+;condition = python:True
+removed_keys = file
 
 [breakpoint]
 # run ipdb if condition is matched

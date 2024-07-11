@@ -248,6 +248,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.print_item"
+    component=".various.PrintItem"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.q_1_recipients_as_text_update"
     component=".handlers.Q1RecipientsAsTextUpdate"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

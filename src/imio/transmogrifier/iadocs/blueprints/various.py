@@ -352,6 +352,33 @@ class NeedOther(object):
             yield item
 
 
+class PrintItem(object):
+    """Print item without big fields.
+
+    Parameters:
+        * removed_keys = O, keys to remove (default file)
+        * condition = O, condition to print (default True)
+    """
+
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.transmogrifier = transmogrifier
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.condition = Condition(options.get("condition", "python:True"), transmogrifier, name, options)
+        self.removed_keys = safe_unicode(options.get("removed_keys", "file")).strip().split()
+
+    def __iter__(self):
+        for item in self.previous:
+            if self.condition(item):
+                print_item(item, self.removed_keys)
+            yield item
+
+
 class ShortLog(object):
     """Logs shortly item."""
 
