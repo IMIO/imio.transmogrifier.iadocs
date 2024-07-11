@@ -27,12 +27,12 @@ profils_donnee_S =  C_SORTANT C_SORT_CJ SORTANT
 profils_donnee =  ${config:profils_donnee_E} ${config:profils_donnee_S}
 date_entree_min = 20140101
 fields = C_ENTR_CJ TYPEDOC mail_type ""
-         C_ENTR_CJ SERVTRAIT treating_groups ""
-         C_ENTR_CJ AGTTRAIT assigned_user ""
+         C_ENTR_CJ SERVTRAIT treating_groups "AGTTRAIT"
+         C_ENTR_CJ AGTTRAIT assigned_user "SERVTRAIT"
          C_ENTR_CJ DATE_DOC original_mail_date "date:%Y%m%d"
          C_ENTR_CJ REFERENCE external_reference_no ""
-         C_ENTR_CJ CONT_NOM description,data_transfer ""
-         C_ENTR_CJ FORMAT_DOC data_transfer ""
+         C_ENTR_CJ CONT_NOM description "position:0"
+         C_ENTR_CJ FORMAT_DOC data_transfer "e_papri:FORMAT_DOC"
          C_ENTR_CJ ACK data_transfer ""
          C_ENTR_CJ AGENT "" ""
          C_ENTR_CJ CONFI "" ""
@@ -281,9 +281,8 @@ pipeline =
     m__maval_read
     m__1_already_only
     m__batched
-;    m__1_mail_recipient_check
+;    m__1_maval_check
     m__count
-;    m__1_batch_store
     m__4_maval_i
 
 # pp  OM handling
@@ -526,7 +525,7 @@ bp_key = e_papri_i
 [3__papri_keep]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_papri_i'
-condition2 = python: item['_eid'] in (u'TYPEDOC', )
+condition2 = python: item['_eid'] in (u'TYPEDOC', u'FORMAT_DOC')
 
 [3__papri_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
@@ -1925,7 +1924,7 @@ kept_keys = modification_date original_mail_date reception_date
 
 [m__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 24a
+parts = 234ac
 
 [mt__pickle_i_r]
 # read plone loaded im
@@ -1952,7 +1951,7 @@ bp_key = e_mail_maval_i
 # keep plone loaded IM mails
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_maval_i'
-condition2 = python: item['_mail_id'] in storage['data']['e_mail_i']
+condition2 = python: item['_eid'] in storage['data']['e_mail_i'] and item['_eid'] == u'392925'
 
 [m__batched]
 # keep only not already treated recipients
@@ -1966,22 +1965,13 @@ condition2 = python:not storage['batch_nb'] and True or (u"{}|{}".format(item['_
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_maval_i
 condition = python: item.get('_bpk') == u'e_mail_maval_i'
-concatenate = _eid _fld _b_k "|"
+concatenate =
 
 [m__count]
 # IM recipients counter
 blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
 condition = python: item.get('_bpk') == u'e_mail_maval_i'
-
-[m__1_batch_store]
-# store treated recipients links in pickle dic
-blueprint = imio.transmogrifier.iadocs.store_in_data
-condition = python: item.get('_bpk') == u'e_mail_maval_i'
-bp_key = e_maval_i
-store_key = _b_k
-fieldnames = _none
-yield = 1
 
 [m__4_maval_i]
 blueprint = imio.transmogrifier.iadocs.m_4_maval_i

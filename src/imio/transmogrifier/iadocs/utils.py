@@ -325,7 +325,7 @@ def is_in_part(section, parts):
 
 
 def log_error(item, msg, level="error", fld="_eid"):
-    getattr(e_logger, level)(u"{}: {} {}, {}".format(item["_bpk"], fld, item[fld], msg))
+    getattr(e_logger, level)(u"{}: {} {}, {}".format(item.get("_bpk", ""), fld, item[fld], msg))
     item["_error"] = True
 
 
