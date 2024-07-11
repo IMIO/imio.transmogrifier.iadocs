@@ -1902,7 +1902,8 @@ class M4MavalIHandling(object):
         if text_fld:
             c_lines = text_fld.split(u"\r\n")
         else:
-            c_lines = (getattr(imail, p_fld) or u"").split(u"\r\n")
+            text_fld = getattr(imail, p_fld) or u""
+            c_lines = text_fld and text_fld.split(u"\r\n") or []
         if not lib_key:
             lib_key = item[u"_fld"]
         if action == "add":
