@@ -16,36 +16,54 @@ default_o_mail_type = courrier
 default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
-default_creation_date = 20090922-1200
+default_creation_date = 20140101-0000
 default_tg = 3
 default_category =
 to_treat = 10
-;profils_donnee = ECH-IN ECH-OUT ENTRANT ENTRANTFER ET-IN ET-NOTE ET-OUT PERS-OUT RA-OUTMED1 RA-OUTMEDR RA-OUTSAN1 RA-OUTSAND
-;                 RA-OUTSS RE-OUTMED1 RE-OUTMEDR RE-OUTSAN1 RE-OUTSAND RE-OUTSS SORTANT SPINTAY TVX-OUT
-profils_donnee_E =  C_ENTR_CJ ENTRANT FACTURE FAX
-profils_donnee_S =  C_SORTANT C_SORT_CJ SORTANT
+profils_donnee_E = ECH-IN ENTRANT ENTRANTFER ET-IN
+profils_donnee_S = ECH-OUT ET-OUT PERS-OUT RA-OUTMED1 RA-OUTMEDR RA-OUTSAN1 RA-OUTSAND RA-OUTSS RE-OUTMED1 RE-OUTMEDR RE-OUTSAN1 RE-OUTSAND RE-OUTSS SORTANT SPINTAY TVX-OUT
+;profils_donnee_E =  C_ENTR_CJ ENTRANT FACTURE FAX
+;profils_donnee_S =  C_SORTANT C_SORT_CJ SORTANT
 profils_donnee =  ${config:profils_donnee_E} ${config:profils_donnee_S}
 date_entree_min = 20140101
-fields = C_ENTR_CJ TYPEDOC mail_type ""
-         C_ENTR_CJ SERVTRAIT treating_groups "AGTTRAIT"
-         C_ENTR_CJ AGTTRAIT assigned_user "SERVTRAIT"
-         C_ENTR_CJ DATEDOC original_mail_date "date:%Y%m%d"
-         C_ENTR_CJ REFERENCE external_reference_no ""
-         C_ENTR_CJ CONT_NOM description "position:0"
-         C_ENTR_CJ FORMAT_DOC data_transfer "e_papri:FORMAT_DOC"
-         C_ENTR_CJ ACK data_transfer ""
-         C_ENTR_CJ AGENT "" ""
-         C_ENTR_CJ CONFI "" ""
-         C_ENTR_CJ CONFI2 "" ""
-         C_ENTR_CJ CONT_MEM "" ""
-         C_ENTR_CJ COUR_REC2 "" ""
-         C_ENTR_CJ COUR_RECU "" ""
-         C_ENTR_CJ REFENT "" ""
-         C_ENTR_CJ REGCE "" ""
+;fields = C_ENTR_CJ TYPEDOC mail_type ""
+;         C_ENTR_CJ SERVTRAIT treating_groups "AGTTRAIT"
+;         C_ENTR_CJ AGTTRAIT assigned_user "SERVTRAIT"
+;         C_ENTR_CJ DATEDOC original_mail_date "date:%Y%m%d"
+;         C_ENTR_CJ REFERENCE external_reference_no ""
+;         C_ENTR_CJ CONT_NOM description "position:0"
+;         C_ENTR_CJ FORMAT_DOC data_transfer "e_papri:FORMAT_DOC"
+;         C_ENTR_CJ ACK data_transfer ""
+;         C_ENTR_CJ AGENT "" ""
+;         C_ENTR_CJ CONFI "" ""
+;         C_ENTR_CJ CONFI2 "" ""
+;         C_ENTR_CJ CONT_MEM "" ""
+;         C_ENTR_CJ COUR_REC2 "" ""
+;         C_ENTR_CJ COUR_RECU "" ""
+;         C_ENTR_CJ REFENT "" ""
+;         C_ENTR_CJ REGCE "" ""
+fields = ET-IN DATEDOC original_mail_date "date:%Y%m%d"
+         ET-IN ETEXP description "e_papri:ETEXP"
+         ET-IN NRN description ""
+         ET-IN REMARQUE data_transfer ""
+         ENTRANT ADRESSE data_transfer "after:NOM"
+         ENTRANT CODEABARRE description ""
+         ENTRANT CODEPOSTAL data_transfer "after:ADRESSE"
+         ENTRANT CONT_ADR "" ""
+         ENTRANT CONT_CP "" ""
+         ENTRANT CONT_LOC "" ""
+         ENTRANT CONT_NOM "" ""
+         ENTRANT DATEDOC original_mail_date "date:%Y%m%d"
+         ENTRANT LOCALITE data_transfer "after:CODEPOSTAL"
+         ENTRANT NOM description,data_transfer "after:"
+         ENTRANT REGCE "" ""
+         ENTRANT RESUMESEC description ""
+         ENTRANT SERVDEST treating_groups ""
+         ENTRANT TYPEDOC mail_type ""
 
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
 permitted_sections = 2349abcflm
-# CHANGE l__1_type_insert FOR EACH CUSTOMER
+# CHANGE b__4__field_insert FOR EACH CUSTOMER
 
 [transmogrifier]
 pipeline =
@@ -71,7 +89,7 @@ pipeline =
     4__palib_check
     4__palib_keep_mail
     4__palib_store
-# 99 réécriture gros fichiers sans lignes inutiles
+# 99 réécriture maval sans lignes inutiles
     9__need
     9l__pickle_i_w
     9__maval_read
@@ -530,7 +548,7 @@ bp_key = e_papri_i
 [3__papri_keep]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_papri_i'
-condition2 = python: item['_eid'] in (u'TYPEDOC', u'FORMAT_DOC')
+condition2 = python: item['_eid'] in (u'TYPEDOC', u'FORMAT_DOC', u'ETEXP')
 
 [3__papri_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
@@ -805,8 +823,9 @@ condition = python: item['_typ'] == u'PARAMUTIL'
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: not storage['data'].get('e_mailtype_match') and item.get('_bpk') == 'e_mailtype'
 key = string:_field
-value = python:item['_eid'].startswith(storage['data']['e_papri']['TYPEDOC']['_prizon']) and 'TYPEDOC' or
-        (item['_eid'].startswith(storage['data']['e_papri']['FORMAT_DOC']['_prizon']) and 'FORMAT_DOC' or '')
+;value = python:item['_eid'].startswith(storage['data']['e_papri']['TYPEDOC']['_prizon']) and 'TYPEDOC' or
+;        (item['_eid'].startswith(storage['data']['e_papri']['FORMAT_DOC']['_prizon']) and 'FORMAT_DOC' or '')
+value = python:item['_eid'].startswith(storage['data']['e_papri']['TYPEDOC']['_prizon']) and 'TYPEDOC' or ''
 
 # PAPRI {u'TYPEDOC': {u'_default': u'LETTRE', u'_prienc': u'CBO', u'_prizon': u'150'}}
 [b__mailtype_used_only]
@@ -1738,8 +1757,8 @@ raise_on_error = ${config:raise_on_error}
 [l__1_mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-;filename = dodon00_test.csv
-filename = dodon00.csv
+filename = dodon00_test.csv
+;filename = dodon00.csv
 ;fieldnames = _A _eid _C reception_date original_mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
 ;             _Q _R _S _T _U _to_del _W _source _source_id _Z
 ;             creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
@@ -1982,7 +2001,7 @@ bp_key = e_mail_maval_i
 # keep plone loaded IM mails
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_maval_i'
-condition2 = python: item['_eid'] in storage['data']['e_mail_i'] and item['_eid'] == u'392925'
+condition2 = python: item['_eid'] in storage['data']['e_mail_i'] and item['_eid'] == u'671153'
 
 [m__batched]
 # keep only not already treated recipients
@@ -3005,7 +3024,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [print_item]
 blueprint = imio.transmogrifier.iadocs.print_item
 ;condition = python:True
-condition = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm')
+condition = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'lm')
 removed_keys = file
 
 [breakpoint]
