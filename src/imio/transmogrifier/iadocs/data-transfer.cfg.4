@@ -793,6 +793,7 @@ bp_key = e_mailtype
 
 [b__palib_load]
 blueprint = imio.transmogrifier.iadocs.read_from_data
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 bp_key = e_mailtype
 related_storage = e_palib
 store_key = _typ
@@ -1954,7 +1955,7 @@ kept_keys = modification_date original_mail_date reception_date
 
 [m__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 234ac
+parts = 234abc
 
 [mt__pickle_i_r]
 # read plone loaded im
