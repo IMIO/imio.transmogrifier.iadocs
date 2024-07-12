@@ -512,7 +512,7 @@ yield = 0
 
 [3__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 2
+parts =
 
 [3__pickle_papri_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -596,7 +596,7 @@ parts = 2
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_i.pkl
 store_key = e_mail_i
-d_condition = python:storage['commit'] is True and 'l__to_correct_only' not in transmogrifier['transmogrifier']['pipeline'].split('\n')
+d_condition = python:storage['commit'] is True and modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and 'l__to_correct_only' not in transmogrifier['transmogrifier']['pipeline'].split('\n')
 
 [9__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader

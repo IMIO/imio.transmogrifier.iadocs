@@ -1831,7 +1831,7 @@ class M4MavalIHandling(object):
     def __iter__(self):
         for item in self.previous:
             if not is_in_part(self, self.parts) or not self.condition(item):
-                # yield item
+                yield item
                 continue
             course_store(self, item)
             self.batch_store[u"{}|{}".format(item["_eid"], item["_fld"])] = 0
