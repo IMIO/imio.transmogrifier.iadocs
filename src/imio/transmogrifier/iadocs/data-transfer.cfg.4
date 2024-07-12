@@ -96,15 +96,18 @@ pipeline =
     b__mailtype_match_store
     b__maval_read
     b__maval_reject
+    b__etype_insert
     b__1_used_nature_store
 ;    b__1_used_source_store
 ;    b__palib_read
     b__palib_load
+    b__4__field_insert
     b__mailtype_used_only
-    b__eid_correction
+    b__4_eid_correction
 ;    b__1_mailtype_check
     b__plone_mailtype_write
     b__1_mailtype_by_type
+    b__4_nature_inserter
     b__1_plonetype_insert
     b__mailtype_match_write
     b__mailtype_update
@@ -741,14 +744,20 @@ yield = 1
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 filename = maval00.csv
-;fieldnames = _etype _eid _field _nature_id _E _F _G _H _I _J
-fieldnames = _etype _eid _field _nature_id
+;fieldnames = _d_s _eid _field _nature_id _E _F _G _H _I _J
+fieldnames = _d_s _eid _field _nature_id
 bp_key = e_mail_mailtype
 
 [b__maval_reject]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'b') and item.get('_bpk') == 'e_mail_mailtype'
-condition2 = python: item.get('_etype') == u'D' and item.get('_field') == u'TYPEDOC' and item['_eid'] in storage['data']['e_mails_prd']
+condition2 = python: item.get('_d_s') == u'D' and item.get('_field') in (u'TYPEDOC', ) and item['_eid'] in storage['data']['e_mails_prd']
+
+[b__etype_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: item.get('_bpk') == 'e_mail_mailtype'
+key = string:_etype
+value = python:storage['data']['e_mails_prd'][item['_eid']]['_prd'] in transmogrifier['config']['profils_donnee_E'].split() and u'E' or u'S'
 
 [b__1_used_nature_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
@@ -758,7 +767,7 @@ store_key = _nature_id
 store_subkey = _etype
 check_key_uniqueness = 0
 check_subkey_uniqueness = 0
-fieldnames = _eid
+fieldnames = _eid _field
 yield = 0
 
 [b__1_used_source_store]
@@ -788,15 +797,20 @@ related_storage = e_palib
 store_key = _typ
 store_subkey = _eid
 fieldnames = _val
-condition = python: item['_typ'] == u'PARAMUTIL' and item['_eid'].startswith(storage['data']['e_papri']['TYPEDOC']['_prizon'])
+condition = python: item['_typ'] == u'PARAMUTIL'
+
+[b__4__field_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: not storage['data'].get('e_mailtype_match') and item.get('_bpk') == 'e_mailtype'
+key = string:_field
+value = python:item['_eid'].startswith(storage['data']['e_papri']['TYPEDOC']['_prizon']) and 'TYPEDOC' or ''
 
 # PAPRI {u'TYPEDOC': {u'_default': u'LETTRE', u'_prienc': u'CBO', u'_prizon': u'150'}}
 [b__mailtype_used_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'b') and item.get('_bpk') == u'e_mailtype'
 ;condition2 = python: item['_libfic'] == u'PARAMUTIL' and item['_liblge'] == u'FRA' and item['_eid'].startswith(storage['data']['e_papri']['TYPEDOC']['_prizon']) and item.get('_eid')[len(storage['data']['e_papri']['TYPEDOC']['_prizon']):] in storage['data'].get('e_used_mailtype', [])
-condition2 = python: item['_eid'][len(storage['data']['e_papri']['TYPEDOC']['_prizon']):] in storage['data'].get('e_used_mailtype', [])
-;condition2 = python: item['_libfic'] == u'PARAMUTIL' and item['_liblge'] == u'FRA' and item['_eid'].startswith(storage['data']['e_papri']['TYPEDOC']['_prizon'])
+condition2 = python: item['_field'] and item['_eid'][len(storage['data']['e_papri'][item['_field']]['_prizon']):] in storage['data'].get('e_used_mailtype', [])
 
 [b__1_mailtype_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -805,11 +819,11 @@ condition = python: item.get('_bpk') == u'e_mailtype'
 booleans = _nature _source
 raise_on_error = ${config:raise_on_error}
 
-[b__eid_correction]
+[b__4_eid_correction]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: not storage['data'].get('e_mailtype_match') and item.get('_bpk') == 'e_mailtype'
 key = string:_eid
-value = python:item['_eid'][len(storage['data']['e_papri']['TYPEDOC']['_prizon']):]
+value = python:item['_eid'][len(storage['data']['e_papri'][item['_field']]['_prizon']):]
 
 [b__plone_mailtype_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
@@ -827,18 +841,25 @@ blueprint = imio.transmogrifier.iadocs.b_1_mailtype_by_type
 condition = python: not storage['data'].get('e_mailtype_match') and item.get('_bpk') == 'e_mailtype'
 related_storage = e_used_mailtype
 
+[b__4_nature_inserter]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: not storage['data'].get('e_mailtype_match') and item.get('_bpk') == 'e_mailtype'
+key = string:_nature
+;value = python: storage["data"]["e_used_mailtype"][item['_eid']][item['_etype']]['_field'] == "TYPEDOC"
+value = python: item['_field'] == "TYPEDOC"
+
 [b__1_plonetype_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: not storage['data'].get('e_mailtype_match') and item.get('_bpk') == 'e_mailtype'
 key = string:_ptype
-value = python:u'D'
+value = python:item['_nature'] and item['_etype'] == 'E' and 'te' or 'ts'
 
 [b__mailtype_match_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_mailtype'
 filename = 0_mailtype_match.csv
-fieldnames = _eid _etype _val _none _none _ptype
+fieldnames = _eid _etype _val _nature _none _ptype
 headers = eid etype etitle nature source type key title active
 bp_key = 0_mailtype_match
 yield = 0
@@ -2975,6 +2996,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [print_item]
 blueprint = imio.transmogrifier.iadocs.print_item
 ;condition = python:True
+condition = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm')
 removed_keys = file
 
 [breakpoint]
