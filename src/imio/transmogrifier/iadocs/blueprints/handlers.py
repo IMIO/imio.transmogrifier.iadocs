@@ -1916,7 +1916,16 @@ class M4MavalIHandling(object):
             lib_key = item[u"_fld"]
         if action == "add":
             lib = self.e_palib[u"PROFILINF0"].get(lib_key, {}).get(u"_val", item[u"_fld"])
-            position = not transform.startswith(u"position:") and 99 or int(transform[9:])
+            position = 99
+            if transform == u"after:":
+                position = 0
+            elif transform.startswith(u"after:"):
+                lib2 = self.e_palib[u"PROFILINF0"].get(transform[6:], {}).get(u"_val", "__unfound__")
+                yet = [i for i, line in enumerate(c_lines) if line.startswith(u"{}: ".format(lib2))]
+                if yet:
+                    position = yet[0] + 1
+                else:
+                    position = 0
             c_lines.insert(
                 position, u"{}: {}".format(lib, value and value or self.transform_value(item[u"_val"], transform))
             )
