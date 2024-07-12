@@ -1808,12 +1808,17 @@ class M4MavalIHandling(object):
         self.e_mails_prd = self.storage["data"].get("e_mails_prd", {})
         self.e_palib = self.storage["data"].get("e_palib", {})
         self.e_papri = self.storage["data"].get("e_papri", {})
-        self.user_match = self.storage["data"]["e_user_match"]
         self.service_match = self.storage["data"]["e_service_match"]
+        self.mailtype_match = self.storage["data"]["e_mailtype_match"]
+        self.user_match = self.storage["data"]["e_user_match"]
         self.p_user_service = self.storage["data"]["p_user_service"]  # plone user service
         # calculate once the editor services for each user
         self.p_u_s_editor = {}
         fct_group = options.get("functions", "IM") or "IM"
+        self.e_type = fct_group == "IM" and "E" or "S"
+        self.default_mt = transmogrifier["config"][
+            self.e_type == "E" and "default_i_mail_type" or "default_o_mail_type"
+        ]
         functions = fct_group == "IM" and IM_EDITOR_SERVICE_FUNCTIONS or OM_EDITOR_SERVICE_FUNCTIONS
         for user in self.p_user_service:
             self.p_u_s_editor[user] = []
@@ -1853,7 +1858,10 @@ class M4MavalIHandling(object):
                 if p_fld in ("description", "data_transfer"):
                     self.text_field(item, item2, imail, p_fld, transform)
                 elif p_fld == "mail_type":
-                    pass
+                    value = self.mailtype_match.get(item["_val"], {}).get(self.e_type, {}).get("_key")
+                    if not value:
+                        value = self.default_mt
+                    item2[p_fld] = value
                 elif p_fld == "treating_groups":
                     value = self.service_match.get(item["_val"], {}).get("uid")
                     t_g = imail.treating_groups
