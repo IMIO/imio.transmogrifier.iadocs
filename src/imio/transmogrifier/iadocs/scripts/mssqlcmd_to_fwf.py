@@ -8,6 +8,7 @@ import argparse
 import logging
 import os
 import re
+import shutil
 
 
 logging.basicConfig()
@@ -33,8 +34,8 @@ tables = OrderedDict(
         ),
         # ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'",
         #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
-        # ('eCourriers', {'c': "(TypeEntrantSortant != 'I' or isnull(NatureID, '') not in (select id from eNatures where "
-        #                      "description like 'Délibération%' or description like 'Séance%') ) and "
+        # ('eCourriers', {'c': "(TypeEntrantSortant != 'I' or isnull(NatureID, '') not in (select id from eNatures "
+        #                      "where description like 'Délibération%' or description like 'Séance%') ) and "
         #                      "isnull(Supprime, '0') != '1'",
         #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
         ("eCourriersDestinataires", {}),
@@ -89,12 +90,14 @@ def main(docker, db_name, pwd, delim, input_filter, output_dir, only_new, simula
         if code or err:
             logger.error("Problem in command '{}': {}".format(cmd, err))
             continue
-        cmd = cp_cmd.format(**{"dock": docker, "of": out_file})
+        tmp_file = "/tmp/sqlcmd.fwf"
+        cmd = cp_cmd.format(**{"dock": docker, "of": tmp_file})
         logger.debug("cp cmd='{}'".format(cmd))
         (out, err, code) = runCommand(cmd)
         if code or err:
             logger.error("Problem in command '{}': {}".format(cmd, err))
             continue
+        shutil.move(tmp_file, out_file)
     logger.info("Script duration: %s" % (datetime.now() - start))
 
 

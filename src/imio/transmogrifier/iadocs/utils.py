@@ -10,7 +10,6 @@ from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import key_val as dim
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.vocabularies import get_users_voc
-
 # from imio.pyutils.system import dump_var
 from imio.pyutils.system import full_path
 from imio.pyutils.system import load_var
