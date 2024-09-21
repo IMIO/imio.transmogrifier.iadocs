@@ -196,7 +196,7 @@ pipeline =
 ;    l__custom_service_id_correct
     l__treating_groups_insert
 ;    l__1_recipient_groups_set
-    l__1_category_id_insert
+;    l__1_category_id_insert
     l__contact_set
     l__1_sender_as_text_set
     l__mail_type_source_insert
@@ -249,7 +249,7 @@ pipeline =
 #    p__assigned_user ?
     p__1_sender_set
 ;    p__default_contact_set
-    p__1_category_id_insert
+;    p__1_category_id_insert
     p__mail_type_insert
     p__1_nature_insert
     p__send_modes_insert
@@ -1442,7 +1442,8 @@ yield = 1
 
 [l__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = abce
+#parts = abce
+parts = abc
 
 [lq__pickle_c_r]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -1646,7 +1647,7 @@ value = python:item['_eid']
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:_type
-value = python:FAIL(item['_source_id'] == u'295' or item['_nature_id'] == u'180') and 'dmsincoming_email' or 'dmsincomingmail'
+value = python:item['_source_id'] == u'59' and 'dmsincoming_email' or 'dmsincomingmail'
 
 [l__1_parent_insert]
 blueprint = imio.transmogrifier.iadocs.parent_path_insert
@@ -1771,7 +1772,8 @@ store_key = e_mail_i
 
 [p__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = abce
+;parts = abce
+parts = abc
 
 [p__1_mail_read]
 # read mails csv file
