@@ -95,18 +95,27 @@ def get_categories(portal):
 def get_file_content(section, item):
     """Get file content following global path and item filename"""
     if not item["_fs_path"]:
-        return None, None
+        return None, None, None
     (basename, ext) = os.path.splitext(item["_fs_path"])
-    if not ext:
-        ext = ".{}".format(item["_ext"].lower())
+    if not ext and item.get("_ext"):
+        ext = ".{}".format(item["_ext"])
     path = os.path.join(section.storage["filesp"], u"{}{}".format(basename, ext))
     pdf_path = os.path.join(section.storage["filesp"], u"PDF_{}.pdf".format(basename))
-    if ext.lower().startswith(".tif") and os.path.exists(pdf_path):
+    ext = ext.lower()
+    if not os.path.exists(path):
+        return path, None, None
+    elif ext.startswith(".tif") and os.path.exists(pdf_path):
         path = pdf_path
-    elif not os.path.exists(path):
-        return path, None
+        item["_fs_path"] = u"PDF_{}.pdf".format(basename)
+        ext = '.pdf'
+    filename = item.get("_filename", u"{}{}".format(basename, ext))
+    (f_basename, f_ext) = os.path.splitext(filename)
+    if not f_ext:
+        filename = u"{}{}".format(filename, ext)
+    elif f_ext != ext:
+        filename = u"{}{}".format(f_basename, ext)
     with open(path, mode="rb") as file:
-        return ext, file.read()
+        return ext, filename, file.read()
 
 
 def get_folders(section):
