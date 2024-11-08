@@ -11,9 +11,9 @@ internal_number_behavior_types = organization person held_position dmsincomingma
 data_transfer_behavior_types = dmsincomingmail dmsincoming_email dmsoutgoingmail
 none_value = NULL
 creator = csvimport
-default_i_mail_type = courrier
-default_o_mail_type = type1
-default_o_send_mode = post
+default_i_mail_type = autre
+default_o_mail_type = autre
+default_o_send_mode = other
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
 default_creation_date = 20160615-1200
@@ -663,7 +663,8 @@ fieldnames = _A _eid _user_id _c_type _E _F _G _H _I _J _K _L _M _N _O _P _Q _R 
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
              _DA _DB _DC _DD _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _DQ _DR _DS _DT _DU _DV _DW _DX _DY _DZ
              _EA _EB _EC _ED _EE _EF _EG _EH _EI _EJ _EK _EL _EM _EN _EO _EP _EQ _ER _ES _ET _EU _EV _EW _EX _EY _EZ
-             _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU
+             _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU _FV _FW _FX _FY _FZ
+             _GA _GB _GC _GD _GE
 bp_key = e_contacts_sender
 
 [dm__1_contacts_userid_only]
@@ -1247,7 +1248,8 @@ fieldnames = _A _eid _user_id _ctyp _E lastname firstname _ptitle _street _pc _c
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
              _DA _DB _DC _DD _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _country _DR _DS _DT _DU _DV _DW _DX _DY _DZ
              _EA _EB _EC _ED _EE _EF _EG _EH _EI _EJ _EK _EL _EM _EN _EO _EP _EQ _ER _ES _ET _EU _EV _EW _EX _addr_id _EZ
-             _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU
+             _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU _FV _FW _FX _FY _FZ
+             _GA _GB _GC _GD _GE
 bp_key = e_contact
 
 [i__pickle_c_w]
@@ -1646,7 +1648,7 @@ value = python:item['_eid']
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:_type
-value = python:FAIL(item['_source_id'] == u'295' or item['_nature_id'] == u'180') and 'dmsincoming_email' or 'dmsincomingmail'
+value = python:item['_source_id'] in (u'8', u'105') and 'dmsincoming_email' or 'dmsincomingmail'
 
 [l__1_parent_insert]
 blueprint = imio.transmogrifier.iadocs.parent_path_insert
