@@ -1241,7 +1241,7 @@ parts = h
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
 filename = eContacts.csv
-fieldnames = _A _B _eid _user_id _ctyp _F lastname firstname _ptitle _street _pc _city _M _phone1 _phone2 _phone3 _Q _R _S _email1 _email2 _email3 _W _X _Y _function _Z
+fieldnames = _A _B _eid _user_id _ctyp _F lastname firstname _ptitle _street _pc _city _M _phone1 _phone2 _phone3 _Q _R _S _email1 _email2 _email3 _W _X _Y _function
              _AA _AB _AC _AD _AE _AF _AG _AH enterprise_number _AJ _AK _AL creation_date _AN modification_date _cell1 _cell2 _cell3 _web _org _name2 _AV _AW _AX _AY _deactivate
              _BA _BB _parent_id _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR _BS _BT _BU _BV _BW _BX _BY _BZ
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
