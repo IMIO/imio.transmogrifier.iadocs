@@ -24,16 +24,15 @@ tables = OrderedDict(
         ("eContactsAdresses", {}),
         ("eContactsTitres", {}),
         ("eContactsType", {}),
-        (
-            "eCourriers",
-            {
-                "c": "isnull(Supprime, '0') != '1'",
-                # ('eCourriers', {'c': "TypeEntrantSortant = 'I' and isnull(Supprime, '0') != '1'",
-                "o": "isnull(DateEncodage, dateentree), dateentree",
-            },
-        ),
-        # ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'",
-        #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
+        # (
+        #     "eCourriers",
+        #     {
+        #         "c": "isnull(Supprime, '0') != '1'",
+        #         "o": "isnull(DateEncodage, dateentree), dateentree",
+        #     },
+        # ),
+        ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'",
+                        'o': "isnull(DateEncodage, dateentree), dateentree"}),
         # ('eCourriers', {'c': "(TypeEntrantSortant != 'I' or isnull(NatureID, '') not in (select id from eNatures "
         #                      "where description like 'Délibération%' or description like 'Séance%') ) and "
         #                      "isnull(Supprime, '0') != '1'",
