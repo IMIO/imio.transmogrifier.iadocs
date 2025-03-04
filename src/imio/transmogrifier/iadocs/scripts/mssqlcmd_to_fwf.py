@@ -39,6 +39,8 @@ tables = OrderedDict(
         #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
         ("eCourriersDestinataires", {}),
         ("eCourriersFichiers", {"o": "CourrierID, OrdreAffichage, DateUpload"}),
+        # when no addresses view
+        # ("eCourriersFichiers", {"o": "CourrierID, DateUpload"}),
         ("eCourriersDossiers", {"o": "CourrierID, Principal desc"}),
         ("eCourriersLiens", {}),
         ("eCourriersServices", {"o": "CourrierID, Principal desc"}),
