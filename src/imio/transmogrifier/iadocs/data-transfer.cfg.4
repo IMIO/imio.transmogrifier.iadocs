@@ -16,16 +16,17 @@ default_o_mail_type = courrier
 default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
-default_creation_date = 20140101-0000
-default_tg = 3
+default_creation_date = 20050726-0000
+default_tg = TVX-BA
 default_category =
 to_treat = 10
-profils_donnee_E = ECH-IN ENTRANT ENTRANTFER ET-IN
-profils_donnee_S = ECH-OUT ET-OUT PERS-OUT RA-OUTMED1 RA-OUTMEDR RA-OUTSAN1 RA-OUTSAND RA-OUTSS RE-OUTMED1 RE-OUTMEDR RE-OUTSAN1 RE-OUTSAND RE-OUTSS SORTANT SPINTAY TVX-OUT
+profils_donnee_E = ENTRANT DOC-GTRAV
+profils_donnee_S =
 ;profils_donnee_E =  C_ENTR_CJ ENTRANT FACTURE FAX
 ;profils_donnee_S =  C_SORTANT C_SORT_CJ SORTANT
-profils_donnee =  ${config:profils_donnee_E} ${config:profils_donnee_S}
-date_entree_min = 20140101
+;profils_donnee =  ${config:profils_donnee_E} ${config:profils_donnee_S}
+profils_donnee =  ${config:profils_donnee_E}
+date_entree_min = 20050726
 ;fields = C_ENTR_CJ TYPEDOC mail_type ""
 ;         C_ENTR_CJ SERVTRAIT treating_groups "AGTTRAIT"
 ;         C_ENTR_CJ AGTTRAIT assigned_user "SERVTRAIT"
@@ -171,9 +172,10 @@ pipeline =
     e__category_full_match_write
     e__stop_category
 # ff  classification folders
-;    f__need
+    f__need
     fF__pickle_w
     fs__1_folder_read
+    fs__4_hour_correction
     F__1_folder_created_read
     fsF__1_folder_check
     f__folder_matched_uid_add
@@ -194,20 +196,20 @@ pipeline =
     f__folder_to_create
     f__batched
     f__count
-    f__internal_ref_no_insert
+    f__internal_number_insert
     f__creation_date_insert
     f__modification_date_insert
     f__1_category_id_insert
     f__1_empty_title_insert
-    f__1_localisation_insert
-    f__1_remark_insert
-    f__1_comment_insert
-    f__1_archive_date_insert
+;    f__1_localisation_insert
+;    f__1_remark_insert
+;    f__1_comment_insert
+;    f__1_archive_date_insert
     f__treating_groups_insert
-    fF__deactivate_insert
+;    fF__deactivate_insert
     f__type_insert
     f__1_id_insert
-    f__1_level3_handler
+;    f__1_level3_handler
     f__1_parent_insert
     fF__1_path_insert
 ;    f__to_correct_only
@@ -581,12 +583,12 @@ bp_key = e_palib_i
 [4__palib_keep]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_palib_i'
-condition2 = python: item['_lng'] == 'FRA' and item['_typ'] in ('DONNEE', 'INFOVAR', 'PARAMUTIL', 'PROFILDON', 'PROFILINF0', 'SERVICE', 'TYPEDONNEE') and item['_eid'] is not None
+condition2 = python: item['_lng'] == 'FRA' and item['_typ'] in ('DONNEE', 'DOSSIER', 'INFOVAR', 'PARAMUTIL', 'PROFILDON', 'PROFILINF0', 'SERVICE', 'TYPEDONNEE') and item['_eid'] is not None
 
 [4__palib_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_palib_i
-condition = python: item.get('_bpk') == u'e_palib_i' and item['_typ'] == 'DONNEE'
+condition = python: item.get('_bpk') == u'e_palib_i' and item['_typ'] in ('DONNEE', 'DOSSIER')
 strip_chars = _eid 0 l
 
 [4__palib_keep_mail]
@@ -699,7 +701,7 @@ bp_key = e_service
 [a__service_reject]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_service'
-condition2 = python: item['_eid']
+condition2 = python: item['_eid'] in ('PERS', 'SECR', 'TVX-BA')
 
 [a__1_service_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -763,8 +765,8 @@ yield = 1
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 filename = maval00.csv
-;fieldnames = _d_s _eid _field _nature_id _E _F _G _H _I _J
-fieldnames = _d_s _eid _field _nature_id
+fieldnames = _d_s _eid _field _nature_id _E _F _G _H _I _J
+;fieldnames = _d_s _eid _field _nature_id
 bp_key = e_mail_mailtype
 
 [b__maval_reject]
@@ -1199,9 +1201,16 @@ d_condition = python:storage['commit'] is True and 'f__to_correct_only' not in t
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 ;filename = eClassementDossiers_test.csv
-filename = dsent00.csv
+filename = dsent00_test.csv
+;filename = dsent00.csv
 fieldnames = _eid _prs _open_date _D _service_id _F _G _archive_date _I _J _K _L _M _N _creation_date _creation_hour _Q _R _S _T
 bp_key = e_folder
+
+[fs__4_hour_correction]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: "_creation_hour" in item and len(item["_creation_hour"]) == 5
+key = string:_creation_hour
+value = python:"0{}".format(item["_creation_hour"])
 
 [F__1_folder_created_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -1303,7 +1312,7 @@ blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_folder'
 bp_key = e_folder
 store_key = _eid
-fieldnames = _ln _eid _prs title _archive_date _service_id creation_date
+fieldnames = _ln _eid _prs title _archive_date _service_id creation_date _mar_ker
 yield = 0
 
 [f__dependency_sorter]
@@ -1347,10 +1356,10 @@ blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
 condition = python: item.get('_bpk') == u'e_folder'
 
-[f__internal_ref_no_insert]
+[f__internal_number_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
-key = string:internal_reference_no
+key = string:internal_number
 value = python:item['_eid']
 
 [f__creation_date_insert]
@@ -1368,17 +1377,19 @@ value = python:storage['creation_date']
 [f__1_category_id_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
-            and item['_category_id'] not in (None, u'0')
+;            and item['_category_id'] not in (None, u'0')
 key = string:classification_categories
-value = python:[storage['data']['e_category_full_match'][item['_category_id']]['_puid']]
-error = python:u"category '{}' not found for eid '{}'".format(item['_category_id'], item['_eid'])
+value = python:[storage["data"]["p_category"]["GESTRAV"]["uid"]]
+;value = python:[storage['data']['e_category_full_match'][item['_category_id']]['_puid']]
+;error = python:u"category '{}' not found for eid '{}'".format(item['_category_id'], item['_eid'])
 
 [f__1_empty_title_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
-            and not item['title']
+            and not item.get('title')
 key = string:title
-value = python:item['_category_id'] and storage['data']['e_category_full_match'].get(item['_category_id'], {}).get('_etitle') or u'Sans titre'
+value = python:u'Sans titre'
+;value = python:item['_category_id'] and storage['data']['e_category_full_match'].get(item['_category_id'], {}).get('_etitle') or u'Sans titre'
 
 [f__1_localisation_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1425,7 +1436,8 @@ value = python:item['archived']
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 key = string:_type
-value = python:item['_level'] == 1 and u'ClassificationFolder' or (item['_level'] == 2 and u'ClassificationSubfolder' or u'')
+value = python:u'ClassificationFolder'
+;value = python:item['_level'] == 1 and u'ClassificationFolder' or (item['_level'] == 2 and u'ClassificationSubfolder' or u'')
 
 [f__1_id_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
