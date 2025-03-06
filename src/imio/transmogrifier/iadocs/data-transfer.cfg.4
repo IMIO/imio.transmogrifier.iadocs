@@ -26,6 +26,7 @@ profils_donnee_S =
 ;profils_donnee_S =  C_SORTANT C_SORT_CJ SORTANT
 ;profils_donnee =  ${config:profils_donnee_E} ${config:profils_donnee_S}
 profils_donnee =  ${config:profils_donnee_E}
+profils_dossier =  GESTRAV
 date_entree_min = 20050726
 ;fields = C_ENTR_CJ TYPEDOC mail_type ""
 ;         C_ENTR_CJ SERVTRAIT treating_groups "AGTTRAIT"
@@ -63,8 +64,8 @@ fields = ET-IN DATEDOC original_mail_date "date:%Y%m%d"
          ENTRANT TYPEDOC mail_type ""
 
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
-permitted_sections = 2349abcflm
-# CHANGE b__4__field_insert FOR EACH CUSTOMER
+permitted_sections = 23459abcflm
+# CHANGE b__4_field_insert FOR EACH CUSTOMER
 
 [transmogrifier]
 pipeline =
@@ -76,20 +77,25 @@ pipeline =
     2__mail_read
     2__mail_keep
     2__mail_store
-# 33 definition infos variables (lien entre id field et id libelle)
-    3__need
-    3__pickle_papri_w
-    3__papri_read
-    3__papri_keep
-    3__papri_store
-# 44 libellés divers
+# 33 sauvegarde dossiers avec profil gardé
+    3__pickle_f_w
+    3__folder_read
+    3__folder_keep
+    3__folder_store
+# 44 definition infos variables (lien entre id field et id libelle)
     4__need
-    4__pickle_palib_w
-    4__palib_read
-    4__palib_keep
-    4__palib_check
-    4__palib_keep_mail
-    4__palib_store
+    4__pickle_papri_w
+    4__papri_read
+    4__papri_keep
+    4__papri_store
+# 55 libellés divers
+    5__need
+    5__pickle_palib_w
+    5__palib_read
+    5__palib_keep
+    5__palib_check
+    5__palib_keep_mail
+    5__palib_store
 # 99 réécriture maval sans lignes inutiles
     9__need
     9l__pickle_i_w
@@ -120,7 +126,7 @@ pipeline =
 ;    b__1_used_source_store
 ;    b__palib_read
     b__palib_load
-    b__4__field_insert
+    b__4_field_insert
     b__mailtype_used_only
     b__4_eid_correction
 ;    b__1_mailtype_check
@@ -530,29 +536,59 @@ yield = 0
 
 # = = = = = = =  33  = = = = = = = #
 
-[3__need]
+[3__pickle_f_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_folders_prs.pkl
+store_key = e_folders_prs
+d_condition = python:storage['commit'] is True and not modules['os'].path.exists(filename)
+
+[3__folder_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('3__pickle_f_w', {}).get('filename', '_not_found_')))
+filename = dsent00.csv
+fieldnames = _eid _prs _dt_ent _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T
+bp_key = e_folders
+
+[3__folder_keep]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: item.get('_bpk') == u'e_folders'
+condition2 = python: item['_prs'] in transmogrifier['config']['profils_dossier'].split()
+;condition2 = python: item['_prs'] in transmogrifier['config']['profils_dossier'].split() and item['_dt_ent'] >= '${config:date_entree_min}'
+
+[3__folder_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_folders'
+bp_key = e_folders_prs
+store_key = _eid
+check_key_uniqueness = 0
+fieldnames = _prs
+yield = 0
+
+# = = = = = = =  44  = = = = = = = #
+
+[4__need]
 blueprint = imio.transmogrifier.iadocs.need_other
 parts =
 
-[3__pickle_papri_w]
+[4__pickle_papri_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_papri.pkl
 store_key = e_papri
 d_condition = python:storage['commit'] is True and not modules['os'].path.exists(filename)
 
-[3__papri_read]
+[4__papri_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('3__pickle_papri_w', {}).get('filename', '_not_found_')))
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('4__pickle_papri_w', {}).get('filename', '_not_found_')))
 filename = papri00.csv
 fieldnames = _A _eid _C _D _E _F _G _default _I _J _K _prienc _prizon _N _O _P _Q _R _S _T _U _V _W _X _Y
 bp_key = e_papri_i
 
-[3__papri_keep]
+[4__papri_keep]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_papri_i'
 condition2 = python: item['_eid'] in (u'TYPEDOC', u'FORMAT_DOC', u'ETEXP')
 
-[3__papri_store]
+[4__papri_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_papri_i'
 bp_key = e_papri
@@ -561,42 +597,42 @@ check_key_uniqueness = 0
 fieldnames = _default _prienc _prizon
 yield = 0
 
-# = = = = = = =  44  = = = = = = = #
+# = = = = = = =  55  = = = = = = = #
 
-[4__need]
+[5__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 2
+parts = 23
 
-[4__pickle_palib_w]
+[5__pickle_palib_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_palib.pkl
 store_key = e_palib
 d_condition = python:storage['commit'] is True and not modules['os'].path.exists(filename)
 
-[4__palib_read]
+[5__palib_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('4__pickle_palib_w', {}).get('filename', '_not_found_')))
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('5__pickle_palib_w', {}).get('filename', '_not_found_')))
 filename = palib00.csv
 fieldnames = _typ _lng _eid _val _E _F _G _H _I
 bp_key = e_palib_i
 
-[4__palib_keep]
+[5__palib_keep]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_palib_i'
 condition2 = python: item['_lng'] == 'FRA' and item['_typ'] in ('DONNEE', 'DOSSIER', 'INFOVAR', 'PARAMUTIL', 'PROFILDON', 'PROFILINF0', 'SERVICE', 'TYPEDONNEE') and item['_eid'] is not None
 
-[4__palib_check]
+[5__palib_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_palib_i
 condition = python: item.get('_bpk') == u'e_palib_i' and item['_typ'] in ('DONNEE', 'DOSSIER')
 strip_chars = _eid 0 l
 
-[4__palib_keep_mail]
+[5__palib_keep_mail]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_palib_i'
-condition2 = python: item['_typ'] != 'DONNEE' and True or item['_eid'] in storage['data']['e_mails_prd']
+condition2 = python: item['_typ'] not in ('DONNEE', 'DOSSIER') and True or (item['_typ'] == 'DONNEE' and item['_eid'] in storage['data']['e_mails_prd'] or (item['_typ'] == 'DOSSIER' and item['_eid'] in storage['data']['e_folders_prs']))
 
-[4__palib_store]
+[5__palib_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_palib_i'
 bp_key = e_palib
@@ -737,7 +773,7 @@ condition = python: item.get('_bpk') == u'e_service'
 
 [b__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 234
+parts = 245
 
 [b__mailtype_match_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -821,7 +857,7 @@ store_subkey = _eid
 fieldnames = _val
 condition = python: item['_typ'] == u'PARAMUTIL'
 
-[b__4__field_insert]
+[b__4_field_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: not storage['data'].get('e_mailtype_match') and item.get('_bpk') == 'e_mailtype'
 key = string:_field
@@ -1750,7 +1786,7 @@ yield = 1
 
 [l__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 24a
+parts = 25a
 
 [lq__pickle_c_r]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -1986,7 +2022,7 @@ kept_keys = modification_date original_mail_date reception_date
 
 [m__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 234abc
+parts = 245abc
 
 [mt__pickle_i_r]
 # read plone loaded im
