@@ -179,9 +179,11 @@ pipeline =
     e__stop_category
 # ff  classification folders
     f__need
+    f__pickle_palib_r
     fF__pickle_w
     fs__1_folder_read
     fs__4_hour_correction
+    f__4__title_insert
     F__1_folder_created_read
     fsF__1_folder_check
     f__folder_matched_uid_add
@@ -1226,6 +1228,11 @@ condition2 = python: False
 blueprint = imio.transmogrifier.iadocs.need_other
 parts = a
 
+[f__pickle_palib_r]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_palib.pkl
+store_key = e_palib
+
 [fF__pickle_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_folder.pkl
@@ -1247,6 +1254,12 @@ blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: "_creation_hour" in item and len(item["_creation_hour"]) == 5
 key = string:_creation_hour
 value = python:"0{}".format(item["_creation_hour"])
+
+[f__4__title_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
+key = string:title
+value = python:item['_eid'] in storage['data']['e_palib']['DOSSIER'] and storage['data']['e_palib']['DOSSIER'][item['_eid']]['_val'] or u''
 
 [F__1_folder_created_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
