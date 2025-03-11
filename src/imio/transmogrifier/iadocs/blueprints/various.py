@@ -379,6 +379,73 @@ class PrintItem(object):
             yield item
 
 
+class ReplaceVariables(object):
+    """Replace variable in stored dict.
+
+    Parameters:
+        * b_condition = O, blueprint condition expression (available: storage)
+        * bp_key = M, blueprint key and storage dic name
+        * store_key = M, storage key
+        * value_key = M, storage value key
+        * delimiter = M, delimiter that surrounds variable
+        * modify_dict = M, flag to know if the dict must be modified (0 or 1)
+        * yield = M, flag to know if a yield must be done (0 or 1)
+    """
+
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        self.bp_key = safe_unicode(options["bp_key"])
+        if not is_in_part(self, self.parts):
+            return
+        doit = Condition(options.get("b_condition") or "python:True", transmogrifier, name, options)
+        self.doit = doit(None, storage=self.storage)
+        if not self.doit:
+            self.values = None
+            return
+        self.values = self.storage["data"].get(self.bp_key)
+        self.store_key = safe_unicode(options["store_key"])
+        self.value_key = safe_unicode(options["value_key"])
+        self.delimiter = safe_unicode(options["delimiter"])
+        self.modify_dict = safe_unicode(options["modify_dict"])
+        self.yld = bool(int(options["yield"]))
+
+    def __iter__(self):
+        for item in self.previous:
+            if not is_in_part(self, self.parts) or not self.values:
+                yield item
+                continue
+            value = item[self.value_key]
+            while self.delimiter in value:
+                pattern = re.escape(self.delimiter) + r'([^' + re.escape(self.delimiter) + r']+)' \
+                    + re.escape(self.delimiter)
+                matches = re.findall(pattern, value)
+                if not matches:
+                    break
+                for var in matches:
+                    if var in self.values:
+                        value = value.replace(u"{0}{1}{0}".format(self.delimiter, var),
+                                              self.values[var][self.value_key])
+                    else:
+                        e_logger.error(
+                            u'{}: variable "{}" not found in dic from orig value "{}"'.format(self.name, var,
+                                                                                              item[self.value_key]))
+                        break
+            if item[self.value_key] != value:
+                if self.modify_dict:
+                    self.values[item[self.store_key]][self.value_key] = value
+                else:
+                    item[self.value_key] = value
+            if self.yld:
+                yield item
+
+
 class ShortLog(object):
     """Logs shortly item."""
 

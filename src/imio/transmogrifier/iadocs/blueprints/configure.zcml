@@ -278,6 +278,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.replace_variables"
+    component=".various.ReplaceVariables"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.rsync_writer"
     component=".handlers.RsyncFileWrite"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

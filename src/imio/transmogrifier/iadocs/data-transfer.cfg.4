@@ -64,7 +64,7 @@ fields = ET-IN DATEDOC original_mail_date "date:%Y%m%d"
          ENTRANT TYPEDOC mail_type ""
 
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
-permitted_sections = 23459abcflm
+permitted_sections = 234569abcflm
 # CHANGE b__4_field_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -96,6 +96,13 @@ pipeline =
     5__palib_check
     5__palib_keep_mail
     5__palib_store
+# 66 sauvegarde chemins
+    6__pickle_p_w
+    6__pamac_read
+    6__pamac_keep
+    6__pamac_store
+    6__pamac_load
+    6__4_pamac_replace_variables
 # 99 réécriture maval sans lignes inutiles
     9__need
     9l__pickle_i_w
@@ -647,6 +654,53 @@ store_key = _typ
 store_subkey = _eid
 check_key_uniqueness = 0
 fieldnames = _val
+yield = 0
+
+# = = = = = = =  66  = = = = = = = #
+
+[6__pickle_p_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_pamac.pkl
+store_key = e_pamac
+d_condition = python:storage['commit'] is True and not modules['os'].path.exists(filename)
+
+[6__pamac_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('3__pickle_p_w', {}).get('filename', '_not_found_')))
+filename = pamac00.csv
+fieldnames = _eid _typ _value _D _E _F _G _H _I _J
+bp_key = e_filepaths
+
+[6__pamac_keep]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: item.get('_bpk') == u'e_filepaths'
+condition2 = python: item['_typ'] == "P"
+
+[6__pamac_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_filepaths'
+bp_key = e_pamac
+store_key = _eid
+check_key_uniqueness = 0
+fieldnames = _value
+yield = 0
+
+[6__pamac_load]
+blueprint = imio.transmogrifier.iadocs.read_from_data
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('3__pickle_p_w', {}).get('filename', '_not_found_')))
+bp_key = e_filepaths
+related_storage = e_pamac
+store_key = _eid
+fieldnames = _value
+
+[6__4_pamac_replace_variables]
+blueprint = imio.transmogrifier.iadocs.replace_variables
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('3__pickle_p_w', {}).get('filename', '_not_found_')))
+bp_key = e_pamac
+store_key = _eid
+value_key = _value
+delimiter = #
+modify_dict = 1
 yield = 0
 
 # = = = = = = =  99  = = = = = = = #

@@ -2022,7 +2022,7 @@ class ParentPathInsert(object):
     """Add parent path key following type.
 
     Parameters:
-        * bp_key = O, blueprint key (here used to get parent path from pickle
+        * bp_key = O, blueprint key (here used to get parent path from pickle)
     """
 
     classProvides(ISectionBlueprint)
@@ -2290,7 +2290,7 @@ class RsyncFileWrite(object):
     """Writes rsync file containing used files.
 
     Parameters:
-        * b_condition = O, blueprint condition expression (available: storage)
+        * b_condition = O, blueprint condition expression (available: storage, filename)
         * filename = M, filename to write
         * bp_key = data key to get files info
     """
