@@ -103,16 +103,19 @@ pipeline =
     6__pamac_store
     6__pamac_load
     6__4_pamac_replace_variables
-# 99 réécriture maval sans lignes inutiles
+# 99 réécriture maval sans lignes inutiles et enregistrement services utilisés
     9__need
     9l__pickle_i_w
+    9__pickle_us_w
     9__maval_read
     9__maval_read_i
     9__maval_reject
     9__maval_reject_i
+    9__4__store_service
     9__maval_cleaned_write
     9__maval_cleaned_write_i
 # aa services
+    a__pickle_us_r
     a__service_match_read
     a__service_match_store
     a__service_read
@@ -186,7 +189,7 @@ pipeline =
     e__stop_category
 # ff  classification folders
     f__need
-    f__pickle_palib_r
+    flm__pickle_palib_r
     fF__pickle_w
     fs__1_folder_read
     fs__4_hour_correction
@@ -278,7 +281,6 @@ pipeline =
 
 # ll  IM & IEM handling
     l__need
-    l__pickle_palib_r
     lq__pickle_c_r
 # dont know if really used ??
 ;    lpq__1_contacts_check
@@ -296,7 +298,7 @@ pipeline =
 ;    l__original_mail_date_insert
     l__1_internal_number_insert
 ;    l__custom_service_id_correct
-    l__treating_groups_insert
+;    l__treating_groups_insert
 ;    l__1_recipient_groups_set
 ;    l__1_category_id_insert
     l__contact_set
@@ -717,9 +719,15 @@ filename = 2_e_mail_i.pkl
 store_key = e_mail_i
 d_condition = python:storage['commit'] is True and modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and 'l__to_correct_only' not in transmogrifier['transmogrifier']['pipeline'].split('\n')
 
+[9__pickle_us_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_used_services.pkl
+store_key = e_used_services
+d_condition = python:storage['commit'] is True and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], '2_e_used_services.pkl'))
+
 [9__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_orig.csv')) and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
+b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_orig.csv')) and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_prd.csv'))
 filename = maval00_orig.csv
 fieldnames = _etype _eid _fld _val _E _F _G _H _I _J
 bp_key = e_maval
@@ -743,11 +751,20 @@ blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval_i'
 condition2 = python: item['_eid'] in storage['data']['e_mail_i']
 
+[9__4__store_service]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_maval' and item["_fld"] == "SERVDEST"
+bp_key = e_used_services
+store_key = _val
+check_key_uniqueness = 0
+fieldnames = _etype
+yield = 1
+
 [9__maval_cleaned_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
 condition = python: item.get('_bpk') in 'e_maval'
-filename = maval00.csv
+filename = maval00_prd.csv
 fieldnames = _etype _eid _fld _val
 headers = VALTYP VALSEQ VALPRI VALVAL
 bp_key = 9_maval
@@ -765,6 +782,11 @@ bp_key = 9_maval
 yield = 0
 
 # = = = = = = =  aa  = = = = = = = #
+
+[a__pickle_us_r]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_used_services.pkl
+store_key = e_used_services
 
 [a__service_match_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -800,7 +822,7 @@ bp_key = e_service
 [a__service_reject]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_service'
-condition2 = python: item['_eid'] in ('PERS', 'SECR', 'TVX-BA')
+condition2 = python: item['_eid'] in storage['data']['e_used_services']
 
 [a__1_service_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -1289,7 +1311,7 @@ condition2 = python: False
 blueprint = imio.transmogrifier.iadocs.need_other
 parts = a
 
-[f__pickle_palib_r]
+[flm__pickle_palib_r]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_palib.pkl
 store_key = e_palib
@@ -1862,11 +1884,6 @@ yield = 1
 blueprint = imio.transmogrifier.iadocs.need_other
 parts = 26a
 
-[l__pickle_palib_r]
-blueprint = imio.transmogrifier.iadocs.pickle_data
-filename = 2_e_palib.pkl
-store_key = e_palib
-
 [lq__pickle_c_r]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_contact.pkl
@@ -2125,7 +2142,7 @@ kept_keys = modification_date original_mail_date reception_date
 
 [m__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 245abc
+parts = 24abc
 
 [mt__pickle_i_r]
 # read plone loaded im
@@ -2152,7 +2169,7 @@ bp_key = e_mail_maval_i
 # keep plone loaded IM mails
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_maval_i'
-condition2 = python: item['_eid'] in storage['data']['e_mail_i'] and item['_eid'] == u'671153'
+condition2 = python: item['_eid'] in storage['data']['e_mail_i'] and item['_eid'] == u'991122'
 
 [m__batched]
 # keep only not already treated recipients
