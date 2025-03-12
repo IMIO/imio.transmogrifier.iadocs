@@ -308,7 +308,8 @@ pipeline =
 ;    l__mail_type_default_insert
 ;    l__1_meetingitem_link_insert
 ;    l__1_confidential_insert
-    l__4_date_prise_en_charge_insert
+    l__4_filepath_insert
+    l__4_handling_date
 ;    l__1_remark_insert
     l__empty_title_insert
     l__1_id_insert
@@ -1933,6 +1934,7 @@ yield = 1
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_i
 condition = python: item.get('_bpk') == u'e_mail_i'
+strip_chars = _path_id \ r
 invalids =
 concatenate = _cr_dt _cr_hr creation_date " "
 dates = reception_date %Y%m%d 0 creation_date "%Y%m%d %H%M%S" 0
@@ -2059,7 +2061,14 @@ key = string:data_transfer
 value = python:u'COURRIER CONFIDENTIEL.'
 separator = python:u'\r\n'
 
-[l__4_date_prise_en_charge_insert]
+[l__4_filepath_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
+key = string:data_transfer
+value = python:u'Fichier: {}{}'.format(item['_path_id'], item['_filename'])
+separator = python:u'\r\n'
+
+[l__4_handling_date]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:data_transfer
