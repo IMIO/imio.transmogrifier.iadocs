@@ -288,6 +288,7 @@ pipeline =
     l__count
     l__4_hour_correction
     l__4__title_insert
+    l__4_replace_variables
     l__1_mail_check
 ;    l__creation_date_insert
     l__modification_date_insert
@@ -307,7 +308,6 @@ pipeline =
 ;    l__mail_type_default_insert
 ;    l__1_meetingitem_link_insert
 ;    l__1_confidential_insert
-;    l__4_filepath_insert
     l__4_date_prise_en_charge_insert
 ;    l__1_remark_insert
     l__empty_title_insert
@@ -666,7 +666,7 @@ d_condition = python:storage['commit'] is True and not modules['os'].path.exists
 
 [6__pamac_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('3__pickle_p_w', {}).get('filename', '_not_found_')))
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('6__pickle_p_w', {}).get('filename', '_not_found_')))
 filename = pamac00.csv
 fieldnames = _eid _typ _value _D _E _F _G _H _I _J
 bp_key = e_filepaths
@@ -687,7 +687,7 @@ yield = 0
 
 [6__pamac_load]
 blueprint = imio.transmogrifier.iadocs.read_from_data
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('3__pickle_p_w', {}).get('filename', '_not_found_')))
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('6__pickle_p_w', {}).get('filename', '_not_found_')))
 bp_key = e_filepaths
 related_storage = e_pamac
 store_key = _eid
@@ -695,10 +695,11 @@ fieldnames = _value
 
 [6__4_pamac_replace_variables]
 blueprint = imio.transmogrifier.iadocs.replace_variables
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('3__pickle_p_w', {}).get('filename', '_not_found_')))
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('6__pickle_p_w', {}).get('filename', '_not_found_')))
 bp_key = e_pamac
 store_key = _eid
-value_key = _value
+dict_value_key = _value
+item_value_key =
 delimiter = #
 modify_dict = 1
 yield = 0
@@ -1858,7 +1859,7 @@ yield = 1
 
 [l__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 2a
+parts = 26a
 
 [l__pickle_palib_r]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -1917,6 +1918,16 @@ blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:title
 value = python:item['_eid'] in storage['data']['e_palib']['DONNEE'] and storage['data']['e_palib']['DONNEE'][item['_eid']]['_val'] or u''
+
+[l__4_replace_variables]
+blueprint = imio.transmogrifier.iadocs.replace_variables
+bp_key = e_pamac
+store_key =
+dic_value_key = _value
+item_value_key = _path_id
+delimiter = #
+modify_dict = 0
+yield = 1
 
 [l__1_mail_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -2047,8 +2058,6 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:data_transfer
 value = python:u'COURRIER CONFIDENTIEL.'
 separator = python:u'\r\n'
-
-;[l__4_filepath_insert]
 
 [l__4_date_prise_en_charge_insert]
 blueprint = imio.transmogrifier.iadocs.inserter

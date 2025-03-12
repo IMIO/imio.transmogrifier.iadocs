@@ -380,13 +380,15 @@ class PrintItem(object):
 
 
 class ReplaceVariables(object):
-    """Replace variable in stored dict.
+    """Replace variable in stored dict or item.
 
     Parameters:
         * b_condition = O, blueprint condition expression (available: storage)
         * bp_key = M, blueprint key and storage dic name
-        * store_key = M, storage key
-        * value_key = M, storage value key
+        * condition = O, matching condition
+        * store_key = O, storage key for dict (mandatory when modify_dict is 1)
+        * dic_value_key = M, storage value key for dict
+        * item_value_key = O, item value key (mandatory when modify_dict is 0)
         * delimiter = M, delimiter that surrounds variable
         * modify_dict = M, flag to know if the dict must be modified (0 or 1)
         * yield = M, flag to know if a yield must be done (0 or 1)
@@ -409,19 +411,22 @@ class ReplaceVariables(object):
         if not self.doit:
             self.values = None
             return
+        self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.values = self.storage["data"].get(self.bp_key)
-        self.store_key = safe_unicode(options["store_key"])
-        self.value_key = safe_unicode(options["value_key"])
+        self.store_key = safe_unicode(options.get("store_key") or u"_rv_")
+        self.dic_value_key = safe_unicode(options["dic_value_key"])
+        self.item_key = safe_unicode(options.get("item_value_key") or u"_rv_")
         self.delimiter = safe_unicode(options["delimiter"])
-        self.modify_dict = safe_unicode(options["modify_dict"])
+        self.modify_dict = bool(int(options["modify_dict"]))
         self.yld = bool(int(options["yield"]))
 
     def __iter__(self):
         for item in self.previous:
-            if not is_in_part(self, self.parts) or not self.values:
+            if not is_in_part(self, self.parts) or not self.values or not self.condition(item):
                 yield item
                 continue
-            value = item[self.value_key]
+            course_store(self, item)
+            value = item[self.item_key]
             while self.delimiter in value:
                 pattern = re.escape(self.delimiter) + r'([^' + re.escape(self.delimiter) + r']+)' \
                     + re.escape(self.delimiter)
@@ -431,17 +436,17 @@ class ReplaceVariables(object):
                 for var in matches:
                     if var in self.values:
                         value = value.replace(u"{0}{1}{0}".format(self.delimiter, var),
-                                              self.values[var][self.value_key])
+                                              self.values[var][self.dic_value_key])
                     else:
                         e_logger.error(
                             u'{}: variable "{}" not found in dic from orig value "{}"'.format(self.name, var,
-                                                                                              item[self.value_key]))
+                                                                                              item[self.item_key]))
                         break
-            if item[self.value_key] != value:
+            if item[self.item_key] != value:
                 if self.modify_dict:
-                    self.values[item[self.store_key]][self.value_key] = value
+                    self.values[item[self.store_key]][self.dic_value_key] = value
                 else:
-                    item[self.value_key] = value
+                    item[self.item_key] = value
             if self.yld:
                 yield item
 
