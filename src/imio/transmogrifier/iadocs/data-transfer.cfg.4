@@ -28,6 +28,7 @@ profils_donnee_S =
 profils_donnee =  ${config:profils_donnee_E}
 profils_dossier =  GESTRAV
 date_entree_min = 20050726
+# see painf
 ;fields = C_ENTR_CJ TYPEDOC mail_type ""
 ;         C_ENTR_CJ SERVTRAIT treating_groups "AGTTRAIT"
 ;         C_ENTR_CJ AGTTRAIT assigned_user "SERVTRAIT"
@@ -49,19 +50,33 @@ fields = ET-IN DATEDOC original_mail_date "date:%Y%m%d"
          ET-IN NRN description ""
          ET-IN REMARQUE data_transfer ""
          ENTRANT ADRESSE data_transfer "after:NOM"
-         ENTRANT CODEABARRE description ""
+         ENTRANT AIGUILERR - ""
+         ENTRANT AIGUILREM - ""
+         ENTRANT CIVILITE - ""
+         ENTRANT CODEABARRE internal_reference_no "format:CB{}"
          ENTRANT CODEPOSTAL data_transfer "after:ADRESSE"
-         ENTRANT CONT_ADR "" ""
-         ENTRANT CONT_CP "" ""
-         ENTRANT CONT_LOC "" ""
-         ENTRANT CONT_NOM "" ""
+         ENTRANT CONT_ADR - ""
+         ENTRANT CONT_CP - ""
+         ENTRANT CONT_LOC - ""
+         ENTRANT CONT_MEM - ""
+         ENTRANT CONT_NOM - ""
+;         ENTRANT COPIES - ""
+;         ENTRANT COPIESAUTO - ""
+;         ENTRANT COURPREC - ""
          ENTRANT DATEDOC original_mail_date "date:%Y%m%d"
          ENTRANT LOCALITE data_transfer "after:CODEPOSTAL"
          ENTRANT NOM description,data_transfer "after:"
-         ENTRANT REGCE "" ""
+;         ENTRANT REFERENCE external_reference_no ""
+         ENTRANT REGCE - ""
          ENTRANT RESUMESEC description ""
+         ENTRANT RMOCD - ""
+         ENTRANT RMOCS - ""
          ENTRANT SERVDEST treating_groups ""
+;         ENTRANT TEL - ""
          ENTRANT TYPEDOC mail_type ""
+         ENTRANT USERCOPIE1 - ""
+         ENTRANT USERCOPIE2 - ""
+         ENTRANT USERTRAIT assigned_user ""
 
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
 permitted_sections = 234569abcflm
@@ -83,7 +98,6 @@ pipeline =
     3__folder_keep
     3__folder_store
 # 44 definition infos variables (lien entre id field et id libelle)
-    4__need
     4__pickle_papri_w
     4__papri_read
     4__papri_keep
@@ -126,6 +140,7 @@ pipeline =
     a__service_update
 # bb  mail type and send mode configuration
     b__need
+    bflm__pickle_palib_r
     b__mailtype_match_read
     b__1_mailtype_match_check
     b__mailtype_match_store
@@ -189,7 +204,6 @@ pipeline =
     e__stop_category
 # ff  classification folders
     f__need
-    flm__pickle_palib_r
     fF__pickle_w
     fs__1_folder_read
     fs__4_hour_correction
@@ -311,7 +325,7 @@ pipeline =
 ;    l__1_meetingitem_link_insert
 ;    l__1_confidential_insert
     l__4_filepath_insert
-    l__4_handling_date
+;    l__4_handling_date
 ;    l__1_remark_insert
     l__empty_title_insert
     l__1_id_insert
@@ -582,10 +596,6 @@ fieldnames = _prs
 yield = 0
 
 # = = = = = = =  44  = = = = = = = #
-
-[4__need]
-blueprint = imio.transmogrifier.iadocs.need_other
-parts =
 
 [4__pickle_papri_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -858,7 +868,12 @@ condition = python: item.get('_bpk') == u'e_service'
 
 [b__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 245
+parts = 24
+
+[bflm__pickle_palib_r]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_palib.pkl
+store_key = e_palib
 
 [b__mailtype_match_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -1310,11 +1325,6 @@ condition2 = python: False
 [f__need]
 blueprint = imio.transmogrifier.iadocs.need_other
 parts = a
-
-[flm__pickle_palib_r]
-blueprint = imio.transmogrifier.iadocs.pickle_data
-filename = 2_e_palib.pkl
-store_key = e_palib
 
 [fF__pickle_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -2081,7 +2091,7 @@ separator = python:u'\r\n'
 [l__4_filepath_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
-key = string:data_transfer
+key = string:data_transfer TO BE REPLACED
 value = python:u'Fichier: {}{}'.format(item['_path_id'], item['_filename'])
 separator = python:u'\r\n'
 
@@ -2161,7 +2171,8 @@ d_condition = python:storage['commit'] is True
 [m__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
-filename = maval00_i.csv
+;filename = maval00_prd.csv
+filename = maval00_test.csv
 fieldnames = _A _eid _fld _val
 bp_key = e_mail_maval_i
 

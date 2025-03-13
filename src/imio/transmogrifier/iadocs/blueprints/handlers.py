@@ -1836,11 +1836,12 @@ class M4MavalIHandling(object):
             course_store(self, item)
             self.batch_store[u"{}|{}".format(item["_eid"], item["_fld"])] = 0
             prd = self.e_mails_prd[item["_eid"]]["_prd"]
+            # pass a missing field or must define all ??
             if prd not in self.fields or item["_fld"] not in self.fields[prd]:
                 log_error(item, "'{}', '{}' not found in fields config".format(prd, item["_fld"]))
                 continue
             p_flds, transform = self.fields[prd][item["_fld"]]
-            if not p_flds:  # we ignore this field
+            if p_flds == "-":  # we ignore this field
                 continue
             imail = get_obj_from_path(self.portal, path=self.im_paths[item["_eid"]]["path"])
             if imail is None:
@@ -1868,14 +1869,15 @@ class M4MavalIHandling(object):
                     if value and t_g != value:
                         item2[p_fld] = value
                         t_g = value
-                    if u"{}|{}".format(item["_eid"], transform) in self.batch_store:
-                        value = self.text_field(
+                    # check if assigned_user has already been treated (transform is the corresponding field)
+                    if transform and u"{}|{}".format(item["_eid"], transform) in self.batch_store:
+                        au_value = self.text_field(
                             item, item2, imail, "data_transfer", "", action="remove", lib_key=transform
                         )
-                        if value and not self.assigned_user(
-                            item2, t_g, self.user_match.get(value, {}).get("_p_userid")
+                        if au_value and not self.assigned_user(
+                            item2, t_g, self.user_match.get(au_value, {}).get("_p_userid")
                         ):
-                            value2 = self.user_match.get(value, {}).get("_nom")
+                            value2 = self.user_match.get(au_value, {}).get("_nom")
                             if value2 and value2 == u"DELETED":
                                 value2 = None
                             self.text_field(
@@ -1888,16 +1890,19 @@ class M4MavalIHandling(object):
                                 value=value2,
                                 text_fld=item2["data_transfer"],
                             )
+                    # else:
+                    #     # we store temporarily the tg value
+                    #     self.text_field(item, item2, imail, "data_transfer", "", lib_key=transform)
                 elif p_fld == "assigned_user":
                     # transform contains the e_fld name of the tg
                     t_g = imail.treating_groups
                     p_userid = self.user_match.get(item["_val"], {}).get("_p_userid")
-                    if u"{}|{}".format(item["_eid"], transform) in self.batch_store or not transform:
+                    if (transform and u"{}|{}".format(item["_eid"], transform) in self.batch_store) or not transform:
+                        # check if au is in tg
                         if not self.assigned_user(item2, t_g, p_userid):
                             value = self.user_match.get(item["_val"], {}).get("_nom")
-                            if value and value == u"DELETED":
-                                value = None
-                            self.text_field(item, item2, imail, "data_transfer", "", value=value)
+                            if value and value != u"DELETED":
+                                self.text_field(item, item2, imail, "data_transfer", "", value=value)
                     else:
                         # we store temporarily the user value
                         self.text_field(item, item2, imail, "data_transfer", "")
@@ -1950,6 +1955,8 @@ class M4MavalIHandling(object):
         parts = transform.split(":")
         if parts[0] in ("date", "datetime"):
             return str_to_date({"k": value}, "k", log_error, fmt=parts[1], as_date=parts[0] == "date")
+        elif parts[0] == "format":
+            return parts[1].format(value)
         elif parts[0] == "e_papri":
             prefix = self.e_papri[parts[1]]["_prienc"] == u"CBO" and self.e_papri[parts[1]]["_prizon"] or u""
             if prefix:
