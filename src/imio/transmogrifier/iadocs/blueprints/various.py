@@ -311,8 +311,6 @@ class ItemFieldSplit(object):
                 yield item
             model_item = item.copy()
             if self.sep not in item.get(self.field, ""):
-                if self.yield_original:
-                    yield item
                 model_item["_bpk"] = self.bpk
                 yield model_item
                 continue
@@ -328,6 +326,7 @@ class ItemFieldSplit(object):
             #         continue
             for part in parts:
                 item2 = model_item.copy()
+                item2["_bpk"] = self.bpk
                 item2[self.field] = part
                 yield item2
 
