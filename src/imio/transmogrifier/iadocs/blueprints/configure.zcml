@@ -164,6 +164,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.item_field_split"
+    component=".various.ItemFieldSplit"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.j_2_contact_update"
     component=".handlers.J2ContactUpdate"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"

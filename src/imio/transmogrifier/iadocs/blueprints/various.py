@@ -21,6 +21,7 @@ from zope.interface import classProvides
 from zope.interface import implements
 
 import copy
+import csv
 import ipdb
 import re
 
@@ -272,13 +273,15 @@ class FilterItem(object):
 
 
 class ItemFieldSplit(object):
-    """Splits an item field and yield multiple item.
+    """Splits an item field and yield multiple items.
 
     Parameters:
+        * bp_key = M, blueprint key for new item
         * condition = O, condition to filter (default True)
         * field = M, item field
         * separator = M, separator to split field
         * part_pattern = O, pattern to check accepted part (default none)
+        * yield_original = O, flag to yield original item (0 or 1, default 0)
     """
 
     classProvides(ISectionBlueprint)
@@ -290,35 +293,43 @@ class ItemFieldSplit(object):
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
+        self.bpk = safe_unicode(options["bp_key"])
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.field = safe_unicode(options["field"])
-        self.sep = safe_unicode(options["separator"])
+        self.sep = next(csv.reader([options["separator"]], delimiter=" ", quotechar='"', skipinitialspace=True))
+        self.sep = self.sep[0].decode("utf8")
         self.pattern = options.get("part_pattern") or u""
+        self.yield_original = bool(int(options.get("yield_original") or "0"))
 
     def __iter__(self):
         for item in self.previous:
-            # TO BE TESTED
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
                 continue
-            if self.sep not in item.get(self.field, ""):
+            course_store(self, item)
+            if self.yield_original:
                 yield item
+            model_item = item.copy()
+            if self.sep not in item.get(self.field, ""):
+                if self.yield_original:
+                    yield item
+                model_item["_bpk"] = self.bpk
+                yield model_item
                 continue
             parts = item[self.field].split(self.sep)
-            if self.pattern:
-                error = False
-                for part in parts:
-                    if not re.match(self.pattern, part):
-                        yield item
-                        error = True
-                        break
-                if error:
-                    continue
-            model_item = item.copy()
+            # if self.pattern: TO BE MODIFIED
+            #     error = False
+            #     for part in parts:
+            #         if not re.match(self.pattern, part):
+            #             yield item
+            #             error = True
+            #             break
+            #     if error:
+            #         continue
             for part in parts:
-                item = model_item.copy()
-                item[self.field] = part
-                yield item
+                item2 = model_item.copy()
+                item2[self.field] = part
+                yield item2
 
 
 class NeedOther(object):

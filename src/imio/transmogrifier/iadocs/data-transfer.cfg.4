@@ -72,7 +72,7 @@ fields = ET-IN DATEDOC original_mail_date "date:%Y%m%d"
          ENTRANT RMOCD - ""
          ENTRANT RMOCS - ""
          ENTRANT SERVDEST treating_groups ""
-;         ENTRANT TEL - ""
+         ENTRANT TEL - ""
          ENTRANT TYPEDOC mail_type ""
          ENTRANT USERCOPIE1 - ""
          ENTRANT USERCOPIE2 - ""
@@ -125,7 +125,9 @@ pipeline =
     9__maval_read_i
     9__maval_reject
     9__maval_reject_i
+    9__4_split_copies
     9__4__store_service
+    9__4_maval_us_reject
     9__maval_cleaned_write
     9__maval_cleaned_write_i
 # aa services
@@ -761,14 +763,27 @@ blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval_i'
 condition2 = python: item['_eid'] in storage['data']['e_mail_i']
 
+[9__4_split_copies]
+blueprint = imio.transmogrifier.iadocs.item_field_split
+bp_key = e_maval_us
+condition = python: item.get('_bpk') == u'e_maval' and item["_fld"] in ("COPIES", "COPIESAUTO")
+field = _val
+separator = " "
+yield_original = 1
+
 [9__4__store_service]
 blueprint = imio.transmogrifier.iadocs.store_in_data
-condition = python: item.get('_bpk') == u'e_maval' and item["_fld"] == "SERVDEST"
+condition = python: (item.get('_bpk') == u'e_maval' and item["_fld"] == "SERVDEST") or item.get('_bpk') == u"e_maval_us"
 bp_key = e_used_services
 store_key = _val
 check_key_uniqueness = 0
 fieldnames = _etype
 yield = 1
+
+[9__4_maval_us_reject]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval_us'
+condition2 = python: False
 
 [9__maval_cleaned_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
@@ -824,7 +839,7 @@ yield = 0
 [a__service_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
-              or transmogrifier.storage['parts'] == 'a'
+;              or transmogrifier.storage['parts'] == 'a'
 filename = maser00.csv
 fieldnames = _eid _title _C _D _E _F _G _H _I _J _K _code _M _N _O _P _Q _R _S _T
 bp_key = e_service
