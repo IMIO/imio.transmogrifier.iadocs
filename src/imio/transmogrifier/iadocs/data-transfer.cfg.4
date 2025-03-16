@@ -313,8 +313,8 @@ pipeline =
     l__reception_date_insert
 ;    l__original_mail_date_insert
     l__1_internal_number_insert
-;    l__custom_service_id_correct
-;    l__treating_groups_insert
+    l__custom_service_id_correct
+    l__treating_groups_insert
 ;    l__1_recipient_groups_set
 ;    l__1_category_id_insert
     l__contact_set
@@ -839,7 +839,7 @@ yield = 0
 [a__service_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
-;              or transmogrifier.storage['parts'] == 'a'
+              or transmogrifier.storage['parts'] == 'a'
 filename = maser00.csv
 fieldnames = _eid _title _C _D _E _F _G _H _I _J _K _code _M _N _O _P _Q _R _S _T
 bp_key = e_service
@@ -1932,7 +1932,7 @@ filename = dodon00_test.csv
 ;             _Q _R _S _T _U _to_del _W _source _source_id _Z
 ;             creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
 ;             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
-fieldnames = _eid _prd reception_date _dt_pec _service_id _user_id _G _path_id _path_typ _J _K _L _filename _typ_don _cr_dt _cr_hr _Q _R _S _T
+fieldnames = _eid _prd reception_date _dt_pec _service_prop_id _user_id _G _path_id _path_typ _J _K _L _filename _typ_don _cr_dt _cr_hr _Q _R _S _T
 bp_key = e_mail_i
 
 [l__1_i_only]
@@ -2011,19 +2011,17 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:internal_number
 value = python:item['_eid']
 
-[l__custom_service_id_correctNO]
+[l__custom_service_id_correct]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
-            and item['_category_id'] not in (None, u'0') and item['_service_id'] != u'333'
-            and int(item['_category_id']) >= 48235 and int(item['_category_id']) <= 48271
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item["_prd"] == "ENTRANT"
 key = string:_service_id
-value = python:u'333'
+value = python:u'SECR'
 
 [l__treating_groups_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:treating_groups
-value = python:item['_service_id'] and storage['data']['e_service_match'][item['_service_id']]['uid'] or storage['data']['e_service_match']['${config:default_tg}']['uid']
+value = python:item.get('_service_id') and storage['data']['e_service_match'][item['_service_id']]['uid'] or storage['data']['e_service_match']['${config:default_tg}']['uid']
 
 [l__1_recipient_groups_setNO]
 blueprint = imio.transmogrifier.iadocs.l_1_recipient_groups_set
@@ -2106,9 +2104,11 @@ separator = python:u'\r\n'
 [l__4_filepath_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
-key = string:data_transfer TO BE REPLACED
-value = python:u'Fichier: {}{}'.format(item['_path_id'], item['_filename'])
-separator = python:u'\r\n'
+;key = string:data_transfer
+;value = python:u'Fichier: {}{}'.format(item['_path_id'], item['_filename'])
+;separator = python:u'\r\n'
+key = string:task_description
+value = python:u'<p>Fichier: {}{}</p>'.format(item['_path_id'], item['_filename'])
 
 [l__4_handling_date]
 blueprint = imio.transmogrifier.iadocs.inserter
