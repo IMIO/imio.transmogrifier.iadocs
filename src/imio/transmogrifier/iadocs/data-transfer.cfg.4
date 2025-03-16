@@ -60,8 +60,8 @@ fields = ET-IN DATEDOC original_mail_date "date:%Y%m%d"
          ENTRANT CONT_LOC - ""
          ENTRANT CONT_MEM - ""
          ENTRANT CONT_NOM - ""
-;         ENTRANT COPIES - ""
-;         ENTRANT COPIESAUTO - ""
+         ENTRANT COPIES recipient_groups ""
+         ENTRANT COPIESAUTO recipient_groups ""
 ;         ENTRANT COURPREC - ""
          ENTRANT DATEDOC original_mail_date "date:%Y%m%d"
          ENTRANT LOCALITE data_transfer "after:CODEPOSTAL"
@@ -2195,7 +2195,7 @@ bp_key = e_mail_maval_i
 # keep plone loaded IM mails
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_maval_i'
-condition2 = python: item['_eid'] in storage['data']['e_mail_i'] and item['_eid'] == u'991122'
+condition2 = python: item['_eid'] in storage['data']['e_mail_i']
 
 [m__batched]
 # keep only not already treated recipients

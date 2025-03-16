@@ -1906,6 +1906,14 @@ class M4MavalIHandling(object):
                     else:
                         # we store temporarily the user value
                         self.text_field(item, item2, imail, "data_transfer", "")
+                elif p_fld == "recipient_groups":
+                    values = item["_val"].strip(" ").split(" ")
+                    values = [self.service_match.get(val, {}).get("uid") for val in values]
+                    to_set = imail.recipient_groups or []
+                    for value in values:
+                        if value and value not in to_set:
+                            to_set.append(value)
+                    item2[p_fld] = to_set
                 else:
                     item2[p_fld] = self.transform_value(item[u"_val"], transform)
             yield item2
