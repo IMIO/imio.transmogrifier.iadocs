@@ -45,7 +45,9 @@ date_entree_min = 20050726
 ;         C_ENTR_CJ COUR_RECU "" ""
 ;         C_ENTR_CJ REFENT "" ""
 ;         C_ENTR_CJ REGCE "" ""
-fields = ENTRANT ADRESSE data_transfer "after:NOM"
+fields = DOC-GTRAV GT_CONTRAT data_transfer ""
+         DOC-GTRAV GT_LOT data_transfer ""
+         ENTRANT ADRESSE data_transfer "after:NOM"
          ENTRANT AIGUILERR - ""
          ENTRANT AIGUILREM - ""
          ENTRANT CIVILITE - ""
@@ -73,11 +75,16 @@ fields = ENTRANT ADRESSE data_transfer "after:NOM"
          ENTRANT USERCOPIE1 - ""
          ENTRANT USERCOPIE2 - ""
          ENTRANT USERTRAIT assigned_user ""
-         DOC-GTRAV GT_CONTRAT data_transfer ""
-         DOC-GTRAV GT_LOT data_transfer ""
+         GESTRAV GT_AGTA - ""
+         GESTRAV GT_AGTT - ""
+         GESTRAV GT_ATTRIB classification_informations "after:GT_LOT"
+         GESTRAV GT_CONTRAT classification_informations "after:"
+         GESTRAV GT_LOT classification_informations "after:GT_CONTRAT"
+         GESTRAV GT_NATURE classification_informations "after:GT_ATTRIB"
+         GESTRAV OBJET classification_informations "after:GT_NATURE"
 
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
-permitted_sections = 234569abcflm
+permitted_sections = 234569abcfglm
 # CHANGE b__4_field_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -140,7 +147,7 @@ pipeline =
     a__service_update
 # bb  mail type and send mode configuration
     b__need
-    bflm__pickle_palib_r
+    bfglm__pickle_palib_r
     b__mailtype_match_read
     b__1_mailtype_match_check
     b__mailtype_match_store
@@ -248,6 +255,15 @@ pipeline =
 ;    f__filter_item
 
 # gg folder completion with maval fields
+    g__need
+    g__pickle_f_r
+    g__pickle_F_maval_w
+    g__maval_read
+    g__1_already_only
+    g__batched
+;    g__1_maval_check
+    g__count
+    g__4_maval_f
 
 # hh  directory configuration
     h__contact_type_match_read
@@ -335,7 +351,7 @@ pipeline =
 #     l__to_correct_only
 #     l__filter_item
 
-# mm  IM & IEM recipients
+# mm  other fields
     m__need
     mt__pickle_i_r
     m__pickle_E_maval_w
@@ -883,7 +899,7 @@ condition = python: item.get('_bpk') == u'e_service'
 blueprint = imio.transmogrifier.iadocs.need_other
 parts = 24
 
-[bflm__pickle_palib_r]
+[bfglm__pickle_palib_r]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_palib.pkl
 store_key = e_palib
@@ -1625,6 +1641,67 @@ blueprint = imio.transmogrifier.iadocs.filter_item
 condition = python: item.get('_bpk') == u'e_folder' and 'f__to_correct_only' in transmogrifier['transmogrifier']['pipeline'].split('\n')
 kept_keys = classification_categories
 
+# = = = = = = =  gg  = = = = = = = #
+
+[g__need]
+blueprint = imio.transmogrifier.iadocs.need_other
+parts = 34c
+
+[g__pickle_f_r]
+# read plone loaded folders
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_folder.pkl
+store_key = e_folder_p
+d_condition = python:False
+
+[g__pickle_F_maval_w]
+# write already treated DS fields
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_e_maval_f.pkl
+store_key = e_maval_f
+d_condition = python:storage['commit'] is True
+
+[g__maval_read]
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition =
+;filename = maval00_prd.csv
+filename = maval00_test.csv
+fieldnames = _A _eid _fld _val
+bp_key = e_mail_maval_f
+
+[g__1_already_only]
+# keep plone loaded IM mails
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'g') and item.get('_bpk') == u'e_mail_maval_f'
+condition2 = python: item['_eid'] in storage['data']['e_folder_p']
+
+[g__batched]
+# keep only not already treated recipients
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'g') and item.get('_bpk') == u'e_mail_maval_f'
+condition2 = python:not storage['batch_nb'] and True or (u"{}|{}".format(item['_eid'], item['_fld']) not in storage['data']['e_maval_f']
+             and storage.get('count', {}).get('g__count', {}).get('e_mail_maval_f', {}).get('c', 0) < storage['batch_nb'])
+
+[g__1_maval_check]
+# check maval
+blueprint = imio.transmogrifier.iadocs.common_input_checks
+bp_key = e_mail_maval_f
+condition = python: item.get('_bpk') == u'e_mail_maval_f'
+concatenate =
+
+[g__count]
+# counter
+blueprint = imio.transmogrifier.iadocs.count
+group_key = _bpk
+condition = python: item.get('_bpk') == u'e_mail_maval_f'
+
+[g__4_maval_f]
+blueprint = imio.transmogrifier.iadocs.4_maval
+condition = python: item.get('_bpk') == u'e_mail_maval_f'
+bp_key = e_maval_f
+store_key = e_folder_p
+profile_keys = e_folders_prs _prs
+
 # = = = = = = =  hh  = = = = = = = #
 
 [h__contact_type_match_read]
@@ -2216,10 +2293,11 @@ group_key = _bpk
 condition = python: item.get('_bpk') == u'e_mail_maval_i'
 
 [m__4_maval_i]
-blueprint = imio.transmogrifier.iadocs.m_4_maval_i
+blueprint = imio.transmogrifier.iadocs.4_maval
 condition = python: item.get('_bpk') == u'e_mail_maval_i'
 bp_key = e_maval_i
 store_key = e_mail_i
+profile_keys = e_mails_prd _prd
 
 # = = = = = = =  pp  = = = = = = = #
 
@@ -3216,7 +3294,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [print_item]
 blueprint = imio.transmogrifier.iadocs.print_item
 ;condition = python:True
-condition = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'lm')
+;condition = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'glm')
 removed_keys = file
 
 [breakpoint]

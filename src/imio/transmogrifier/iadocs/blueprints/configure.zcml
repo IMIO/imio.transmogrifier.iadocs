@@ -200,8 +200,8 @@
     />
 
   <utility
-    name="imio.transmogrifier.iadocs.m_4_maval_i"
-    component=".handlers.M4MavalIHandling"
+    name="imio.transmogrifier.iadocs.4_maval"
+    component=".handlers.MavalHandling"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
     />
 

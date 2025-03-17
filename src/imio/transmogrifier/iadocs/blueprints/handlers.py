@@ -1772,12 +1772,13 @@ class M1AssignedUserHandling(object):
                 yield item2
 
 
-class M4MavalIHandling(object):
-    """Handles IM fields from maval file.
+class MavalHandling(object):
+    """Handles fields from maval file.
 
     Parameters:
         * bk_key = M, storage key to set batch record
         * store_key = M, storage main key to find mail path
+        * profile_keys = M, store key and subkey to find all items and corresponding profile
         * functions = O, functions group (IM or OM. Default IM)
         * condition = O, condition expression
     """
@@ -1805,11 +1806,12 @@ class M4MavalIHandling(object):
         self.fields = {}
         for prd, e_fld, p_fld, transform in self.flds_opt:
             self.fields.setdefault(prd, {})[e_fld] = (p_fld, transform)
-        self.e_mails_prd = self.storage["data"].get("e_mails_prd", {})
+        self.profile_keys = safe_unicode(options["profile_keys"]).split(" ")
+        self.e_all_items = self.storage["data"].get(self.profile_keys[0], {})
         self.e_palib = self.storage["data"].get("e_palib", {})
         self.e_papri = self.storage["data"].get("e_papri", {})
-        self.service_match = self.storage["data"]["e_service_match"]
-        self.mailtype_match = self.storage["data"]["e_mailtype_match"]
+        self.service_match = self.storage["data"].get("e_service_match", {})
+        self.mailtype_match = self.storage["data"].get("e_mailtype_match", {})
         self.user_match = self.storage["data"]["e_user_match"]
         self.p_user_service = self.storage["data"]["p_user_service"]  # plone user service
         # calculate once the editor services for each user
@@ -1835,29 +1837,29 @@ class M4MavalIHandling(object):
                 continue
             course_store(self, item)
             self.batch_store[u"{}|{}".format(item["_eid"], item["_fld"])] = 0
-            prd = self.e_mails_prd[item["_eid"]]["_prd"]
+            prof = self.e_all_items[item["_eid"]][self.profile_keys[1]]
             # pass a missing field or must define all ??
-            if prd not in self.fields or item["_fld"] not in self.fields[prd]:
-                log_error(item, "'{}', '{}' not found in fields config".format(prd, item["_fld"]))
+            if prof not in self.fields or item["_fld"] not in self.fields[prof]:
+                log_error(item, "'{}', '{}' not found in fields config".format(prof, item["_fld"]))
                 continue
-            p_flds, transform = self.fields[prd][item["_fld"]]
+            p_flds, transform = self.fields[prof][item["_fld"]]
             if p_flds == "-":  # we ignore this field
                 continue
-            imail = get_obj_from_path(self.portal, path=self.im_paths[item["_eid"]]["path"])
-            if imail is None:
+            obj = get_obj_from_path(self.portal, path=self.im_paths[item["_eid"]]["path"])
+            if obj is None:
                 o_logger.warning("mail %s: path '%s' not found", item["_eid"], self.im_paths[item["_eid"]]["path"])
                 continue
             item2 = {
                 "_eid": item["_eid"],
                 "_path": self.im_paths[item["_eid"]]["path"],
-                "_type": imail.portal_type,
+                "_type": obj.portal_type,
                 "_bpk": "i_maval_{}".format(item["_fld"]),
                 "_act": "U",
-                "modification_date": imail.creation_date,
+                "modification_date": obj.creation_date,
             }
             for p_fld in p_flds.split(","):
-                if p_fld in ("description", "data_transfer"):
-                    self.text_field(item, item2, imail, p_fld, transform)
+                if p_fld in ("description", "data_transfer", "classification_informations"):
+                    self.text_field(item, item2, obj, p_fld, transform)
                 elif p_fld == "mail_type":
                     value = self.mailtype_match.get(item["_val"], {}).get(self.e_type, {}).get("_key")
                     if not value:
@@ -1865,14 +1867,14 @@ class M4MavalIHandling(object):
                     item2[p_fld] = value
                 elif p_fld == "treating_groups":
                     value = self.service_match.get(item["_val"], {}).get("uid")
-                    t_g = imail.treating_groups
+                    t_g = obj.treating_groups
                     if value and t_g != value:
                         item2[p_fld] = value
                         t_g = value
                     # check if assigned_user has already been treated (transform is the corresponding field)
                     if transform and u"{}|{}".format(item["_eid"], transform) in self.batch_store:
                         au_value = self.text_field(
-                            item, item2, imail, "data_transfer", "", action="remove", lib_key=transform
+                            item, item2, obj, "data_transfer", "", action="remove", lib_key=transform
                         )
                         if au_value and not self.assigned_user(
                             item2, t_g, self.user_match.get(au_value, {}).get("_p_userid")
@@ -1883,7 +1885,7 @@ class M4MavalIHandling(object):
                             self.text_field(
                                 item,
                                 item2,
-                                imail,
+                                obj,
                                 "data_transfer",
                                 "",
                                 lib_key=transform,
@@ -1892,24 +1894,24 @@ class M4MavalIHandling(object):
                             )
                     # else:
                     #     # we store temporarily the tg value
-                    #     self.text_field(item, item2, imail, "data_transfer", "", lib_key=transform)
+                    #     self.text_field(item, item2, obj, "data_transfer", "", lib_key=transform)
                 elif p_fld == "assigned_user":
                     # transform contains the e_fld name of the tg
-                    t_g = imail.treating_groups
+                    t_g = obj.treating_groups
                     p_userid = self.user_match.get(item["_val"], {}).get("_p_userid")
                     if (transform and u"{}|{}".format(item["_eid"], transform) in self.batch_store) or not transform:
                         # check if au is in tg
                         if not self.assigned_user(item2, t_g, p_userid):
                             value = self.user_match.get(item["_val"], {}).get("_nom")
                             if value and value != u"DELETED":
-                                self.text_field(item, item2, imail, "data_transfer", "", value=value)
+                                self.text_field(item, item2, obj, "data_transfer", "", value=value)
                     else:
                         # we store temporarily the user value
-                        self.text_field(item, item2, imail, "data_transfer", "")
+                        self.text_field(item, item2, obj, "data_transfer", "")
                 elif p_fld == "recipient_groups":
                     values = item["_val"].strip(" ").split(" ")
                     values = [self.service_match.get(val, {}).get("uid") for val in values]
-                    to_set = imail.recipient_groups or []
+                    to_set = obj.recipient_groups or []
                     for value in values:
                         if value and value not in to_set:
                             to_set.append(value)
@@ -1918,12 +1920,12 @@ class M4MavalIHandling(object):
                     item2[p_fld] = self.transform_value(item[u"_val"], transform)
             yield item2
 
-    def text_field(self, item, item2, imail, p_fld, transform, action="add", lib_key=None, value=None, text_fld=None):
+    def text_field(self, item, item2, obj, p_fld, transform, action="add", lib_key=None, value=None, text_fld=None):
         ret = None
         if text_fld:
             c_lines = text_fld.split(u"\r\n")
         else:
-            text_fld = getattr(imail, p_fld) or u""
+            text_fld = getattr(obj, p_fld) or u""
             c_lines = text_fld and text_fld.split(u"\r\n") or []
         if not lib_key:
             lib_key = item[u"_fld"]
@@ -2653,7 +2655,7 @@ class X1ReplyToUpdate(object):
             if target_id not in reply_to_ids:
                 reply_to.append(RelationValue(target_id))
                 reply_to_ids.append(target_id)
-            # get directly imail linked mails
+            # get directly obj linked mails
             if target.reply_to:
                 ids_to_add = [rv.to_id for rv in target.reply_to if rv.to_id not in reply_to_ids]
                 for _id in ids_to_add:
