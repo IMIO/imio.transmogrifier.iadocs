@@ -45,11 +45,7 @@ date_entree_min = 20050726
 ;         C_ENTR_CJ COUR_RECU "" ""
 ;         C_ENTR_CJ REFENT "" ""
 ;         C_ENTR_CJ REGCE "" ""
-fields = ET-IN DATEDOC original_mail_date "date:%Y%m%d"
-         ET-IN ETEXP description "e_papri:ETEXP"
-         ET-IN NRN description ""
-         ET-IN REMARQUE data_transfer ""
-         ENTRANT ADRESSE data_transfer "after:NOM"
+fields = ENTRANT ADRESSE data_transfer "after:NOM"
          ENTRANT AIGUILERR - ""
          ENTRANT AIGUILREM - ""
          ENTRANT CIVILITE - ""
@@ -325,7 +321,7 @@ pipeline =
 ;    l__1_source_insert
 ;    l__mail_type_nature_insert
 ;    l__1_nature_insert
-;    l__mail_type_default_insert
+    l__mail_type_default_insert
 ;    l__1_meetingitem_link_insert
 ;    l__1_confidential_insert
     l__4_filepath_insert
@@ -2083,7 +2079,7 @@ key = string:data_transfer
 value = python:u'SOURCE: {}.'.format(storage['data']['e_mailtype_match'][item['_source_id']][item['_etype']]['_etitle'])
 separator = python:u'\r\n'
 
-[l__mail_type_default_insertNO]
+[l__mail_type_default_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and 'mail_type' not in item
 key = string:mail_type
