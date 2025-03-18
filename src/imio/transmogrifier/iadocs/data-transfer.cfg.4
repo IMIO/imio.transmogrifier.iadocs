@@ -7,8 +7,8 @@ debug = 0
 # needed if contact encoding group is enabled in Plone
 creating_group =
 raise_on_error = 1
-internal_number_behavior_types = organization person held_position dmsincomingmail dmsincoming_email dmsoutgoingmail
-data_transfer_behavior_types = dmsincomingmail dmsincoming_email dmsoutgoingmail
+internal_number_behavior_types = organization dmsincomingmail
+data_transfer_behavior_types = dmsincomingmail
 none_value = *NONE
 creator = csvimport
 default_i_mail_type = courrier
@@ -863,7 +863,7 @@ bp_key = e_service
 [a__service_reject]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_service'
-condition2 = python: item['_eid'] in storage['data']['e_used_services']
+condition2 = python: item['_eid'] in storage['data']['e_used_services'] or item['_eid'] in storage['data'].get('e_service_match', {})
 
 [a__1_service_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
