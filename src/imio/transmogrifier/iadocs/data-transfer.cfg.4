@@ -84,7 +84,7 @@ fields = DOC-GTRAV GT_CONTRAT data_transfer ""
          GESTRAV OBJET classification_informations "after:GT_NATURE"
 
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
-permitted_sections = 234569abcfglm
+permitted_sections = 234569abcfglms
 # CHANGE b__4_field_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -213,8 +213,9 @@ pipeline =
     f__need
     fF__pickle_w
     fs__1_folder_read
+    fs__4_folder_reject
     fs__4_hour_correction
-    f__4__title_insert
+    fs__4__title_insert
 ;    F__1_folder_created_read
     fsF__1_folder_check
 ;    f__folder_matched_uid_add
@@ -434,6 +435,7 @@ pipeline =
 
 # ss classification folders assignments
     s__need
+    s__4_title_rename
     s__1_folder_store
     s__pickle_mail_folder_w
     s__1_mail_folder_read
@@ -1353,7 +1355,7 @@ condition2 = python: False
 
 [f__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = a
+parts = 3a
 
 [fF__pickle_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -1371,13 +1373,18 @@ filename = dsent00_test.csv
 fieldnames = _eid _prs _open_date _D _service_id _F _G _archive_date _I _J _K _L _M _N _cr_dt _cr_hr _Q _R _S _T
 bp_key = e_folder
 
+[fs__4_folder_reject]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'fs') and item.get('_bpk') == 'e_folder'
+condition2 = python: item['_eid'] in storage['data']['e_folders_prs']
+
 [fs__4_hour_correction]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: "_cr_hr" in item and len(item["_cr_hr"]) == 5
 key = string:_cr_hr
 value = python:"0{}".format(item["_cr_hr"])
 
-[f__4__title_insert]
+[fs__4__title_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 key = string:title
@@ -2742,7 +2749,14 @@ kept_keys = _none
 
 [s__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = e
+parts = 3
+
+[s__4_title_rename]
+blueprint = imio.transmogrifier.iadocs.manipulator
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact' and item['_type'] == u'organization'
+keys = title
+delete = title
+destination = string:_title
 
 [s__1_folder_store]
 # store the folders from csv file (section f)
@@ -2750,7 +2764,7 @@ blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_folder'
 bp_key = e_folder
 store_key = _eid
-fieldnames = _title _category_id
+fieldnames = _title
 yield = 0
 
 [s__pickle_mail_folder_w]
@@ -2764,16 +2778,16 @@ d_condition = python:storage['commit'] is True and 's__to_correct_only' not in t
 # read folders links csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = eCourriersDossiers.csv
-;filename = eCourriersDossiers_test.csv
-fieldnames = _A _eid _folder_id _principal
+;filename = dsdet00.csv
+filename = dsdet00_test.csv
+fieldnames = _folder_id _typ _eid _D _E _F _G _H _I
 bp_key = e_mail_folder
 
 [s__1_already_only]
-# keep plone loaded mails folders
+# keep plone loaded mails and folders
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 's') and item.get('_bpk') == u'e_mail_folder'
-condition2 = python: item['_eid'] in storage['data']['e_mail']
+condition2 = python: item['_eid'] in storage['data']['e_mail'] and item['_folder_id'] in storage['data']['e_folders_prs']
 
 [s__batched]
 # keep only not already treated mails folders links
@@ -2787,6 +2801,7 @@ condition2 = python:not storage['batch_nb'] and True or ((item['_eid'] not in st
 blueprint = imio.transmogrifier.iadocs.s_1_classification_folders_update
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 's') and item.get('_bpk') == u'e_mail_folder'
 store_key = e_mail
+fill_empty_mail_category = 0
 
 [s__count]
 # folders links counter
@@ -3293,7 +3308,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 
 [print_item]
 blueprint = imio.transmogrifier.iadocs.print_item
-;condition = python:True
+condition = python:False
 ;condition = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'glm')
 removed_keys = file
 

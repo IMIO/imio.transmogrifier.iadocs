@@ -78,7 +78,7 @@ class Initialization(object):
     classProvides(ISectionBlueprint)
     implements(ISection)
 
-    def __init__(self, transmogrifier, name, options, previous):
+    def __init__(self, transmogrifier, name, options, previous):  # noqa 901
         self.previous = previous
         self.name = name
         self.portal = transmogrifier.context
@@ -516,7 +516,7 @@ class CommonInputChecks(object):
         self.dates = pool_tuples(self.dates, 3, "dates option")
         self.evals = [key for key in safe_unicode(options.get("evals", "")).split() if key in fieldnames]
 
-    def __iter__(self):
+    def __iter__(self):  # noqa 901
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self, item)
@@ -968,7 +968,7 @@ class SetState(object):
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.roe = bool(int(options.get("raise_on_error", "1")))
 
-    def __iter__(self):
+    def __iter__(self):  # noqa 901
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self, item)
