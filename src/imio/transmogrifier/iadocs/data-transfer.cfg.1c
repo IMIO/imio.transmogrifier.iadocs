@@ -63,6 +63,9 @@ pipeline =
     c__1_user_match_read
     c__user_match_store
     c__1_user_read
+    c__1_plonetype_reject_non_user
+    c__1_plonetype_insert_active
+    c__1_plonetype_reject_inactive
     c__plone_user_write
     c__1_user_match_write
 # dd  personnel held_position for OM sender
@@ -668,16 +671,25 @@ yield = 0
 [c__1_user_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
-filename = eUsers.csv
-fieldnames = _A _eid _elogin _D _active _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _nom _prenom
-             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR _BS _BT _BU _BV _BW _BX _BY _BZ
-             _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
-             _DA _DB _DC _DD _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _DQ _DR _DS _DT _DU _DV _DW _DX _DY _DZ
-             _EA _EB _EC _ED _EE _EF _EG _EH _EI _EJ _EK _EL _EM _EN _EO _EP _EQ _ER _ES _ET _EU _EV _EW _EX _EY _EZ
-             _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU _FV _FW _FX _FY _FZ
-             _GA _GB _GC _GD _GE _GF _GG _GH
+filename = jalhay-export-contacts.csv
+fieldnames = _eid _nom _prenom _D _contact_type _F _inactive _H _I _J _K _L _M _N _O _P _Q
 bp_key = e_user
+
+[c__1_plonetype_reject_non_user]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'c') and item.get('_bpk') == 'e_user'
+condition2 = python:item.get(u"_contact_type") == u"Utilisateurs"
+
+[c__1_plonetype_insert_active]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'c') and item.get('_bpk') == 'e_user'
+key = string:_active
+value = python:item.get(u"_inactive") == u"NON"
+
+[c__1_plonetype_reject_inactive]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'c') and item.get('_bpk') == 'e_user'
+condition2 = python:item.get(u"_active")
 
 [c__plone_user_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
