@@ -451,7 +451,7 @@ class ReplaceVariables(object):
                         e_logger.error(
                             u'{}: variable "{}" not found in dic from orig value "{}"'.format(self.name, var,
                                                                                               item[self.item_key]))
-                        break
+                        value = value.replace(u"{0}{1}{0}".format(self.delimiter, var), u"!{}!".format(var))
             if item[self.item_key] != value:
                 if self.modify_dict:
                     self.values[item[self.store_key]][self.dic_value_key] = value
