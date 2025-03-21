@@ -438,19 +438,23 @@ class ReplaceVariables(object):
             course_store(self, item)
             value = item[self.item_key]
             while self.delimiter in value:
-                pattern = re.escape(self.delimiter) + r'([^' + re.escape(self.delimiter) + r']+)' \
-                    + re.escape(self.delimiter)
+                pattern = (
+                    re.escape(self.delimiter) + r"([^" + re.escape(self.delimiter) + r"]+)" + re.escape(self.delimiter)
+                )
                 matches = re.findall(pattern, value)
                 if not matches:
                     break
                 for var in matches:
                     if var in self.values:
-                        value = value.replace(u"{0}{1}{0}".format(self.delimiter, var),
-                                              self.values[var][self.dic_value_key])
+                        value = value.replace(
+                            u"{0}{1}{0}".format(self.delimiter, var), self.values[var][self.dic_value_key]
+                        )
                     else:
                         e_logger.error(
-                            u'{}: variable "{}" not found in dic from orig value "{}"'.format(self.name, var,
-                                                                                              item[self.item_key]))
+                            u'{}: variable "{}" not found in dic from orig value "{}"'.format(
+                                self.name, var, item[self.item_key]
+                            )
+                        )
                         break
             if item[self.item_key] != value:
                 if self.modify_dict:
