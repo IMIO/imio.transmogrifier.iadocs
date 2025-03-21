@@ -1812,7 +1812,7 @@ class MavalHandling(object):
         self.e_papri = self.storage["data"].get("e_papri", {})
         self.service_match = self.storage["data"].get("e_service_match", {})
         self.mailtype_match = self.storage["data"].get("e_mailtype_match", {})
-        self.user_match = self.storage["data"]["e_user_match"]
+        self.user_match = self.storage["data"].get("e_user_match", {})
         self.p_user_service = self.storage["data"]["p_user_service"]  # plone user service
         # calculate once the editor services for each user
         self.p_u_s_editor = {}
