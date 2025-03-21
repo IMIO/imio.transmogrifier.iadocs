@@ -308,6 +308,22 @@ class Initialization(object):
                 self.storage["data"]["p_irn_to_folder"],
                 self.storage["data"]["p_folder_full_title"],
             ) = get_folders(self)
+        # customer type 4
+        if "9" in self.storage["parts"]:
+            fields_dic = {}
+            for prof_str, letter in ((transmogrifier["config"]["profils_donnee_E"], "E"),
+                                     (transmogrifier["config"]["profils_donnee_S"], "S"),
+                                     (transmogrifier["config"]["profils_dossier"], "F")):
+                profiles = prof_str.strip(" ").split(" ")
+                fields_dic.update({k: {'typ': letter} for k in profiles if k})
+            flds_opt = transmogrifier["config"]["fields"].replace("\n", " ")
+            flds_opt = next(csv.reader([flds_opt.strip()], delimiter=" ", quotechar='"', skipinitialspace=True))
+            flds_opt = [cell.decode("utf8") for cell in flds_opt]
+            flds_opt = [tup for tup in pool_tuples(flds_opt, 4, "fields option")]
+            for prd, e_fld, p_fld, transform in flds_opt:
+                fields_dic[prd][e_fld] = p_fld
+            self.storage["data"]["e_9_fields"] = fields_dic
+
         # store already imported mails
         self.storage["data"]["p_mail_ids"] = {}  # TODO will replace pkl file ?
         # store user groups

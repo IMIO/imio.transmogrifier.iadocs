@@ -787,12 +787,12 @@ condition2 = python: (item.get('_etype') == u'D' and item['_eid'] in storage['da
 [9__maval_reject_i]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval' and item['_etype'] == "D"
-condition2 = python: item['_eid'] in storage['data']['e_mail_i']
+condition2 = python: item['_eid'] in storage['data']['e_mail_i'] and storage["data"]["e_9_fields"][storage['data']['e_mails_prd'][item["_eid"]]["_prd"]][item["_fld"]] != "-"
 
 [9__maval_reject_f]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval' and item['_etype'] == "S"
-condition2 = python: item['_eid'] in storage['data']['e_folder_p']
+condition2 = python: item['_eid'] in storage['data']['e_folder_p'] and storage["data"]["e_9_fields"][storage['data']['e_folders_prs'][item["_eid"]]["_prs"]][item["_fld"]] != "-"
 
 [9__4_split_copies]
 blueprint = imio.transmogrifier.iadocs.item_field_split
