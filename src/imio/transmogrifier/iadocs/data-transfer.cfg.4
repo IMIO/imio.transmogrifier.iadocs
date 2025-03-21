@@ -125,16 +125,19 @@ pipeline =
 # 99 réécriture maval sans lignes inutiles et enregistrement services utilisés
     9__need
     9l__pickle_i_w
+    9f__pickle_f_w
     9__pickle_us_w
+    9__maval_read_orig
     9__maval_read
-    9__maval_read_i
     9__maval_reject
     9__maval_reject_i
+    9__maval_reject_f
     9__4_split_copies
     9__4__store_service
     9__4_maval_us_reject
     9__maval_cleaned_write
     9__maval_cleaned_write_i
+    9__maval_cleaned_write_f
 # aa services
     a__pickle_us_r
     a__service_match_read
@@ -211,7 +214,7 @@ pipeline =
     e__stop_category
 # ff  classification folders
     f__need
-    fF__pickle_w
+;    fF__pickle_w
     fs__1_folder_read
     fs__4_folder_reject
     fs__4_hour_correction
@@ -739,7 +742,7 @@ yield = 0
 
 [9__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 2
+parts = 23
 
 [9l__pickle_i_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -747,49 +750,61 @@ filename = 2_e_mail_i.pkl
 store_key = e_mail_i
 d_condition = python:storage['commit'] is True and modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and 'l__to_correct_only' not in transmogrifier['transmogrifier']['pipeline'].split('\n')
 
+[9f__pickle_f_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_folder.pkl
+store_key = e_folder_p
+d_condition = python:storage['commit'] is True and modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f')
+
 [9__pickle_us_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_used_services.pkl
 store_key = e_used_services
 d_condition = python:storage['commit'] is True and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], '2_e_used_services.pkl'))
 
-[9__maval_read]
+[9__maval_read_orig]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_orig.csv')) and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_prd.csv'))
+b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_orig.csv')) and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
 filename = maval00_orig.csv
 fieldnames = _etype _eid _fld _val _E _F _G _H _I _J
-bp_key = e_maval
+bp_key = e_maval_orig
 
-[9__maval_read_i]
+[9__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_orig.csv')) and
               modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv')) and
-              not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_i.csv'))
+              (not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_i.csv')) or
+               not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_f.csv')))
 filename = maval00.csv
 fieldnames = _etype _eid _fld _val
-bp_key = e_maval_i
+bp_key = e_maval
 
 [9__maval_reject]
 blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval'
-condition2 = python: item.get('_etype') == u'D' and item['_eid'] in storage['data']['e_mails_prd']
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval_orig'
+condition2 = python: (item.get('_etype') == u'D' and item['_eid'] in storage['data']['e_mails_prd']) or (item.get('_etype') == u'S' and item['_eid'] in storage['data']['e_folders_prs'])
 
 [9__maval_reject_i]
 blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval_i'
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval' and item['_etype'] == "D"
 condition2 = python: item['_eid'] in storage['data']['e_mail_i']
+
+[9__maval_reject_f]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval' and item['_etype'] == "S"
+condition2 = python: item['_eid'] in storage['data']['e_folder_p']
 
 [9__4_split_copies]
 blueprint = imio.transmogrifier.iadocs.item_field_split
 bp_key = e_maval_us
-condition = python: item.get('_bpk') == u'e_maval' and item["_fld"] in ("COPIES", "COPIESAUTO")
+condition = python: item.get('_bpk') == u'e_maval_orig' and item["_fld"] in ("COPIES", "COPIESAUTO")
 field = _val
 separator = " "
 yield_original = 1
 
 [9__4__store_service]
 blueprint = imio.transmogrifier.iadocs.store_in_data
-condition = python: (item.get('_bpk') == u'e_maval' and item["_fld"] == "SERVDEST") or item.get('_bpk') == u"e_maval_us"
+condition = python: (item.get('_bpk') == u'e_maval_orig' and item["_fld"] == "SERVDEST") or item.get('_bpk') == u"e_maval_us"
 bp_key = e_used_services
 store_key = _val
 check_key_uniqueness = 0
@@ -804,8 +819,8 @@ condition2 = python: False
 [9__maval_cleaned_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
-condition = python: item.get('_bpk') in 'e_maval'
-filename = maval00_prd.csv
+condition = python: item.get('_bpk') == 'e_maval_orig'
+filename = maval00.csv
 fieldnames = _etype _eid _fld _val
 headers = VALTYP VALSEQ VALPRI VALVAL
 bp_key = 9_maval
@@ -815,11 +830,22 @@ yield = 0
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv')) and
               not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_i.csv'))
-condition = python: item.get('_bpk') in 'e_maval_i'
+condition = python: item.get('_bpk') == 'e_maval' and item['_etype'] == 'D'
 filename = maval00_i.csv
 fieldnames = _etype _eid _fld _val
 headers = VALTYP VALSEQ VALPRI VALVAL
-bp_key = 9_maval
+bp_key = 9_maval_i
+yield = 0
+
+[9__maval_cleaned_write_f]
+blueprint = imio.transmogrifier.iadocs.csv_writer
+b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv')) and
+              not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_f.csv'))
+condition = python: item.get('_bpk') == 'e_maval' and item['_etype'] == 'S'
+filename = maval00_f.csv
+fieldnames = _etype _eid _fld _val
+headers = VALTYP VALSEQ VALPRI VALVAL
+bp_key = 9_maval_f
 yield = 0
 
 # = = = = = = =  aa  = = = = = = = #
@@ -1671,7 +1697,7 @@ d_condition = python:storage['commit'] is True
 [g__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
-;filename = maval00_prd.csv
+;filename = maval00.csv
 filename = maval00_test.csv
 fieldnames = _A _eid _fld _val
 bp_key = e_mail_maval_f
@@ -2268,7 +2294,7 @@ d_condition = python:storage['commit'] is True
 [m__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
-;filename = maval00_prd.csv
+;filename = maval00.csv
 filename = maval00_test.csv
 fieldnames = _A _eid _fld _val
 bp_key = e_mail_maval_i
