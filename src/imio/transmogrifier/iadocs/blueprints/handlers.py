@@ -2121,7 +2121,7 @@ class PostActions(object):
                     u"Commit in '{}' at {}".format(item["_bpk"], self.storage["count"]["commit_count"][""]["c"])
                 )
                 for filename, store_key, condition in self.storage["lastsection"]["pkl_dump"]:
-                    if filename and condition(None, storage=self.storage):
+                    if filename and condition(None, storage=self.storage, filename=filename):
                         o_logger.info(u"Dumping '{}'".format(filename))
                         with open(filename, "wb") as fh:
                             cPickle.dump(self.storage["data"][store_key], fh, -1)
