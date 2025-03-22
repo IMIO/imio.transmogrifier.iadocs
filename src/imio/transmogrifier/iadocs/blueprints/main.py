@@ -357,6 +357,7 @@ class Initialization(object):
 
         # deactivate versioning :
         pr_tool = api.portal.get_tool("portal_repository")
+        # TODO store previous values persistently !!
         self.storage["plone"]["pr_vct"] = tuple(pr_tool._versionable_content_types)
         self.storage["plone"]["pr_vpm"] = dict(pr_tool._version_policy_mapping)
         pr_tool._versionable_content_types = []

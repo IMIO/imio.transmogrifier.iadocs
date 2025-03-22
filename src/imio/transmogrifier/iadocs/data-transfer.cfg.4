@@ -20,8 +20,8 @@ default_creation_date = 20050726-0000
 default_tg = TVX-BA
 default_category =
 to_treat = 10
-;profils_donnee_E = ENTRANT DOC-GTRAV
-profils_donnee_E = DOC-GTRAV
+profils_donnee_E = ENTRANT DOC-GTRAV
+;profils_donnee_E = ENTRANT
 profils_donnee_S =
 ;profils_donnee_E =  C_ENTR_CJ ENTRANT FACTURE FAX
 ;profils_donnee_S =  C_SORTANT C_SORT_CJ SORTANT
@@ -48,6 +48,9 @@ date_entree_min = 20050726
 ;         C_ENTR_CJ REGCE "" ""
 fields = DOC-GTRAV GT_CONTRAT data_transfer ""
          DOC-GTRAV GT_LOT data_transfer ""
+         DOC-GTRAV GT_AGTA - ""
+         DOC-GTRAV GT_NATURE - ""
+         DOC-GTRAV OBJET - ""
          ENTRANT ADRESSE data_transfer "after:NOM"
          ENTRANT AIGUILERR - ""
          ENTRANT AIGUILREM - ""
@@ -94,7 +97,7 @@ pipeline =
     0__pickle_f_w
     0__files_list
 # 22 sauvegarde données avec profil gardé
-    2l__pickle_m_w
+    2lm__pickle_m_w
     2__mail_read
     2__mail_keep
     2__mail_store
@@ -139,6 +142,7 @@ pipeline =
     9__maval_cleaned_write
     9__maval_cleaned_write_i
     9__maval_cleaned_write_f
+    9__stop
 # aa services
     a__pickle_us_r
     a__service_match_read
@@ -560,7 +564,7 @@ bp_key = e_files
 
 # = = = = = = =  22  = = = = = = = #
 
-[2l__pickle_m_w]
+[2lm__pickle_m_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mails_prd.pkl
 store_key = e_mails_prd
@@ -568,7 +572,7 @@ d_condition = python:storage['commit'] is True and not modules['os'].path.exists
 
 [2__mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('2l__pickle_m_w', {}).get('filename', '_not_found_')))
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('2lm__pickle_m_w', {}).get('filename', '_not_found_')))
 filename = dodon00.csv
 fieldnames = _eid _prd _dt_ent _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T
 bp_key = e_mails
@@ -848,6 +852,11 @@ fieldnames = _etype _eid _fld _val
 headers = VALTYP VALSEQ VALPRI VALVAL
 bp_key = 9_maval_f
 yield = 0
+
+[9__stop]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: item.get('_bpk') in ('e_maval', 'e_maval_orig')
+condition2 = python: False
 
 # = = = = = = =  aa  = = = = = = = #
 
@@ -2294,8 +2303,8 @@ d_condition = python:storage['commit'] is True
 [m__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
-;filename = maval00.csv
-filename = maval00_test.csv
+filename = maval00_i.csv
+;filename = maval00_test.csv
 fieldnames = _A _eid _fld _val
 bp_key = e_mail_maval_i
 
