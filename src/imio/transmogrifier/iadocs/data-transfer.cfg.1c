@@ -64,8 +64,6 @@ pipeline =
     c__user_match_store
     c__1_user_read
     c__1_user_reject_non_user
-    c__1_user_insert_active
-    c__1_user_reject_inactive
     c__plone_user_write
     c__1_user_match_write
 # dd  personnel held_position for OM sender
@@ -472,7 +470,7 @@ invalids = _eid NULL
 
 [a__service_reject]
 blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'a') and item.get('_bpk') == u'e_service' 
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'a') and item.get('_bpk') == u'e_service'
 condition2 = python: item.get('_eid') is not None
 
 [a__service_store]
@@ -506,7 +504,7 @@ blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_service'
 filename = 0_service_match.csv
-fieldnames = _eid _pid _title
+fieldnames = _eid _none _title
 headers = eid parent_eid etitle uid full_title
 bp_key = 0_service_match
 
@@ -682,17 +680,6 @@ bp_key = e_user
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'c') and item.get('_bpk') == 'e_user'
 condition2 = python:item.get(u"_c_type") == u"Utilisateurs"
-
-[c__1_user_insert_active]
-blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'c') and item.get('_bpk') == 'e_user'
-key = string:_active
-value = python:item.get(u"_inactive") == u"NON"
-
-[c__1_user_reject_inactive]
-blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'c') and item.get('_bpk') == 'e_user'
-condition2 = python:item.get(u"_active")
 
 [c__plone_user_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
