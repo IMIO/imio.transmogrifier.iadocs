@@ -7,8 +7,8 @@ debug = 0
 # needed if contact encoding group is enabled in Plone
 creating_group =
 raise_on_error = 1
-internal_number_behavior_types = organization person held_position dmsincomingmail dmsincoming_email dmsoutgoingmail
-data_transfer_behavior_types = dmsincomingmail dmsincoming_email dmsoutgoingmail
+internal_number_behavior_types = organization dmsincomingmail
+data_transfer_behavior_types = dmsincomingmail
 none_value = *NONE
 creator = csvimport
 default_i_mail_type = courrier
@@ -21,6 +21,7 @@ default_tg = TVX-BA
 default_category =
 to_treat = 10
 profils_donnee_E = ENTRANT DOC-GTRAV
+;profils_donnee_E = DOC-GTRAV
 profils_donnee_S =
 ;profils_donnee_E =  C_ENTR_CJ ENTRANT FACTURE FAX
 ;profils_donnee_S =  C_SORTANT C_SORT_CJ SORTANT
@@ -47,6 +48,9 @@ date_entree_min = 20050726
 ;         C_ENTR_CJ REGCE "" ""
 fields = DOC-GTRAV GT_CONTRAT data_transfer ""
          DOC-GTRAV GT_LOT data_transfer ""
+         DOC-GTRAV GT_AGTA - ""
+         DOC-GTRAV GT_NATURE - ""
+         DOC-GTRAV OBJET - ""
          ENTRANT ADRESSE data_transfer "after:NOM"
          ENTRANT AIGUILERR - ""
          ENTRANT AIGUILREM - ""
@@ -69,6 +73,7 @@ fields = DOC-GTRAV GT_CONTRAT data_transfer ""
          ENTRANT RESUMESEC description ""
          ENTRANT RMOCD - ""
          ENTRANT RMOCS - ""
+         ENTRANT RMQCS data_transfer "after:LOCALITE"
          ENTRANT SERVDEST treating_groups ""
          ENTRANT TEL - ""
          ENTRANT TYPEDOC mail_type ""
@@ -84,7 +89,7 @@ fields = DOC-GTRAV GT_CONTRAT data_transfer ""
          GESTRAV OBJET classification_informations "after:GT_NATURE"
 
 ;permitted_sections = 0abcdefFhilmp1qrstuxy
-permitted_sections = 234569abcfglm
+permitted_sections = 234569abcfglms
 # CHANGE b__4_field_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -93,7 +98,7 @@ pipeline =
     0__pickle_f_w
     0__files_list
 # 22 sauvegarde données avec profil gardé
-    2__pickle_m_w
+    2lm__pickle_m_w
     2__mail_read
     2__mail_keep
     2__mail_store
@@ -116,7 +121,7 @@ pipeline =
     5__palib_keep_mail
     5__palib_store
 # 66 sauvegarde chemins
-    6__pickle_p_w
+    6l__pickle_p_w
     6__pamac_read
     6__pamac_keep
     6__pamac_store
@@ -125,16 +130,20 @@ pipeline =
 # 99 réécriture maval sans lignes inutiles et enregistrement services utilisés
     9__need
     9l__pickle_i_w
+    9f__pickle_f_w
     9__pickle_us_w
+    9__maval_read_orig
     9__maval_read
-    9__maval_read_i
     9__maval_reject
     9__maval_reject_i
+    9__maval_reject_f
     9__4_split_copies
     9__4__store_service
     9__4_maval_us_reject
     9__maval_cleaned_write
     9__maval_cleaned_write_i
+    9__maval_cleaned_write_f
+    9__stop
 # aa services
     a__pickle_us_r
     a__service_match_read
@@ -211,10 +220,11 @@ pipeline =
     e__stop_category
 # ff  classification folders
     f__need
-    fF__pickle_w
+;    fF__pickle_w
     fs__1_folder_read
+    fs__4_folder_reject
     fs__4_hour_correction
-    f__4__title_insert
+    fs__4__title_insert
 ;    F__1_folder_created_read
     fsF__1_folder_check
 ;    f__folder_matched_uid_add
@@ -434,6 +444,7 @@ pipeline =
 
 # ss classification folders assignments
     s__need
+    s__4_title_rename
     s__1_folder_store
     s__pickle_mail_folder_w
     s__1_mail_folder_read
@@ -554,7 +565,7 @@ bp_key = e_files
 
 # = = = = = = =  22  = = = = = = = #
 
-[2__pickle_m_w]
+[2lm__pickle_m_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mails_prd.pkl
 store_key = e_mails_prd
@@ -562,7 +573,7 @@ d_condition = python:storage['commit'] is True and not modules['os'].path.exists
 
 [2__mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('2__pickle_m_w', {}).get('filename', '_not_found_')))
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('2lm__pickle_m_w', {}).get('filename', '_not_found_')))
 filename = dodon00.csv
 fieldnames = _eid _prd _dt_ent _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T
 bp_key = e_mails
@@ -687,7 +698,7 @@ yield = 0
 
 # = = = = = = =  66  = = = = = = = #
 
-[6__pickle_p_w]
+[6l__pickle_p_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_pamac.pkl
 store_key = e_pamac
@@ -695,7 +706,7 @@ d_condition = python:storage['commit'] is True and not modules['os'].path.exists
 
 [6__pamac_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('6__pickle_p_w', {}).get('filename', '_not_found_')))
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('6l__pickle_p_w', {}).get('filename', '_not_found_')))
 filename = pamac00.csv
 fieldnames = _eid _typ _value _D _E _F _G _H _I _J
 bp_key = e_filepaths
@@ -716,7 +727,7 @@ yield = 0
 
 [6__pamac_load]
 blueprint = imio.transmogrifier.iadocs.read_from_data
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('6__pickle_p_w', {}).get('filename', '_not_found_')))
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('6l__pickle_p_w', {}).get('filename', '_not_found_')))
 bp_key = e_filepaths
 related_storage = e_pamac
 store_key = _eid
@@ -724,7 +735,7 @@ fieldnames = _value
 
 [6__4_pamac_replace_variables]
 blueprint = imio.transmogrifier.iadocs.replace_variables
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('6__pickle_p_w', {}).get('filename', '_not_found_')))
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('6l__pickle_p_w', {}).get('filename', '_not_found_')))
 bp_key = e_pamac
 store_key = _eid
 dict_value_key = _value
@@ -737,7 +748,7 @@ yield = 0
 
 [9__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 2
+parts = 23
 
 [9l__pickle_i_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -745,49 +756,61 @@ filename = 2_e_mail_i.pkl
 store_key = e_mail_i
 d_condition = python:storage['commit'] is True and modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and 'l__to_correct_only' not in transmogrifier['transmogrifier']['pipeline'].split('\n')
 
+[9f__pickle_f_w]
+blueprint = imio.transmogrifier.iadocs.pickle_data
+filename = 2_folder.pkl
+store_key = e_folder_p
+d_condition = python:storage['commit'] is True and modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f')
+
 [9__pickle_us_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_used_services.pkl
 store_key = e_used_services
 d_condition = python:storage['commit'] is True and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], '2_e_used_services.pkl'))
 
-[9__maval_read]
+[9__maval_read_orig]
 blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_orig.csv')) and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_prd.csv'))
+b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_orig.csv')) and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
 filename = maval00_orig.csv
 fieldnames = _etype _eid _fld _val _E _F _G _H _I _J
-bp_key = e_maval
+bp_key = e_maval_orig
 
-[9__maval_read_i]
+[9__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_orig.csv')) and
               modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv')) and
-              not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_i.csv'))
+              (not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_i.csv')) or
+               not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_f.csv')))
 filename = maval00.csv
 fieldnames = _etype _eid _fld _val
-bp_key = e_maval_i
+bp_key = e_maval
 
 [9__maval_reject]
 blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval'
-condition2 = python: item.get('_etype') == u'D' and item['_eid'] in storage['data']['e_mails_prd']
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval_orig'
+condition2 = python: (item.get('_etype') == u'D' and item['_eid'] in storage['data']['e_mails_prd']) or (item.get('_etype') == u'S' and item['_eid'] in storage['data']['e_folders_prs'])
 
 [9__maval_reject_i]
 blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval_i'
-condition2 = python: item['_eid'] in storage['data']['e_mail_i']
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval' and item['_etype'] == "D"
+condition2 = python: item['_eid'] in storage['data']['e_mail_i'] and storage["data"]["e_9_fields"][storage['data']['e_mails_prd'][item["_eid"]]["_prd"]][item["_fld"]] != "-"
+
+[9__maval_reject_f]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '9') and item.get('_bpk') == 'e_maval' and item['_etype'] == "S"
+condition2 = python: item['_eid'] in storage['data']['e_folder_p'] and storage["data"]["e_9_fields"][storage['data']['e_folders_prs'][item["_eid"]]["_prs"]][item["_fld"]] != "-"
 
 [9__4_split_copies]
 blueprint = imio.transmogrifier.iadocs.item_field_split
 bp_key = e_maval_us
-condition = python: item.get('_bpk') == u'e_maval' and item["_fld"] in ("COPIES", "COPIESAUTO")
+condition = python: item.get('_bpk') == u'e_maval_orig' and item["_fld"] in ("COPIES", "COPIESAUTO")
 field = _val
 separator = " "
 yield_original = 1
 
 [9__4__store_service]
 blueprint = imio.transmogrifier.iadocs.store_in_data
-condition = python: (item.get('_bpk') == u'e_maval' and item["_fld"] == "SERVDEST") or item.get('_bpk') == u"e_maval_us"
+condition = python: (item.get('_bpk') == u'e_maval_orig' and item["_fld"] == "SERVDEST") or item.get('_bpk') == u"e_maval_us"
 bp_key = e_used_services
 store_key = _val
 check_key_uniqueness = 0
@@ -802,8 +825,8 @@ condition2 = python: False
 [9__maval_cleaned_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv'))
-condition = python: item.get('_bpk') in 'e_maval'
-filename = maval00_prd.csv
+condition = python: item.get('_bpk') == 'e_maval_orig'
+filename = maval00.csv
 fieldnames = _etype _eid _fld _val
 headers = VALTYP VALSEQ VALPRI VALVAL
 bp_key = 9_maval
@@ -813,12 +836,28 @@ yield = 0
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv')) and
               not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_i.csv'))
-condition = python: item.get('_bpk') in 'e_maval_i'
+condition = python: item.get('_bpk') == 'e_maval' and item['_etype'] == 'D'
 filename = maval00_i.csv
 fieldnames = _etype _eid _fld _val
 headers = VALTYP VALSEQ VALPRI VALVAL
-bp_key = 9_maval
+bp_key = 9_maval_i
 yield = 0
+
+[9__maval_cleaned_write_f]
+blueprint = imio.transmogrifier.iadocs.csv_writer
+b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00.csv')) and
+              not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], 'maval00_f.csv'))
+condition = python: item.get('_bpk') == 'e_maval' and item['_etype'] == 'S'
+filename = maval00_f.csv
+fieldnames = _etype _eid _fld _val
+headers = VALTYP VALSEQ VALPRI VALVAL
+bp_key = 9_maval_f
+yield = 0
+
+[9__stop]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: item.get('_bpk') in ('e_maval', 'e_maval_orig')
+condition2 = python: False
 
 # = = = = = = =  aa  = = = = = = = #
 
@@ -861,7 +900,7 @@ bp_key = e_service
 [a__service_reject]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: item.get('_bpk') == u'e_service'
-condition2 = python: item['_eid'] in storage['data']['e_used_services']
+condition2 = python: item['_eid'] in storage['data']['e_used_services'] or item['_eid'] in storage['data'].get('e_service_match', {})
 
 [a__1_service_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -1353,7 +1392,7 @@ condition2 = python: False
 
 [f__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = a
+parts = 3a
 
 [fF__pickle_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -1365,11 +1404,15 @@ d_condition = python:storage['commit'] is True and 'f__to_correct_only' not in t
 # read the folder csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
-;filename = eClassementDossiers_test.csv
-filename = dsent00_test.csv
-;filename = dsent00.csv
+;filename = dsent00_test.csv
+filename = dsent00.csv
 fieldnames = _eid _prs _open_date _D _service_id _F _G _archive_date _I _J _K _L _M _N _cr_dt _cr_hr _Q _R _S _T
 bp_key = e_folder
+
+[fs__4_folder_reject]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'fs') and item.get('_bpk') == 'e_folder'
+condition2 = python: item['_eid'] in storage['data']['e_folders_prs']
 
 [fs__4_hour_correction]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1377,13 +1420,13 @@ condition = python: "_cr_hr" in item and len(item["_cr_hr"]) == 5
 key = string:_cr_hr
 value = python:"0{}".format(item["_cr_hr"])
 
-[f__4__title_insert]
+[fs__4__title_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 key = string:title
 value = python:item['_eid'] in storage['data']['e_palib']['DOSSIER'] and storage['data']['e_palib']['DOSSIER'][item['_eid']]['_val'] or u''
 
-[F__1_folder_created_read]
+[F__1_folder_created_readNO]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 filename = 3_folder_created.csv
 fieldnames = _eid title _uid treating_groups archived _path _type classification_categories classification_informations internal_reference_no _deactivate creation_date modification_date
@@ -1399,7 +1442,7 @@ concatenate = _cr_dt _cr_hr creation_date " "
 booleans = archived
 dates = creation_date "%Y%m%d %H%M%S" 0
 
-[f__folder_matched_uid_add]
+[f__folder_matched_uid_addNO]
 blueprint = imio.transmogrifier.iadocs.add_data_in_item
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == u'e_folder'
@@ -1411,7 +1454,7 @@ fieldnames = uid
 prefix = _pf
 marker = eid_present
 
-[f__folder_matched_folder_info_add]
+[f__folder_matched_folder_info_addNO]
 blueprint = imio.transmogrifier.iadocs.add_data_in_item
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == u'e_folder'
@@ -1423,7 +1466,7 @@ fieldnames = full_title parent path
 prefix = _p
 add_store_keys = 0
 
-[f__folder_service_uid_add]
+[f__folder_service_uid_addNO]
 blueprint = imio.transmogrifier.iadocs.add_data_in_item
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == u'e_folder'
@@ -1434,7 +1477,7 @@ store_subkey =
 fieldnames = uid
 prefix = _ps_
 
-[f__folder_service_name_add]
+[f__folder_service_name_addNO]
 blueprint = imio.transmogrifier.iadocs.add_data_in_item
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == u'e_folder'
@@ -1446,7 +1489,7 @@ fieldnames = ft
 prefix = _ps
 add_store_keys = 0
 
-[f__folder_match_write]
+[f__folder_match_writeNO]
 blueprint = imio.transmogrifier.iadocs.csv_writer
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_folder'
@@ -1456,7 +1499,7 @@ headers = eid etitle earchive eparent eservice puid ptitle pparent origin
 bp_key = 0_folder_match
 yield = 1
 
-[f__1_parent_relation_store]
+[f__1_parent_relation_storeNO]
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_folder' and item['_parent_id'] and item['_parent_id'] != item['_eid']
 bp_key = e_f_parent_relation
@@ -1464,13 +1507,13 @@ store_key = _eid
 fieldnames = _parent_id
 yield = 1
 
-[f__relative_path]
+[f__relative_pathNO]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 key = string:path
 value = python:item['_ppath'] and modules['imio.helpers.transmogrifier'].relative_path(transmogrifier.context, item['_ppath']) or u''
 
-[f__1_existing_folder_store]
+[f__1_existing_folder_storeNO]
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_folder' and item['_eid'] not in storage['data']['e_folder_p'] and item['path']
 bp_key = e_folder_p
@@ -1486,7 +1529,7 @@ store_key = _eid
 fieldnames = _ln _eid _prs title _archive_date _service_id creation_date _mar_ker
 yield = 0
 
-[f__dependency_sorter]
+[f__dependency_sorterNO]
 blueprint = imio.transmogrifier.iadocs.dependency_sorter
 # condition = python: item['_type'] == u'organization'
 condition =
@@ -1562,28 +1605,28 @@ key = string:title
 value = python:u'Sans titre'
 ;value = python:item['_category_id'] and storage['data']['e_category_full_match'].get(item['_category_id'], {}).get('_etitle') or u'Sans titre'
 
-[f__1_localisation_insert]
+[f__1_localisation_insertNO]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder' and item.get('_localisation')
 key = string:classification_informations
 value = python: u'LOCALISATION: {}.'.format(item['_localisation'])
 separator = python:u'\r\n'
 
-[f__1_remark_insert]
+[f__1_remark_insertNO]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder' and item.get('_remark')
 key = string:classification_informations
 value = python: u'REMARQUE: {}.'.format(item['_remark'])
 separator = python:u'\r\n'
 
-[f__1_comment_insert]
+[f__1_comment_insertNO]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder' and item.get('_comment')
 key = string:classification_informations
 value = python: u'COMMENTAIRE: {}.'.format(item['_comment'])
 separator = python:u'\r\n'
 
-[f__1_archive_date_insert]
+[f__1_archive_date_insertNO]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder' and item.get('_archive_date')
 key = string:classification_informations
@@ -1597,7 +1640,7 @@ key = string:treating_groups
 value = python:item['_service_id'] and storage['data']['e_service_match'][item['_service_id']]['uid'] or storage['data']['e_service_match']['${config:default_tg}']['uid']
 error_value = python: storage['data']['e_service_match']['${config:default_tg}']['uid']
 
-[fF__deactivate_insert]
+[fF__deactivate_insertNO]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 key = string:_deactivate
@@ -1616,7 +1659,7 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:_id
 value = python:item['_eid']
 
-[f__1_level3_handler]
+[f__1_level3_handlerNO]
 blueprint = imio.transmogrifier.iadocs.f_1_level3_handler
 condition = python: item['_level'] == 3
 
@@ -1630,13 +1673,13 @@ condition = python: item.get('_bpk') == u'e_folder'
 bp_key = e_folder_p
 id_keys = _eid
 
-[f__to_correct_only]
+[f__to_correct_onlyNO]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 condition2 = python: obj and ('classification_categories' in item and obj.classification_categories and obj.classification_categories != item['classification_categories'])
 get_obj = 1
 
-[f__filter_item]
+[f__filter_itemNO]
 blueprint = imio.transmogrifier.iadocs.filter_item
 condition = python: item.get('_bpk') == u'e_folder' and 'f__to_correct_only' in transmogrifier['transmogrifier']['pipeline'].split('\n')
 kept_keys = classification_categories
@@ -1645,7 +1688,8 @@ kept_keys = classification_categories
 
 [g__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 34c
+;parts = 34c
+parts = 34
 
 [g__pickle_f_r]
 # read plone loaded folders
@@ -1664,8 +1708,7 @@ d_condition = python:storage['commit'] is True
 [g__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
-;filename = maval00_prd.csv
-filename = maval00_test.csv
+filename = maval00_f.csv
 fieldnames = _A _eid _fld _val
 bp_key = e_mail_maval_f
 
@@ -1982,7 +2025,7 @@ yield = 1
 
 [l__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = 26a
+parts = a
 
 [lq__pickle_c_r]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -2001,8 +2044,8 @@ raise_on_error = ${config:raise_on_error}
 [l__1_mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = dodon00_test.csv
-;filename = dodon00.csv
+;filename = dodon00_test.csv
+filename = dodon00.csv
 ;fieldnames = _A _eid _C reception_date original_mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
 ;             _Q _R _S _T _U _to_del _W _source _source_id _Z
 ;             creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
@@ -2160,7 +2203,7 @@ separator = python:u'\r\n'
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and 'mail_type' not in item
 key = string:mail_type
-value = python: u'${config:default_i_mail_type}'
+value = python: item["_prd"] == "DOC-GTRAV" and u"gestrav" or u'${config:default_i_mail_type}'
 
 [l__1_meetingitem_link_insertNO]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -2183,7 +2226,7 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 ;value = python:u'Fichier: {}{}'.format(item['_path_id'], item['_filename'])
 ;separator = python:u'\r\n'
 key = string:task_description
-value = python:u'<p>Fichier: {}{}</p>'.format(item['_path_id'], item['_filename'])
+value = python:u'<p>Fichier: {}\{}</p>'.format(item['_path_id'], item['_filename'])
 
 [l__4_handling_date]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -2261,8 +2304,8 @@ d_condition = python:storage['commit'] is True
 [m__maval_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
-;filename = maval00_prd.csv
-filename = maval00_test.csv
+filename = maval00_i.csv
+;filename = maval00_test.csv
 fieldnames = _A _eid _fld _val
 bp_key = e_mail_maval_i
 
@@ -2742,7 +2785,14 @@ kept_keys = _none
 
 [s__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = e
+parts = 3
+
+[s__4_title_rename]
+blueprint = imio.transmogrifier.iadocs.manipulator
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact' and item['_type'] == u'organization'
+keys = title
+delete = title
+destination = string:_title
 
 [s__1_folder_store]
 # store the folders from csv file (section f)
@@ -2750,7 +2800,7 @@ blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_folder'
 bp_key = e_folder
 store_key = _eid
-fieldnames = _title _category_id
+fieldnames = _title
 yield = 0
 
 [s__pickle_mail_folder_w]
@@ -2764,16 +2814,16 @@ d_condition = python:storage['commit'] is True and 's__to_correct_only' not in t
 # read folders links csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = eCourriersDossiers.csv
-;filename = eCourriersDossiers_test.csv
-fieldnames = _A _eid _folder_id _principal
+;filename = dsdet00.csv
+filename = dsdet00_test.csv
+fieldnames = _folder_id _typ _eid _D _E _F _G _H _I
 bp_key = e_mail_folder
 
 [s__1_already_only]
-# keep plone loaded mails folders
+# keep plone loaded mails and folders
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 's') and item.get('_bpk') == u'e_mail_folder'
-condition2 = python: item['_eid'] in storage['data']['e_mail']
+condition2 = python: item['_eid'] in storage['data']['e_mail'] and item['_folder_id'] in storage['data']['e_folders_prs']
 
 [s__batched]
 # keep only not already treated mails folders links
@@ -2787,6 +2837,7 @@ condition2 = python:not storage['batch_nb'] and True or ((item['_eid'] not in st
 blueprint = imio.transmogrifier.iadocs.s_1_classification_folders_update
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 's') and item.get('_bpk') == u'e_mail_folder'
 store_key = e_mail
+fill_empty_mail_category = 0
 
 [s__count]
 # folders links counter
@@ -3293,7 +3344,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 
 [print_item]
 blueprint = imio.transmogrifier.iadocs.print_item
-;condition = python:True
+condition = python:False
 ;condition = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'glm')
 removed_keys = file
 

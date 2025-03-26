@@ -60,8 +60,8 @@ class CSVReader(object):
         self.roe = bool(int(options.get("raise_on_error") or "1"))
         self.fmtparam = dict(
             (
-                key[len("fmtparam-") :],
-                Expression(value, transmogrifier, name, options)(options, key=key[len("fmtparam-") :]),
+                key[len("fmtparam-"):],
+                Expression(value, transmogrifier, name, options)(options, key=key[len("fmtparam-"):]),
             )
             for key, value in six.iteritems(options)
             if key.startswith("fmtparam-")
@@ -221,8 +221,8 @@ class CSVWriter(object):
         csv_encoding = safe_unicode(options.get("csv_encoding") or "utf8")
         fmtparam = dict(
             (
-                key[len("fmtparam-") :],
-                Expression(value, transmogrifier, name, options)(options, key=key[len("fmtparam-") :]),
+                key[len("fmtparam-"):],
+                Expression(value, transmogrifier, name, options)(options, key=key[len("fmtparam-"):]),
             )
             for key, value in six.iteritems(options)
             if key.startswith("fmtparam-")

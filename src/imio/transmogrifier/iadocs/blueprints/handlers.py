@@ -1812,7 +1812,7 @@ class MavalHandling(object):
         self.e_papri = self.storage["data"].get("e_papri", {})
         self.service_match = self.storage["data"].get("e_service_match", {})
         self.mailtype_match = self.storage["data"].get("e_mailtype_match", {})
-        self.user_match = self.storage["data"]["e_user_match"]
+        self.user_match = self.storage["data"].get("e_user_match", {})
         self.p_user_service = self.storage["data"]["p_user_service"]  # plone user service
         # calculate once the editor services for each user
         self.p_u_s_editor = {}
@@ -2121,7 +2121,7 @@ class PostActions(object):
                     u"Commit in '{}' at {}".format(item["_bpk"], self.storage["count"]["commit_count"][""]["c"])
                 )
                 for filename, store_key, condition in self.storage["lastsection"]["pkl_dump"]:
-                    if filename and condition(None, storage=self.storage):
+                    if filename and condition(None, storage=self.storage, filename=filename):
                         o_logger.info(u"Dumping '{}'".format(filename))
                         with open(filename, "wb") as fh:
                             cPickle.dump(self.storage["data"][store_key], fh, -1)
