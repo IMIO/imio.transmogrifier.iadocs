@@ -1949,7 +1949,7 @@ class MavalHandling(object):
             to_remove = [line for line in c_lines if line.startswith(u"{}: ".format(lib))]
             if to_remove:
                 c_lines.remove(to_remove[0])
-                ret = to_remove[0][len(lib) + 2:]
+                ret = to_remove[0][len(lib) + 2 :]
         item2[p_fld] = u"\r\n".join(c_lines)
         return ret
 

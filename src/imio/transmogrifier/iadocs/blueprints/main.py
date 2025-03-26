@@ -12,6 +12,8 @@ from datetime import datetime
 from DateTime.DateTime import DateTime
 from imio.dms.mail import ARCHIVE_SITE
 from imio.dms.mail.browser.settings import IImioDmsMailConfig
+from imio.helpers.content import get_from_annotation
+from imio.helpers.content import set_to_annotation
 from imio.helpers.security import generate_password
 from imio.helpers.transmogrifier import clean_value
 from imio.helpers.transmogrifier import Condition
@@ -78,7 +80,7 @@ class Initialization(object):
     classProvides(ISectionBlueprint)
     implements(ISection)
 
-    def __init__(self, transmogrifier, name, options, previous):  # noqa 901
+    def __init__(self, transmogrifier, name, options, previous):  # noqa C901
         self.previous = previous
         self.name = name
         self.portal = transmogrifier.context
@@ -355,11 +357,12 @@ class Initialization(object):
             "collective.classification.folder.browser.settings." "IClassificationConfig.folder_number"
         )
 
-        # deactivate versioning :
+        # deactivate versioning
         pr_tool = api.portal.get_tool("portal_repository")
-        # TODO store previous values persistently !!
-        self.storage["plone"]["pr_vct"] = tuple(pr_tool._versionable_content_types)
-        self.storage["plone"]["pr_vpm"] = dict(pr_tool._version_policy_mapping)
+        if not get_from_annotation("transmo.pr_vct", obj=self.portal):
+            set_to_annotation("transmo.pr_vct", value=tuple(pr_tool._versionable_content_types), obj=self.portal)
+        if not get_from_annotation("transmo.pr_vpm", obj=self.portal):
+            set_to_annotation("transmo.pr_vpm", value=dict(pr_tool._version_policy_mapping), obj=self.portal)
         pr_tool._versionable_content_types = []
         pr_tool._version_policy_mapping = {}
 
@@ -533,7 +536,7 @@ class CommonInputChecks(object):
         self.dates = pool_tuples(self.dates, 3, "dates option")
         self.evals = [key for key in safe_unicode(options.get("evals", "")).split() if key in fieldnames]
 
-    def __iter__(self):  # noqa 901
+    def __iter__(self):  # noqa C901
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self, item)
@@ -783,10 +786,16 @@ class LastSection(object):
         # reactivate versioning
         if not ARCHIVE_SITE:
             pr_tool = api.portal.get_tool("portal_repository")
-            pr_tool._versionable_content_types = list(self.storage["plone"]["pr_vct"])
-            pr_tool._version_policy_mapping = self.storage["plone"]["pr_vpm"]
+            annot = IAnnotations(self.portal)
+            stored_value = get_from_annotation("transmo.pr_vct", obj=self.portal)
+            if stored_value:
+                pr_tool._versionable_content_types = list(stored_value)
+                del annot["transmo.pr_vct"]
+            stored_value = get_from_annotation("transmo.pr_vpm", obj=self.portal)
+            if stored_value:
+                pr_tool._version_policy_mapping = pr_tool._version_policy_mapping
+                del annot["transmo.pr_vpm"]
         course_print(self)
-        # import ipdb; ipdb.set_trace()
 
 
 class PickleData(object):
@@ -985,7 +994,7 @@ class SetState(object):
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.roe = bool(int(options.get("raise_on_error", "1")))
 
-    def __iter__(self):  # noqa 901
+    def __iter__(self):  # noqa C901
         for item in self.previous:
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self, item)
