@@ -372,9 +372,11 @@ pipeline =
     g__maval_read
     g__1_already_only
     g__batched
-;    g__1_maval_check
+    g__1_maval_check
     g__count
+    g__4_path_insert
     g__4_title_modify
+    g__4_useless_skip
     g__4_maval_f
 
 # hh  directory configuration
@@ -1815,7 +1817,7 @@ fieldnames = _A _eid _fld _val
 bp_key = e_mail_maval_f
 
 [g__1_already_only]
-# keep plone loaded IM mails
+# keep plone loaded folders
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'g') and item.get('_bpk') == u'e_mail_maval_f'
 condition2 = python: item['_eid'] in storage['data']['e_folder_p']
@@ -1832,7 +1834,7 @@ condition2 = python:not storage['batch_nb'] and True or (u"{}|{}".format(item['_
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_maval_f
 condition = python: item.get('_bpk') == u'e_mail_maval_f'
-concatenate =
+replace_newline = _val " | "
 
 [g__count]
 # counter
@@ -1840,14 +1842,29 @@ blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
 condition = python: item.get('_bpk') == u'e_mail_maval_f'
 
+[g__4_path_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'g') and item.get('_bpk') == u'e_mail_maval_f' and
+            item["_fld"] == u"GT_NATURE"
+condition2 = python: True
+key = string:_path
+value = python: storage["data"]["e_folder_p"][item["_eid"]]['path']
+
 [g__4_title_modify]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'g') and item.get('_bpk') == u'e_mail_maval_f' and
             item["_fld"] == u"GT_NATURE"
-condition2 = python: item["_val"].startswith(obj.title)
+condition2 = python: item["_val"].startswith(obj.title) and item["_val"] > obj.title
 get_obj = 1
 key = string:_replace
 value = string:title
+
+[g__4_useless_skip]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'g') and item.get('_bpk') == u'e_mail_maval_f' and
+             item["_fld"] == u"GT_NATURE"
+condition2 = python: item["_val"] != obj.title
+get_obj = 1
 
 [g__4_maval_f]
 blueprint = imio.transmogrifier.iadocs.4_maval

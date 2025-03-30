@@ -100,6 +100,7 @@ class EnhancedCondition(object):
         * condition1 = M, main matching condition.
         * condition2 = M, matching condition to yield item.
         * get_obj = O, flag to get object from path (default 0)
+        * error = O, error message to display
     """
 
     classProvides(ISectionBlueprint)
@@ -113,6 +114,12 @@ class EnhancedCondition(object):
         self.portal = transmogrifier.context
         self.name = name
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.error = Expression(
+            options.get("error", 'python:u"condition 2 error for eid {}".format(item.get("_eid"))'),
+            transmogrifier,
+            name,
+            options,
+        )
 
     def __iter__(self):
         for item in self.previous:
@@ -121,8 +128,12 @@ class EnhancedCondition(object):
                 obj = None
                 if self.get_obj:
                     obj = get_obj_from_path(self.portal, item)
-                if self.condition2(item, storage=self.storage, obj=obj):
-                    yield item
+                try:
+                    if self.condition2(item, storage=self.storage, obj=obj):
+                        yield item
+                except Exception as msg:
+                    e_logger.error(u"{}: {} ({})".format(self.name, self.error(item), msg))
+                    continue
             else:
                 yield item
 
@@ -156,7 +167,7 @@ class EnhancedInserter(object):
         if self.condition2:
             self.condition2 = Condition(self.condition2, transmogrifier, name, options)
         self.error = Expression(
-            options.get("error", 'python:u"error getting value for eid {}".format(' 'item.get("_eid"))'),
+            options.get("error", 'python:u"error getting value for eid {}".format(item.get("_eid"))'),
             transmogrifier,
             name,
             options,
