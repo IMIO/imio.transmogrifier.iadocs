@@ -1857,6 +1857,11 @@ class MavalHandling(object):
                 "_act": "U",
                 "modification_date": obj.creation_date,
             }
+            # with _replace, we don't take into account _fld anymore but insert another field with value
+            if "_replace" in item:
+                item2[item["_replace"]] = item["_val"]
+                yield item2
+                continue
             for p_fld in p_flds.split(","):
                 if p_fld in ("description", "data_transfer", "classification_informations"):
                     self.text_field(item, item2, obj, p_fld, transform)
@@ -1940,7 +1945,7 @@ class MavalHandling(object):
                 if yet:
                     position = yet[0] + 1
                 else:
-                    position = 0
+                    position = 999  # at the end
             c_lines.insert(
                 position, u"{}: {}".format(lib, value and value or self.transform_value(item[u"_val"], transform))
             )
@@ -1949,7 +1954,7 @@ class MavalHandling(object):
             to_remove = [line for line in c_lines if line.startswith(u"{}: ".format(lib))]
             if to_remove:
                 c_lines.remove(to_remove[0])
-                ret = to_remove[0][len(lib) + 2 :]
+                ret = to_remove[0][len(lib) + 2 :]  # noqa e203
         item2[p_fld] = u"\r\n".join(c_lines)
         return ret
 

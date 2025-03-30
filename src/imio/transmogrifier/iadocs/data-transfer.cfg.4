@@ -16,7 +16,7 @@ default_o_mail_type = courrier
 default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
-default_creation_date = 20050726-0000
+default_creation_date = 20050325-0000
 default_tg = TVX-BA
 default_category =
 to_treat = 10
@@ -28,7 +28,7 @@ profils_donnee_S =
 ;profils_donnee =  ${config:profils_donnee_E} ${config:profils_donnee_S}
 profils_donnee =  ${config:profils_donnee_E}
 profils_dossier =  GESTRAV TVX-CABCAN
-date_entree_min = 20050726
+date_entree_min = 20050325
 # see painf
 ;fields = C_ENTR_CJ TYPEDOC mail_type ""
 ;         C_ENTR_CJ SERVTRAIT treating_groups "AGTTRAIT"
@@ -103,14 +103,23 @@ fields = DOC-GTRAV GT_CONTRAT data_transfer ""
          TVX LIBCOMPL - ""
          TVX LOCALITE - ""
          TVX NOM - ""
+         TVX-CABCAN ADRESSE - ""
          TVX-CABCAN ANNEE_DOSS classification_informations "after:LIBCOMPL"
          TVX-CABCAN AVING - ""
+         TVX-CABCAN CODEPOSTAL - ""
          TVX-CABCAN DATEDOC - ""
          TVX-CABCAN DOSREF classification_informations "after:ANNEE_DOSS"
          TVX-CABCAN LIBCOMPL classification_informations "after:"
+         TVX-CABCAN LOCALITE - ""
+         TVX-CABCAN NOM - ""
          TVX-CABCAN REMARQUE - ""
          TVX-CABCAN RMQCOND - ""
          TVX-CABCAN RMQING - ""
+         TVX-CABCAN TYPECOND - ""
+         TVX-CABCAN TVX_ADR - ""
+         TVX-CABCAN TVX_CP - ""
+         TVX-CABCAN TVX_LOC - ""
+         TVX-CABCAN TVX_NOM - ""
          TVX-CABCAN TYPECOND - ""
          TVX-CABCAN USERTRAIT - ""
          TVX-COL ANN_COL - ""
@@ -365,6 +374,7 @@ pipeline =
     g__batched
 ;    g__1_maval_check
     g__count
+    g__4_title_modify
     g__4_maval_f
 
 # hh  directory configuration
@@ -1685,7 +1695,7 @@ blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 ;            and item['_category_id'] not in (None, u'0')
 key = string:classification_categories
-value = python:[storage["data"]["p_category"]["GESTRAV"]["uid"]]
+value = python:[storage["data"]["p_category"][item['_prs']]["uid"]]
 ;value = python:[storage['data']['e_category_full_match'][item['_category_id']]['_puid']]
 ;error = python:u"category '{}' not found for eid '{}'".format(item['_category_id'], item['_eid'])
 
@@ -1829,6 +1839,15 @@ concatenate =
 blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
 condition = python: item.get('_bpk') == u'e_mail_maval_f'
+
+[g__4_title_modify]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'g') and item.get('_bpk') == u'e_mail_maval_f' and
+            item["_fld"] == u"GT_NATURE"
+condition2 = python: item["_val"].startswith(obj.title)
+get_obj = 1
+key = string:_replace
+value = string:title
 
 [g__4_maval_f]
 blueprint = imio.transmogrifier.iadocs.4_maval
