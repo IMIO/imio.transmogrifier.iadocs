@@ -436,7 +436,7 @@ class ReplaceVariables(object):
         self.values = self.storage["data"].get(self.bp_key)
         self.store_key = safe_unicode(options.get("store_key") or u"_rv_")
         self.dic_value_key = safe_unicode(options["dic_value_key"])
-        self.item_key = safe_unicode(options.get("item_value_key") or u"_rv_")
+        self.item_key = safe_unicode(options.get("item_value_key") or u"_value")
         self.delimiter = safe_unicode(options["delimiter"])
         self.modify_dict = bool(int(options["modify_dict"]))
         self.yld = bool(int(options["yield"]))
