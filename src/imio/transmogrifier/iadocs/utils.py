@@ -337,12 +337,14 @@ def log_error(item, msg, level="error", fld="_eid"):
     item["_error"] = True
 
 
-def print_item(item, remove=["file"]):
+def print_item(item, remove=["file"], with_separator=None):
     """Print item ordered by key and without big value"""
     for k in sorted(item.keys()):
         if k in remove:
             continue
         print(u"{}: {}".format(k, item[k]))
+    if with_separator:
+        print(with_separator * 30)
 
 
 def short_log(item, count=None):

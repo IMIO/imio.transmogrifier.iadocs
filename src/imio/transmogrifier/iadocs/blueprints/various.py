@@ -379,6 +379,7 @@ class PrintItem(object):
     Parameters:
         * removed_keys = O, keys to remove (default file)
         * condition = O, condition to print (default True)
+        * separator = O, separator char between print (default empty)
     """
 
     classProvides(ISectionBlueprint)
@@ -391,12 +392,13 @@ class PrintItem(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get("condition", "python:True"), transmogrifier, name, options)
+        self.separator = safe_unicode(options.get("separator", ""))
         self.removed_keys = safe_unicode(options.get("removed_keys", "file")).strip().split()
 
     def __iter__(self):
         for item in self.previous:
             if self.condition(item):
-                print_item(item, self.removed_keys)
+                print_item(item, self.removed_keys, with_separator=self.separator)
             yield item
 
 
