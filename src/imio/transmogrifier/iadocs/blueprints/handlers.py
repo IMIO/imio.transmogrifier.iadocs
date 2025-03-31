@@ -1786,7 +1786,7 @@ class MavalHandling(object):
     classProvides(ISectionBlueprint)
     implements(ISection)
 
-    def __init__(self, transmogrifier, name, options, previous):
+    def __init__(self, transmogrifier, name, options, previous):  # noqa :C901
         self.previous = previous
         self.name = name
         self.portal = transmogrifier.context
@@ -1803,9 +1803,42 @@ class MavalHandling(object):
         self.flds_opt = next(csv.reader([self.flds_opt.strip()], delimiter=" ", quotechar='"', skipinitialspace=True))
         self.flds_opt = [cell.decode("utf8") for cell in self.flds_opt]
         self.flds_opt = [tup for tup in pool_tuples(self.flds_opt, 4, "fields option")]
+
+        dependency_graph = {}
+        for prd, e_fld, p_fld, transform in self.flds_opt:
+            if prd not in dependency_graph:
+                dependency_graph[prd] = {}
+            if transform.startswith("after:"):
+                parent = transform[6:]
+                dependency_graph[prd][e_fld] = parent
+            else:
+                dependency_graph[prd][e_fld] = ""
+
+        def get_full_chain(prof, fld, dep_graph):
+            chain = []
+            current = fld
+            while current in dep_graph[prof]:
+                parent = dep_graph[prof][current]
+                if not parent:
+                    break
+                chain.append(parent)
+                current = parent
+            return chain
+
         self.fields = {}
         for prd, e_fld, p_fld, transform in self.flds_opt:
-            self.fields.setdefault(prd, {})[e_fld] = (p_fld, transform)
+            if prd not in self.fields:
+                self.fields[prd] = {}
+            if not transform.startswith("after:"):
+                self.fields[prd][e_fld] = (p_fld, transform)
+                continue
+            chain = get_full_chain(prd, e_fld, dependency_graph)
+            if not chain:
+                new_transform = "after:"
+            else:
+                new_transform = "after:" + ",".join(chain)
+            self.fields[prd][e_fld] = (p_fld, new_transform)
+
         self.profile_keys = safe_unicode(options["profile_keys"]).split(" ")
         self.e_all_items = self.storage["data"].get(self.profile_keys[0], {})
         self.e_palib = self.storage["data"].get("e_palib", {})
@@ -1830,7 +1863,7 @@ class MavalHandling(object):
                         if org not in self.p_u_s_editor[user]:
                             self.p_u_s_editor[user].append(org)
 
-    def __iter__(self):  # noqa :C901
+    def __iter__(self):  # noqa C901
         for item in self.previous:
             if not is_in_part(self, self.parts) or not self.condition(item):
                 yield item
@@ -1940,12 +1973,12 @@ class MavalHandling(object):
             if transform == u"after:":
                 position = 0
             elif transform.startswith(u"after:"):
-                lib2 = self.e_palib[u"PROFILINF0"].get(transform[6:], {}).get(u"_val", "__unfound__")
-                yet = [i for i, line in enumerate(c_lines) if line.startswith(u"{}: ".format(lib2))]
-                if yet:
-                    position = yet[0] + 1
-                else:
-                    position = 999  # at the end
+                for prev_fld in transform[6:].split(","):
+                    lib2 = self.e_palib[u"PROFILINF0"].get(prev_fld, {}).get(u"_val", "__unfound__")
+                    yet = [i for i, line in enumerate(c_lines) if line.startswith(u"{}: ".format(lib2))]
+                    if yet:
+                        position = yet[0] + 1
+                        break
             c_lines.insert(
                 position, u"{}: {}".format(lib, value and value or self.transform_value(item[u"_val"], transform))
             )
