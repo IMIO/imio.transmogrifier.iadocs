@@ -21,7 +21,7 @@ default_tg = TVX-BA
 default_category =
 to_treat = 10
 profils_donnee_E = ENTRANT DOC-GTRAV STTP-NOTE TVX TVX-COL TVX-COLOJ TVX-IMP TVX-NOTE TVX-OUT
-;profils_donnee_E = ENTRANT DOC-GTRAV STTP-NOTE TVX TVX-COL TVX-COLOJ TVX-IMP TVX-NOTE TVX-OUT
+;profils_donnee_E = DOC-GTRAV STTP-NOTE TVX TVX-COL TVX-COLOJ TVX-IMP TVX-NOTE TVX-OUT
 profils_donnee_S =
 ;profils_donnee_E =  C_ENTR_CJ ENTRANT FACTURE FAX
 ;profils_donnee_S =  C_SORTANT C_SORT_CJ SORTANT
@@ -2942,8 +2942,8 @@ d_condition = python:storage['commit'] is True and 's__to_correct_only' not in t
 # read folders links csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-;filename = dsdet00.csv
-filename = dsdet00_test.csv
+filename = dsdet00.csv
+;filename = dsdet00_test.csv
 fieldnames = _folder_id _typ _eid _D _E _F _G _H _I
 bp_key = e_mail_folder
 
