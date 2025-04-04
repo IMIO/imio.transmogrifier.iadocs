@@ -2331,7 +2331,7 @@ separator = python:u'\r\n'
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and 'mail_type' not in item
 key = string:mail_type
-value = python: item["_prd"] == "ENTRANT" and u'${config:default_i_mail_type}' or item["_prd"].lower()
+value = python: item["_prd"] == "ENTRANT" and u'${config:default_i_mail_type}' or (item["_prd"] == u"STTP-NOTE" and u"sttp" or u"travaux")
 
 [l__1_meetingitem_link_insertNO]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -2354,7 +2354,7 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 ;value = python:u'Fichier: {}{}'.format(item['_path_id'], item['_filename'])
 ;separator = python:u'\r\n'
 key = string:task_description
-value = python:u'<p>Ancien chemin: {0}\{1}<br />Nouveau chemin: maestro.verviers.be\\{1}<br /><a href="http://maestro.verviers.be/{1}">{1}</a></p>'.format(item['_path_id'], item['_filename'])
+value = python:u'<p><a href="https://maestro.verviers.be/data/{}">{}</a></p>'.format(modules["urllib"].quote(item['_filename']), item['_filename'])
 
 [l__4_handling_dateNO]
 blueprint = imio.transmogrifier.iadocs.inserter
