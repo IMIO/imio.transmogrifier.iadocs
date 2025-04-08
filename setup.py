@@ -46,7 +46,7 @@ setup(
         "plone.api>=1.8.4",
         "Products.GenericSetup>=1.8.2",
         "transmogrify.dexterity",
-        "plone.app.dexterity<=2.1.1",
+        #"plone.app.dexterity<=2.1.1",
     ],
     extras_require={
         "test": [
