@@ -20,8 +20,8 @@ default_creation_date = 20050325-0000
 default_tg = TVX-BA
 default_category =
 to_treat = 10
-profils_donnee_E = ENTRANT DOC-GTRAV STTP-NOTE TVX TVX-COL TVX-COLOJ TVX-IMP TVX-NOTE TVX-OUT
-;profils_donnee_E = DOC-GTRAV STTP-NOTE TVX TVX-COL TVX-COLOJ TVX-IMP TVX-NOTE TVX-OUT
+;profils_donnee_E = ENTRANT DOC-GTRAV STTP-NOTE TVX TVX-COL TVX-COLOJ TVX-IMP TVX-NOTE TVX-OUT
+profils_donnee_E = DOC-GTRAV STTP-NOTE TVX TVX-COL TVX-COLOJ TVX-IMP TVX-NOTE TVX-OUT
 profils_donnee_S =
 ;profils_donnee_E =  C_ENTR_CJ ENTRANT FACTURE FAX
 ;profils_donnee_S =  C_SORTANT C_SORT_CJ SORTANT
@@ -439,7 +439,7 @@ pipeline =
 ;    l__creation_date_insert
     l__modification_date_insert
     l__reception_date_insert
-;    l__original_mail_date_insert
+    l__original_mail_date_insert
     l__1_internal_number_insert
     l__custom_service_id_correct
     l__treating_groups_insert
@@ -2245,7 +2245,7 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:reception_date
 value = python:item['creation_date']
 
-[l__original_mail_date_insertNO]
+[l__original_mail_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('original_mail_date') is None
 key = string:original_mail_date
@@ -2354,7 +2354,7 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 ;value = python:u'Fichier: {}{}'.format(item['_path_id'], item['_filename'])
 ;separator = python:u'\r\n'
 key = string:task_description
-value = python:u'<p><a href="https://maestro.verviers.be/data/{}">{}</a></p>'.format(modules["urllib"].quote(item['_filename']), item['_filename'])
+value = python:u'<p><a href="http://webs.verviers.be/maestro/?fichier={}" target="_blank">{}</a></p>'.format(modules["urllib"].quote(item['_filename']), item['_filename'])
 
 [l__4_handling_dateNO]
 blueprint = imio.transmogrifier.iadocs.inserter
