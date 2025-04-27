@@ -5,6 +5,7 @@ from collective.classification.tree.utils import get_parents
 from collective.contact.plonegroup.utils import get_selected_org_suffix_principal_ids
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
+from datetime import datetime
 from ftw.labels.interfaces import ILabeling
 from imio.dms.mail import IM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail import IM_READER_SERVICE_FUNCTIONS
@@ -1956,6 +1957,12 @@ class MavalHandling(object):
                     item2[p_fld] = to_set
                 else:
                     item2[p_fld] = self.transform_value(item[u"_val"], transform)
+                    if item2[p_fld] is None:
+                        log_error(
+                            item,
+                            "None value for field '{}', p_fld '{}', transform '{}'".format(
+                                item["_fld"], p_fld, transform))
+                        continue
             yield item2
 
     def text_field(self, item, item2, obj, p_fld, transform, action="add", lib_key=None, value=None, text_fld=None):
@@ -2002,7 +2009,11 @@ class MavalHandling(object):
             return value
         parts = transform.split(":")
         if parts[0] in ("date", "datetime"):
-            return str_to_date({"k": value}, "k", log_error, fmt=parts[1], as_date=parts[0] == "date")
+            as_date = parts[0] == "date"
+            min_date = datetime(1900, 1, 1, 0, 0)
+            if as_date:
+                min_date = min_date.date()
+            return str_to_date({"k": value}, "k", log_error, fmt=parts[1], as_date=as_date, min_val=min_date)
         elif parts[0] == "format":
             return parts[1].format(value)
         elif parts[0] == "e_papri":
