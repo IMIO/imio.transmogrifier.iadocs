@@ -1956,12 +1956,13 @@ class MavalHandling(object):
                             to_set.append(value)
                     item2[p_fld] = to_set
                 else:
-                    item2[p_fld] = self.transform_value(item[u"_val"], transform)
+                    item2[p_fld] = self.transform_value(item, transform)
                     if item2[p_fld] is None:
                         log_error(
                             item,
                             "None value for field '{}', p_fld '{}', transform '{}'".format(
-                                item["_fld"], p_fld, transform))
+                                item["_fld"], p_fld, transform),
+                        )
                         continue
             yield item2
 
@@ -1987,7 +1988,7 @@ class MavalHandling(object):
                         position = yet[0] + 1
                         break
             c_lines.insert(
-                position, u"{}: {}".format(lib, value and value or self.transform_value(item[u"_val"], transform))
+                position, u"{}: {}".format(lib, value and value or self.transform_value(item, transform))
             )
         elif action == "remove":
             lib = self.e_palib[u"PROFILINF0"].get(lib_key, {}).get(u"_val", "__unfound__")
@@ -2004,7 +2005,8 @@ class MavalHandling(object):
             return True
         return False
 
-    def transform_value(self, value, transform):
+    def transform_value(self, item, transform):
+        value = item[u"_val"]
         if not transform:
             return value
         parts = transform.split(":")
@@ -2013,7 +2015,9 @@ class MavalHandling(object):
             min_date = datetime(1900, 1, 1, 0, 0)
             if as_date:
                 min_date = min_date.date()
-            return str_to_date({"k": value}, "k", log_error, fmt=parts[1], as_date=as_date, min_val=min_date)
+            tmp_item = item.copy()
+            tmp_item["k"] = value
+            return str_to_date(tmp_item, "k", log_error, fmt=parts[1], as_date=as_date, min_val=min_date)
         elif parts[0] == "format":
             return parts[1].format(value)
         elif parts[0] == "e_papri":
