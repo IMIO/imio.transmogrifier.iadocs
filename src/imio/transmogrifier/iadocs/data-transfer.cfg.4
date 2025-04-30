@@ -2916,7 +2916,7 @@ parts = 3
 
 [s__4_title_rename]
 blueprint = imio.transmogrifier.iadocs.manipulator
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact' and item['_type'] == u'organization'
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 's') and item.get('_bpk') == u'e_folder'
 keys = title
 delete = title
 destination = string:_title
