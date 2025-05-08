@@ -676,14 +676,14 @@ yield = 0
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
 filename = eCourriers.csv
-fieldnames = _A _eid _C _D _E _F _G _H _sender_id _sender _service _L _M _etype _O _P _Q _R _S _T _U _V _W _X _Y _Z
-             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK
+fieldnames = _A _eid _C _reception_date _E _F _G _H _sender_id _sender _service _L _M _etype _O _P _Q _R _S _T _U _V _W _X _Y _Z
+             _creation_date _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK
 bp_key = e_mail_sender
 
 [d__1_S_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'd') and item.get('_bpk') == u'e_mail_sender'
-condition2 = python: item.get('_etype') == 'S'
+condition2 = python: item.get('_etype') == 'S' and (item['_reception_date'] != "0" and item['_reception_date'] > "20100100" or (item["_creation_date"] != "NULL" and item["_creation_date"] > "20100100"))
 
 [d__om_sender_creation]
 blueprint = imio.transmogrifier.iadocs.d_om_sender_creation
