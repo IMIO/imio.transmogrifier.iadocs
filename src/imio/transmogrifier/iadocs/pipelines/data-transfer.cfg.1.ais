@@ -1466,7 +1466,7 @@ d_condition = python:storage['commit'] is True and 'l__to_correct_only' not in t
 [l__1_E_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
-condition2 = python: item.get('_etype') in ('E', 'I')
+condition2 = python: item.get('_etype') in ('E', 'I') and (item['reception_date'] != "0" and item['reception_date'] > "20100100" or (item["creation_date"] != "NULL" and item["creation_date"] > "20100100"))
 
 [l__batched]
 blueprint = imio.transmogrifier.iadocs.condition
@@ -1783,7 +1783,7 @@ d_condition = python:storage['commit'] is True and 'p__to_correct_only' not in t
 # keep only S mails
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o'
-condition2 = python: item.get('_etype') == 'S' and item.get('creation_date') != '0'
+condition2 = python: item.get('_etype') == 'S' and item.get('creation_date') != '0' and (item['outgoing_date'] != "0" and item['outgoing_date'] > "20100100" or (item["creation_date"] != "NULL" and item["creation_date"] > "20100100"))
 
 [p__batched]
 # keep only not already treated OM mails
