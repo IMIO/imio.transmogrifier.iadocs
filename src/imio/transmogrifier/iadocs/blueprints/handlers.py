@@ -2564,6 +2564,7 @@ class T1DmsfileCreation(object):
     Parameters:
         * bp_key = M, blueprint key
         * store_key = M, storage main key to find mail path
+        * disk_files_key = M, storage disk files key to get path
         * condition = O, condition expression
     """
 
@@ -2581,7 +2582,9 @@ class T1DmsfileCreation(object):
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.bp_key = safe_unicode(options["bp_key"])
         store_key = safe_unicode(options["store_key"])
+        disk_files_key = safe_unicode(options["disk_files_key"])
         self.paths = self.storage["data"][store_key]
+        self.disk_files = self.storage["data"][disk_files_key]
         self.files = {}
         self.ext = {}
 

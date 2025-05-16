@@ -325,7 +325,7 @@ pipeline =
     t__batched
 ;    t__1_upload_date_modify
     t__1_dmsfile_check
-    t__1_fspath_insert
+#    t__1_fspath_insert
     t__1_dmsfile_creation
     t__1_path_insert
     t__count
@@ -337,7 +337,7 @@ pipeline =
     u__batched
 ;    u__1_upload_date_modify
     u__1_dmsfile_check
-    u__1_fspath_insert
+#    u__1_fspath_insert
     u__1_dmsfile_creation
     u__1_path_insert
     u__count
@@ -2391,6 +2391,7 @@ blueprint = imio.transmogrifier.iadocs.t_1_dmsfile_creation
 condition = python: item.get('_bpk') == u'e_file'
 bp_key = e_dmsfile_i
 store_key = e_mail_i
+disk_files_key = e_files
 
 [t__1_path_insert]
 # insert _path field value
@@ -2462,6 +2463,7 @@ blueprint = imio.transmogrifier.iadocs.t_1_dmsfile_creation
 condition = python: item.get('_bpk') == u'e_file'
 bp_key = e_dmsfile_o
 store_key = e_mail_o
+disk_files_key = e_files
 
 [u__1_path_insert]
 # insert _path field value

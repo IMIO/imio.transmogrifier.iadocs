@@ -73,7 +73,7 @@ def encode_list(lst, encoding):
     """
     new_list = []
     for content in lst:
-        if isinstance(content, unicode):
+        if isinstance(content, unicode):  # noqa
             content = content.encode(encoding)
         new_list.append(content)
     return new_list
@@ -94,28 +94,49 @@ def get_categories(portal):
 
 def get_file_content(section, item):
     """Get file content following global path and item filename"""
-    if not item["_fs_path"]:
+    df = section.disk_files
+    # get all paths (on item and from disk
+    paths = []
+    if item["_fs_path"]:
+        paths.append(item["_fs_path"])
+    if item['_eid'] in df:
+        for ext, path in df[item['_eid']]['f']:  # {'f': [(u'.pdf', u'PDF_0-999')]}
+            path = u"{}/{}{}".format(path, item['_eid'], ext)
+            if path not in paths:
+                paths.append(path)
+    if not paths:
         return None, None, None
-    (basename, ext) = os.path.splitext(item["_fs_path"])
-    if not ext and item.get("_ext"):
-        ext = ".{}".format(item["_ext"])
-    path = os.path.join(section.storage["filesp"], u"{}{}".format(basename, ext))
-    pdf_path = os.path.join(section.storage["filesp"], u"PDF_{}.pdf".format(basename))
-    ext = ext.lower()
-    if not os.path.exists(path):
-        return path, None, None
-    elif ext.startswith(".tif") and os.path.exists(pdf_path):
-        path = pdf_path
-        item["_fs_path"] = u"PDF_{}.pdf".format(basename)
+    # check if path exists
+    fullpaths = {}
+    for path in paths:
+        (basename, ext) = os.path.splitext(path)
+        if not ext and item.get("_ext"):
+            ext = ".{}".format(item["_ext"])
+            path = u"{}{}".format(basename, ext)
+        fullpath = os.path.join(section.storage["filesp"], path)
+        if os.path.exists(fullpath):
+            fullpaths[ext.lower()] = (fullpath, path)
+    if not fullpaths:
+        return paths[0], None, None
+    # take pdf first
+    if '.pdf' in fullpaths:
+        fullpath, path = fullpaths['.pdf']
+        item["_fs_path"] = path
         ext = '.pdf'
-    filename = item.get("_filename", u"{}{}".format(basename, ext))
+    else:
+        ext = min(fullpaths.keys())
+        fullpath, path = fullpaths[ext]
+        item["_fs_path"] = path
+    # get and adapt filename
+    filename = item.get("_filename", os.path.basename(fullpath))
     (f_basename, f_ext) = os.path.splitext(filename)
     if not f_ext:
         filename = u"{}{}".format(filename, ext)
     elif f_ext != ext:
         filename = u"{}{}".format(f_basename, ext)
-    with open(path, mode="rb") as file:
-        return ext, filename, file.read()
+    # return file content
+    with open(fullpath, mode="rb") as fileh:
+        return ext, filename, fileh.read()
 
 
 def get_folders(section):
