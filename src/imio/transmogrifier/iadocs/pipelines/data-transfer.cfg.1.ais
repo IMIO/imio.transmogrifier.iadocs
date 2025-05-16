@@ -196,7 +196,7 @@ pipeline =
 ;    l__custom_service_id_correct
     l__treating_groups_insert
 ;    l__1_recipient_groups_set
-    l__1_category_id_insert
+;    l__1_category_id_insert
     l__contact_set
     l__1_sender_as_text_set
     l__mail_type_source_insert
@@ -249,7 +249,7 @@ pipeline =
 #    p__assigned_user ?
     p__1_sender_set
 ;    p__default_contact_set
-    p__1_category_id_insert
+;    p__1_category_id_insert
 ;    p__mail_type_insert
     p__1_nature_insert
     p__send_modes_insert
@@ -1431,7 +1431,7 @@ yield = 1
 
 [l__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = abce
+parts = abc
 
 [lq__pickle_c_r]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -1759,7 +1759,7 @@ store_key = e_mail_i
 
 [p__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = abce
+parts = abc
 
 [p__1_mail_read]
 # read mails csv file
@@ -1897,7 +1897,7 @@ value = python:item['_nature_id'] and storage['data']['e_mailtype_match'][item['
 [p__1_nature_insert]
 # insert nature in data_transfer
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item['_nature_id']
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item['_nature_id'] and item['_nature_id'] != '81'
 key = string:data_transfer
 value = python:u'NATURE: {}.'.format(storage['data']['e_mailtype_match'][item['_nature_id']]['S']['_etitle'])
 separator = python:u'\r\n'
