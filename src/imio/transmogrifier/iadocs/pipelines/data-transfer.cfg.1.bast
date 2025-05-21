@@ -83,7 +83,7 @@ pipeline =
     e__1_category_check
     e__category_store
     e__category_load
-    e__category_used_only
+;    e__category_used_only
 #    e__category_not_in_plone
     e__category_matched_add
     e__category_match_write
