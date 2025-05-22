@@ -31,11 +31,11 @@ tables = OrderedDict(
         #         "o": "isnull(DateEncodage, dateentree), dateentree",
         #     },
         # ),
-        # ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'",
-        #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
-        ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1' and (dateentree != 0 "
-                             "and DateEntree  > 20100100 or (dateencodage is not NULL and dateencodage > 20100100))",
+        ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'",
                         'o': "isnull(DateEncodage, dateentree), dateentree"}),
+        # ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1' and (dateentree != 0 "
+        #                      "and DateEntree  > 20100100 or (dateencodage is not NULL and dateencodage > 20100100))",
+        #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
         # ('eCourriers', {'c': "(TypeEntrantSortant != 'I' or isnull(NatureID, '') not in (select id from eNatures "
         #                      "where description like 'Délibération%' or description like 'Séance%') ) and "
         #                      "isnull(Supprime, '0') != '1'",
