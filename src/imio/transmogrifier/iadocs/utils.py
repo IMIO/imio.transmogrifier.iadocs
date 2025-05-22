@@ -292,6 +292,8 @@ def get_plonegroup_orgs(portal, eid_fld="internal_number"):
             "st": api.content.get_state(org),
             "sl": term.value in selected_orgs,
         }
+        if term.title == u"Reprise de données":
+            eid_to_orgs[None] = {"uid": term.value}
         for eid in eids:
             eid_to_orgs[eid] = {"uid": term.value}
     return all_orgs, eid_to_orgs
