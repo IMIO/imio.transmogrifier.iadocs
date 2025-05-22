@@ -12,12 +12,12 @@ data_transfer_behavior_types = dmsincomingmail dmsincoming_email dmsoutgoingmail
 none_value = NULL
 creator = csvimport
 default_i_mail_type = courrier
-default_o_mail_type = courrier
+default_o_mail_type = neant
 default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
 default_creation_date = 20110314-1200
-default_tg = 3
+default_tg = 32
 default_category =
 to_treat = 10
 permitted_sections = 0abcdefFhilmp1qrstuxy
@@ -84,6 +84,7 @@ pipeline =
     e__category_store
     e__category_load
 ;    e__category_used_only
+    e__active_category_used
 #    e__category_not_in_plone
     e__category_matched_add
     e__category_match_write
@@ -250,7 +251,7 @@ pipeline =
     p__1_sender_set
 ;    p__default_contact_set
     p__1_category_id_insert
-    p__mail_type_insert
+#    p__mail_type_insert
     p__1_nature_insert
     p__send_modes_insert
     p__1_source_insert
@@ -826,6 +827,13 @@ blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'e') and item.get('_bpk') == u'e_category'
 condition2 = python: item['_ecode'] and item.get('_eid') in storage['data'].get('e_used_category', [])
 
+[e__active_category_used]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'e') and item.get('_bpk') == u'e_category'
+            and item['_eactive'] and item.get('_eid') not in storage['data'].get('e_used_category', [])
+key = string:_eactive
+value = python:False
+
 [e__category_not_in_plone]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'e') and item.get('_bpk') == u'e_category'
@@ -1113,7 +1121,7 @@ separator = python:u'\r\n'
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'f') and item.get('_bpk') == u'e_folder'
 key = string:treating_groups
-value = python:item['_service_id'] and storage['data']['e_service_match'][item['_service_id']]['uid'] or storage['data']['e_service_match']['${config:default_tg}']['uid']
+value = python:item['_service_id'] and storage['data']['e_service_match'].get(item['_service_id'], {}).get('uid') or storage['data']['e_service_match']['${config:default_tg}']['uid']
 error_value = python: storage['data']['e_service_match']['${config:default_tg}']['uid']
 
 [fF__deactivate_insert]
@@ -1642,7 +1650,7 @@ value = python:item['_eid']
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:_type
-value = python:FAIL(item['_source_id'] == u'295' or item['_nature_id'] == u'180') and 'dmsincoming_email' or 'dmsincomingmail'
+value = python:item['_source_id'] == u'2' and 'dmsincoming_email' or 'dmsincomingmail'
 
 [l__1_parent_insert]
 blueprint = imio.transmogrifier.iadocs.parent_path_insert
