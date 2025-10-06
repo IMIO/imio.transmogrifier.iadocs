@@ -24,15 +24,17 @@ tables = OrderedDict(
         ("eContactsAdresses", {}),
         ("eContactsTitres", {}),
         ("eContactsType", {}),
-        # (
-        #     "eCourriers",
-        #     {
-        #         "c": "isnull(Supprime, '0') != '1'",
-        #         "o": "isnull(DateEncodage, dateentree), dateentree",
-        #     },
-        # ),
-        ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'",
-                        'o': "isnull(DateEncodage, dateentree), dateentree"}),
+        (
+            "eCourriers",
+            {
+                "c": "isnull(Supprime, '0') != '1'",
+                "o": "isnull(DateEncodage, dateentree), dateentree",
+            },
+        ),
+        # ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'",
+        #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
+        # ('eCourriers', {'c': "TypeEntrantSortant = 'I' and isnull(Supprime, '0') != '1'",
+        #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
         # ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1' and (dateentree != 0 "
         #                      "and DateEntree  > 20100100 or (dateencodage is not NULL and dateencodage > 20100100))",
         #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
