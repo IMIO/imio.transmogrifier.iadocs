@@ -1257,6 +1257,7 @@ condition = python: item.get('_bpk') == u'e_contacts'
 bp_key = e_used_contact_type
 store_key = _c_type
 fieldnames = _eid
+check_key_uniqueness = 0
 yield = 0
 
 [h__1_contact_type_read]
