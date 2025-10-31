@@ -96,7 +96,7 @@ def main(docker, db_name, pwd, delim, input_filter, output_dir, only_new, simula
         if code or err:
             logger.error("Problem in command '{}': {}".format(cmd, err))
             continue
-        tmp_file = "/tmp/sqlcmd.fwf"
+        tmp_file = os.path.join(output_dir, "sqlcmd.fwf")
         cmd = cp_cmd.format(**{"dock": docker, "of": tmp_file})
         logger.debug("cp cmd='{}'".format(cmd))
         (out, err, code) = runCommand(cmd)
