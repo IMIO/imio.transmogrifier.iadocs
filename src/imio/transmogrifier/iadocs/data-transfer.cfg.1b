@@ -223,6 +223,7 @@ pipeline =
     m__pickle_mail_assigned_user_w
     m__1_mail_recipient_read
     m__1_already_only
+    m__1_contact_id_only
     m__batched
     m__1_mail_recipient_check
 #    m__1_principal_only
@@ -1723,6 +1724,12 @@ bp_key = e_mail_recip_i
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
 condition2 = python: item['_mail_id'] in storage['data']['e_mail_i']
+
+[m__1_contact_id_only]
+# keep only principal recipients
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
+condition2 = python: item["_contact_id"]
 
 [m__batched]
 # keep only not already treated recipients

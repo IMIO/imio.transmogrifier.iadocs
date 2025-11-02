@@ -226,6 +226,7 @@ pipeline =
     m__batched
     m__1_mail_recipient_check
 #    m__1_principal_only
+    m__1_contact_id_only
     m__count
     m__1_batch_store
     m__1_assigned_user
@@ -1751,6 +1752,12 @@ dates = _due_date %Y%m%d 1 _trm_date %Y%m%d 1
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
 condition2 = python: item['_principal'] and item["_contact_id"]]
+
+[m__1_contact_id_only]
+# keep only principal recipients
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
+condition2 = python: item["_contact_id"]
 
 [m__count]
 # IM recipients counter
