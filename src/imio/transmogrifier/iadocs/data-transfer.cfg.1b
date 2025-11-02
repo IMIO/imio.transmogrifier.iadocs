@@ -20,7 +20,7 @@ default_creation_date = 20090922-1200
 default_tg = 3
 default_category =
 to_treat = 10
-permitted_sections = 0abcdefFhilmp1qrstuxy
+permitted_sections = 0abcdefFhilmp1qrstuwxy
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -269,8 +269,8 @@ pipeline =
 # 11  rsync file
 
     1tu__pickle_f_r
-    1rsxy__pickle_i_r
-    1rsxy__pickle_o_r
+    1rswxy__pickle_i_r
+    1rswxy__pickle_o_r
     1tu__1_dmsfile_read
 ;    1__files_load
     1__already_only
@@ -342,6 +342,16 @@ pipeline =
     u__1_dmsfile_creation
     u__1_path_insert
     u__count
+
+# ww  IM/OM links for meetingitem
+    w__1_mail_link_read
+    w__1_not_only_mails
+    w__1_copy_ids
+    w__1_reverse_eid
+    w__1_reverse_target_id
+    w__mail_path_add
+    w__uid_add
+    w__meetingitem_write
 
 # xx  IM/OM links
 #    x__need
@@ -2015,14 +2025,14 @@ blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_files.pkl
 store_key = e_files
 
-[1rsxy__pickle_i_r]
+[1rswxy__pickle_i_r]
 # read plone loaded IM
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_i.pkl
 store_key = e_mail
 d_condition = python:False
 
-[1rsxy__pickle_o_r]
+[1rswxy__pickle_o_r]
 # read plone loaded OM
 blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_o.pkl
@@ -2485,6 +2495,76 @@ id_keys = _eid
 blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
 condition = python: item.get('_bpk') == u'e_dmsfile_o'
+
+# = = = = = = =  ww  = = = = = = = #
+
+[w__1_mail_link_read]
+# read mail links csv file
+blueprint = imio.transmogrifier.iadocs.csv_reader
+#b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
+# filename = eCourriersLiens_test.csv
+filename = eCourriersLiens.csv
+fieldnames = _A _eid _target_id _comment
+bp_key = e_meetingitem_link
+
+[w__1_not_only_mails]
+# keep plone loaded mail links with other id than mail id
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'w') and item.get('_bpk') == u'e_meetingitem_link'
+condition2 = python: (item["_eid"] != item["_target_id"]) and ((item['_eid'] in storage['data']['e_mail'] and item['_target_id'] not in storage['data']['e_mail']) or (item['_eid'] not in storage['data']['e_mail'] and item['_target_id'] in storage['data']['e_mail']))
+
+[w__1_copy_ids]
+# copy _eid to _eid_copy and _target_id to _target_id_copy
+blueprint = imio.transmogrifier.iadocs.manipulator
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'w') and item.get('_bpk') == u'e_meetingitem_link'
+keys =
+    _eid
+;    _target_id
+destination = string:$key-copy
+
+# if _eid is the mail, reverse _eid and _target_id
+[w__1_reverse_eid]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'w') and item.get('_bpk') == u'e_meetingitem_link'
+condition2 = python: item['_eid'] in storage['data']['e_mail']
+key = string:_eid
+value = python:item["_target_id"]
+
+[w__1_reverse_target_id]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'w') and item.get('_bpk') == u'e_meetingitem_link'
+condition2 = python: item['_target_id'] not in storage['data']['e_mail']
+key = string:_target_id
+value = python:item["_eid-copy"]
+
+# insert _puid for mail id thats always now _target_id
+[w__mail_path_add]
+blueprint = imio.transmogrifier.iadocs.add_data_in_item
+condition = python: item.get('_bpk') == u'e_meetingitem_link'
+bp_key = w_mail_path_add
+related_storage = e_mail
+store_key = _target_id
+add_store_keys = 0
+fieldnames = path
+prefix = _
+
+[w__uid_add]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'w') and item.get('_bpk') == u'e_meetingitem_link'
+key = string:_puid
+value = python:obj.UID()
+error = python:u"error getting value for eid {} and target_id {}".format(item.get("_eid"), item.get("_target_id"))
+get_obj = 1
+
+[w__meetingitem_write]
+blueprint = imio.transmogrifier.iadocs.csv_writer
+;b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], ""))
+condition = python: item.get('_bpk') == 'e_meetingitem_link'
+filename = 3_meeting_item.csv
+fieldnames = _eid _target_id _puid _comment
+headers = item_id mail_id mail_uid link_type
+bp_key = 2_meeting_item
+yield = 0
 
 # = = = = = = =  xx  = = = = = = = #
 
