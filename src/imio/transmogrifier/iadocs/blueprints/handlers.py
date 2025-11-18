@@ -11,8 +11,8 @@ from imio.dms.mail import IM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail import IM_READER_SERVICE_FUNCTIONS
 from imio.dms.mail import OM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail.utils import create_period_folder
-from imio.dms.mail.utils import separate_fullname
 from imio.helpers.content import uuidToObject
+from imio.helpers.security import separate_fullname
 from imio.helpers.transmogrifier import clean_value
 from imio.helpers.transmogrifier import Condition
 from imio.helpers.transmogrifier import get_correct_id
