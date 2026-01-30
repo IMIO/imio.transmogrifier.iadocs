@@ -12,7 +12,6 @@ from imio.dms.mail import IM_READER_SERVICE_FUNCTIONS
 from imio.dms.mail import OM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail.utils import create_period_folder
 from imio.helpers.content import uuidToObject
-from imio.helpers.security import separate_fullname
 from imio.helpers.transmogrifier import clean_value
 from imio.helpers.transmogrifier import Condition
 from imio.helpers.transmogrifier import get_correct_id
@@ -55,6 +54,12 @@ import csv
 import os
 import re
 import transaction
+
+
+try:
+    from imio.dms.mail.utils import separate_fullname  # 3.0 version
+except ImportError:
+    from imio.helpers.security import separate_fullname  # 3.1 version
 
 
 class AServiceUpdate(object):
@@ -1135,8 +1140,8 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
             dest1.append(u"{}: {}.".format(label, u", ".join(sender)))
             dest2.append(u"{}: {}.".format(label, u", ".join(sender)))
         # address
-        p_address = all_of_dict_values(parent_infos, ["_street", "_pc", "_city"])
-        address = all_of_dict_values(infos, ["_street", "_pc", "_city"])
+        p_address = all_of_dict_values(parent_infos, ["_street", "_street_nb" , "_street_nb_box", "_pc", "_city"])
+        address = all_of_dict_values(infos, ["_street", "_street_nb" , "_street_nb_box", "_pc", "_city"])
         if address:
             change = True
             dest2.append(u"ADRESSE {}: {}.".format(label, u" ".join(address)))
