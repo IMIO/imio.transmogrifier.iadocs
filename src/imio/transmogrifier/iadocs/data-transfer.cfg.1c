@@ -1529,8 +1529,8 @@ raise_on_error = ${config:raise_on_error}
 [l__1_mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = courriers_test.csv
-;filename = courriers.csv
+;filename = courriers_test.csv
+filename = courriers.csv
 fieldnames = _eid _etype title _service_id _service external_reference_no _confidential reception_date original_mail_date _sender_id _sender _source_id _source
              _nature_id _nature _remark _Q
 #             due_date _category_id _to_del creation_date _meeting_link _meetingitem_link
