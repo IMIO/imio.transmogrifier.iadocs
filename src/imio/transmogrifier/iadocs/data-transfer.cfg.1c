@@ -160,6 +160,7 @@ pipeline =
     ilpq__1_contacts_read
     ilpq__oui_non_correct
     i__pickle_c_w
+    ip__user_id_insert
     i__1_needed_userid_only
 ;    i__1_creation_date_modify
 ;    i__1_modification_date_modify
@@ -194,6 +195,7 @@ pipeline =
     lq__pickle_c_r
     l__1_mail_read
     l__pickle_i_w
+    l__1_I_correct
     l__1_E_only
     l__batched
     l__count
@@ -248,6 +250,7 @@ pipeline =
     p__1_S_only
     p__batched
     p__count
+    p__oui_non_correct
     p__1_mail_check
     p__creation_date_insert
     p__modification_date_insert
@@ -260,12 +263,12 @@ pipeline =
 #    p__assigned_user ?
     p__1_sender_set
 ;    p__default_contact_set
-    p__1_category_id_insert
+;    p__1_category_id_insert
     p__mail_type_insert
     p__1_nature_insert
     p__send_modes_insert
     p__1_source_insert
-    p__1_meetingitem_link_insert
+;    p__1_meetingitem_link_insert
     p__1_confidential_insert
     p__1_remark_insert
     p__empty_title_insert
@@ -1322,6 +1325,13 @@ filename = 2_e_contact.pkl
 store_key = e_contact_path
 d_condition = python:storage['commit'] is True
 
+[ip__user_id_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'ip') and item.get('_bpk') == u'e_contact'
+            and item["_ctyp"] == u"Utilisateurs"
+key = string:_user_id
+value = python:item["_eid"]
+
 [i__1_needed_userid_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact'
@@ -1385,7 +1395,8 @@ bp_key = e_contact
 store_key = _eid
 ;fieldnames = _ln _type _user_id _ctyp lastname firstname _ptitle _street _pc _city _phone2 _phone2 _phone3 _email1 _email2 _email3
 ;             _function enterprise_number creation_date modification_date _cell1 _cell2 _cell3 _web _org _name2 _deactivate _parent_id _country _addr_id
-fieldnames = _ln _type _ctyp lastname firstname _ptitle _name2 _deactivate _country _pc _city _street _street_nb _street_nb_box _email1 _cell1 _phone1 _fax
+fieldnames = _ln _type _ctyp lastname firstname _ptitle _name2 _deactivate _country _pc _city _street _street_nb _street_nb_box
+             _email1 _cell1 _phone1 _fax _user_id
 yield = 0
 
 [i__dependency_sorter]
@@ -1542,10 +1553,16 @@ filename = 2_e_mail_i.pkl
 store_key = e_mail_i
 d_condition = python:storage['commit'] is True and 'l__to_correct_only' not in transmogrifier['transmogrifier']['pipeline'].split('\n')
 
+[l__1_I_correct]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: item.get('_bpk') == u'e_mail_i' and item['_etype'] == "I"
+key = string:_etype
+value = string:E
+
 [l__1_E_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
-condition2 = python: item.get('_etype') in ('E', 'I')
+condition2 = python: item.get('_etype') == 'E'
 
 [l__batched]
 blueprint = imio.transmogrifier.iadocs.condition
@@ -1844,18 +1861,21 @@ store_key = e_mail_i
 
 [p__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = abce
+;parts = abce
+parts = abc
 
 [p__1_mail_read]
 # read mails csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-# filename = eCourriers_S_test.csv
-filename = eCourriers.csv
-fieldnames = _A _eid _C outgoing_date mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
-             _Q _R _S _T _U _to_del _W _source _source_id _Z
-             creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
+;filename = courriers_test.csv
+filename = courriers.csv
+fieldnames = _eid _etype title _service_id _service external_reference_no _confidential outgoing_date mail_date _sender_id _sender _source_id _source
+             _nature_id _nature _remark _Q
+;fieldnames = _A _eid _C outgoing_date mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
+;             _Q _R _S _T _U _to_del _W _source _source_id _Z
+;             creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
+;             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
 bp_key = e_mail_o
 
 [p__pickle_o_w]
@@ -1869,7 +1889,7 @@ d_condition = python:storage['commit'] is True and 'p__to_correct_only' not in t
 # keep only S mails
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o'
-condition2 = python: item.get('_etype') == 'S' and item.get('creation_date') != '0'
+condition2 = python: item.get('_etype') == 'S'
 
 [p__batched]
 # keep only not already treated OM mails
@@ -1883,24 +1903,30 @@ blueprint = imio.transmogrifier.iadocs.count
 group_key = _bpk
 condition = python: item.get('_bpk') == u'e_mail_o'
 
+[p__oui_non_correct]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: item.get('_bpk') == u'e_mail_o' and item['_confidential'] in (u"OUI", u'Oui', u"NON", u'Non')
+key = string:_confidential
+value = python:item['_confidential'] in (u"OUI", u'Oui') and True or (item['_confidential'] not in (u"NON", u'Non') and item['_confidential'] or False)
+
 [p__1_mail_check]
 # check OM mail item
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_o
 condition = python: item.get('_bpk') == u'e_mail_o'
 replace_newline = external_reference_no " - "
-invalids = outgoing_date 0 mail_date 0 due_date 0 _category_id 0
+invalids = outgoing_date 0 mail_date 0
 clean_value = title python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" python:u'\n' _remark python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" python:u'\r\n' _sender python:u'\n' " " "python:[(r'^-+$', u''), (r'\s{2,}', u' ')]" python:u'\n'
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
-booleans = _confidential _meetingitem_link
-dates = outgoing_date %Y%m%d 0 mail_date %Y%m%d 1 due_date %Y%m%d 1 creation_date %Y%m%d 0
+booleans = _confidential
+dates = outgoing_date %Y%m%d 0 mail_date %Y%m%d 1
 
 [p__creation_date_insert]
 # insert creation date
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item['creation_date'] is None
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item.get('creation_date') is None
 key = string:creation_date
-value = python:item['outgoing_date']
+value = python:item['outgoing_date'] and item['outgoing_date'] or modules['datetime'].datetime.combine(item['mail_date'], modules['datetime'].time.min)
 
 [p__modification_date_insert]
 # insert modification date
