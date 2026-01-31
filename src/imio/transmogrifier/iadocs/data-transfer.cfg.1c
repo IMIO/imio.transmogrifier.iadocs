@@ -2125,13 +2125,11 @@ update = 1
 # read mails files links csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-;filename = eCourriersFichiers_test.csv
-filename = eCourriersFichiers.csv
-fieldnames = _A _eid _mail_id _filename _ext _fs_path _desc _H creation_date _J _K _version _M _last_version _O _P _Q _R _S _T _U _V _W _X _Y _Z
-             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _order _BS _BT _BU _BV _BW _BX _BY _BZ
-             _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
-             _DA _DB _DC _size _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _DQ _DR _DS _DT _DU _DV _DW
+;filename = fichiers_test.csv
+filename = fichiers.csv
+fieldnames = _eid _mail_id _desc _filename creation_date _ext _fs_path
+;fieldnames = _A _eid _mail_id _filename _ext _fs_path _desc _H creation_date _J _K _version _M _last_version _O _P _Q _R _S _T _U _V _W _X _Y _Z
+;             _order _size
 bp_key = e_file
 
 [1__files_load]
@@ -2419,17 +2417,15 @@ d_condition = python:storage['commit'] is True
 # read mails csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-#filename = eCourriers_E_test.csv
-filename = eCourriers.csv
-fieldnames = _A _eid _C _D _E _F _G _H _I _J _K _L _M _etype _O _P _Q _R _S _T _U _to_del _W _X _Y _Z
-             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
+#filename = courriers_test.csv
+filename = courriers.csv
+fieldnames = _eid _etype _C _D _E _F _G _H _I _J _K _L _M _N _O _P _Q
 bp_key = e_mail
 
 [t__1_E_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 't') and item.get('_bpk') == u'e_mail'
-condition2 = python: item.get('_etype') in ('E', 'I') and str(item['_to_del']) != '1'
+condition2 = python: item.get('_etype') in ('E', 'I')
 # condition2 = python: item.get('_etype') in ('E',) and str(item['_to_del']) != '1'
 
 [t__1_store_mail]
@@ -2445,7 +2441,8 @@ yield = 0
 # keep plone loaded mails
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 't') and item.get('_bpk') == u'e_file'
-condition2 = python: item['_mail_id'] in storage['data']['e_mail_i'] and item['_last_version'] != '0' and item['_eid'] not in storage['data']['e_dmsfile_unfound']
+;condition2 = python: item['_mail_id'] in storage['data']['e_mail_i'] and item['_last_version'] != '0' and item['_eid'] not in storage['data']['e_dmsfile_unfound']
+condition2 = python: item['_mail_id'] in storage['data']['e_mail_i'] and item['_eid'] not in storage['data']['e_dmsfile_unfound']
 
 [t__1_i_only]
 blueprint = imio.transmogrifier.iadocs.condition
@@ -2467,7 +2464,7 @@ condition = python: item.get('_bpk') == u'e_file'
 clean_value = _filename python:u'\n' " " "python:[]" python:u''
 replace_newline = _desc " - "
 invalids = _fs_path ??
-booleans = _last_version
+booleans =
 dates = creation_date "%Y-%m-%d %H:%M:%S.%f" 0
 
 [t__1_fspath_insert]
@@ -2522,7 +2519,8 @@ d_condition = python:storage['commit'] is True
 # keep plone loaded OM files
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'u') and item.get('_bpk') == u'e_file'
-condition2 = python: item['_mail_id'] in storage['data']['e_mail_o'] and item['_last_version'] != '0' and item['_eid'] not in storage['data']['e_dmsfile_unfound']
+;condition2 = python: item['_mail_id'] in storage['data']['e_mail_o'] and item['_last_version'] != '0' and item['_eid'] not in storage['data']['e_dmsfile_unfound']
+condition2 = python: item['_mail_id'] in storage['data']['e_mail_o'] and item['_eid'] not in storage['data']['e_dmsfile_unfound']
 
 [u__1_upload_date_modify]
 # insert creation_date field value
@@ -2539,7 +2537,7 @@ condition = python: item.get('_bpk') == u'e_file'
 clean_value = _filename python:u'\n' " " "python:[]" python:u''
 replace_newline = _desc " - "
 invalids = _fs_path ??
-booleans = _last_version
+booleans =
 dates = creation_date "%Y-%m-%d %H:%M:%S.%f" 0
 
 [u__1_fspath_insert]
@@ -2594,10 +2592,11 @@ d_condition = python:storage['commit'] is True
 # read mail links csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-# filename = eCourriersLiens_test.csv
-filename = eCourriersLiens.csv
+# filename = liens-courriers_test.csv
+filename = liens-courriers.csv
 fieldnames = _A _eid _target_id _comment
 bp_key = e_mail_link
+fmtparam-delimiter = python:';'
 
 [x__1_already_only]
 # keep plone loaded mail links
