@@ -17,7 +17,7 @@ default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
 default_creation_date = 20170101-1200
-default_tg = 3
+default_tg = 6
 default_category =
 to_treat = 10
 permitted_sections = 0abcdefFhilmp1qrstuwxy
@@ -764,7 +764,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
 filename = eClassementDossiers.csv
-fieldnames = _A _B _eid _D _E _F _G _H _I _J _category_id _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ
+fieldnames = _A _B _eid _D _E _F _G _H _I _J _category_id _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP
 bp_key = e_folder_category
 
 [e__1_category_reject]
@@ -914,7 +914,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 ;filename = eClassementDossiers_test.csv
 filename = eClassementDossiers.csv
 fieldnames = _A _B _eid title archived _archive_date _localisation _remark _service_id _J _category_id _parent_id _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
-             _AA _comment _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ
+             _AA _comment _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP
 bp_key = e_folder
 
 [F__1_folder_created_read]
