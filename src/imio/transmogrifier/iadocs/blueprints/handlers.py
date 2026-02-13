@@ -187,11 +187,13 @@ class BMailtypeUpdate(object):
             yield item
 
         if self.to_add:
-            o_logger.info("Part b: adding some mail types")
+            # o_logger.info("Part b: adding some mail types")
             for typ in self.to_add:
                 values = list(api.portal.get_registry_record(MAILTYPES[typ]))
                 for key in self.to_add[typ]:
                     values.append(self.to_add[typ][key])
+                    o_logger.info("Part b: updating '{}' mail types with new value: {}".format(typ,
+                                                                                               self.to_add[typ][key]))
                 api.portal.set_registry_record(MAILTYPES[typ], values)
             self.storage["data"]["p_mailtype"] = get_mailtypes(self.portal)
 
