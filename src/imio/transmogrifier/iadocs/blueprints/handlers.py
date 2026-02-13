@@ -1259,7 +1259,8 @@ class I1ContactUpdate(object):
                             item["number"] = a_dic["_number"]
                         if a_dic["_box"]:
                             item["number"] = (
-                                item["number"] and u"{} bte {}".format(item["number"], a_dic["_box"]) or a_dic["_box"]
+                                item.get("number") and u"{} bte {}".format(item["number"], a_dic["_box"])
+                                or a_dic["_box"]
                             )
                         if a_dic["_street"]:
                             item["street"] = a_dic["_street"]
