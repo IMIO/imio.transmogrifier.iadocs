@@ -2504,7 +2504,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 # filename = eCourriersLiens_test.csv
 filename = eCourriersLiens.csv
-fieldnames = _A _eid _target_id _comment
+fieldnames = _A _B _eid _target_id _comment
 bp_key = e_meetingitem_link
 
 [w__1_not_only_mails]
