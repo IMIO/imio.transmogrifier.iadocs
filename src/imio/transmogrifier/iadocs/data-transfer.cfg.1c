@@ -16,7 +16,7 @@ default_o_mail_type = courrier
 default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
-default_creation_date = 20090922-1200
+default_creation_date = 20080101-1200
 default_tg = 3
 default_category =
 to_treat = 10
@@ -682,7 +682,7 @@ bp_key = e_user
 [c__1_user_reject_non_user]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'c') and item.get('_bpk') == 'e_user'
-condition2 = python:item.get(u"_c_type") == u"Utilisateurs"
+condition2 = python:item.get(u"_c_type") in (u"Utilisateurs", u"Membre du personnel")
 
 [c__plone_user_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
