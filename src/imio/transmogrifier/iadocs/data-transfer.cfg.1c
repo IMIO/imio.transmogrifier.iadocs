@@ -148,9 +148,9 @@ pipeline =
     h__contact_type_match_read
     h__contact_type_match_store
     h__1_contacts_read
+    h__1_contact_type_not_user
     h__1_used_contact_type_store
-    h__1_contact_type_read
-    h__contact_type_used_only
+    h__contact_type_load
     h__plone_contact_type_write
     h__contact_type_match_write
     h__contact_type_update
@@ -1248,30 +1248,30 @@ yield = 1
 [h__1_contacts_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('h__contact_type_match_read', {}).get('filename', '_not_found_')))
-filename = eContacts.csv
+filename = contacts.csv
 fieldnames = ${dm__1_contacts_read:fieldnames}
 bp_key = e_contacts
+
+[h__1_contact_type_not_user]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'h') and item.get('_bpk') == u'e_contacts'
+condition2 = python: item.get(u"_c_type") not in (u"Utilisateurs", u"Membre du personnel")
 
 [h__1_used_contact_type_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_contacts'
-bp_key = e_used_contact_type
+bp_key = e_contact_type
 store_key = _c_type
-fieldnames = _eid
+fieldnames = _c_type
 check_key_uniqueness = 0
 yield = 0
 
-[h__1_contact_type_read]
-blueprint = imio.transmogrifier.iadocs.csv_reader
-b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('h__contact_type_match_read', {}).get('filename', '_not_found_')))
-filename = eContactsType.csv
-fieldnames = _A _eid _etitle _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T
+[h__contact_type_load]
+blueprint = imio.transmogrifier.iadocs.read_from_data
 bp_key = e_contact_type
-
-[h__contact_type_used_only]
-blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'h') and item.get('_bpk') == u'e_contact_type'
-condition2 = python: item.get('_eid') in storage['data'].get('e_used_contact_type', [])
+b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('h__contact_type_match_read', {}).get('filename', '_not_found_')))
+store_key = _c_type
+fieldnames =
 
 [h__plone_contact_type_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
@@ -1288,7 +1288,7 @@ blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('h__contact_type_match_read', {}).get('filename', '_not_found_')))
 condition = python: item.get('_bpk') == 'e_contact_type'
 filename = 0_contact_type_match.csv
-fieldnames = _eid _etitle
+fieldnames = _c_type _c_type
 headers = eid etitle pid ptitle
 bp_key = 0_contact_type_match
 yield = 0
@@ -2863,7 +2863,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
 ;condition = python:item.get('_eid', None) in (u'191013', u'')
-;condition = python:True
+condition = python:True
 ;condition = python:storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) % 500 == 0
 
 [stop]
