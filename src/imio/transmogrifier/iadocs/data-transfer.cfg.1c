@@ -17,7 +17,7 @@ default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
 default_creation_date = 20080101-1200
-default_tg = 3
+default_tg = 1
 default_category =
 to_treat = 10
 permitted_sections = 0abcdefFhilmp1qrstuxy
@@ -720,7 +720,7 @@ bp_key = e_contacts_sender
 [dm__1_contacts_reject_non_user]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python:modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'd') and item.get('_bpk') == 'e_contacts_sender'
-condition2 = python:item.get(u"_c_type") == u"Utilisateurs"
+condition2 = python:item.get(u"_c_type") in (u"Utilisateurs", u"Membre du personnel")
 
 [dm__1_contacts_insert_active]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1328,7 +1328,7 @@ d_condition = python:storage['commit'] is True
 [ip__user_id_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'ip') and item.get('_bpk') == u'e_contact'
-            and item["_ctyp"] == u"Utilisateurs"
+            and item["_ctyp"] in (u"Utilisateurs", u"Membre du personnel")
 key = string:_user_id
 value = python:item["_eid"]
 
@@ -1562,7 +1562,7 @@ value = string:E
 [l__1_E_only]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
-condition2 = python: item.get('_etype') == 'E'
+condition2 = python: item.get('_etype') in ('E', 'I')
 
 [l__batched]
 blueprint = imio.transmogrifier.iadocs.condition
@@ -2863,7 +2863,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
 ;condition = python:item.get('_eid', None) in (u'191013', u'')
-condition = python:True
+;condition = python:True
 ;condition = python:storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) % 500 == 0
 
 [stop]
