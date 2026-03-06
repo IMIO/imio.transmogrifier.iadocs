@@ -106,6 +106,7 @@ pipeline =
     f__need
     fF__pickle_w
     fs__1_folder_read
+    f__oui_non_correct
     F__1_folder_created_read
     fsF__1_folder_check
     f__folder_matched_uid_add
@@ -130,9 +131,9 @@ pipeline =
     f__modification_date_insert
     f__1_category_id_insert
     f__1_empty_title_insert
-    f__1_localisation_insert
+;    f__1_localisation_insert  no more localisation given
     f__1_remark_insert
-    f__1_comment_insert
+;    f__1_comment_insert  no more comment given
     f__1_archive_date_insert
     f__treating_groups_insert
     fF__deactivate_insert
@@ -967,10 +968,15 @@ d_condition = python:storage['commit'] is True and 'f__to_correct_only' not in t
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 ;filename = eClassementDossiers_test.csv
-filename = eClassementDossiers.csv
-fieldnames = _A _eid title archived _archive_date _localisation _remark _service_id _I _category_id _parent_id _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
-             _comment _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO
+filename = dossiers-classement.csv
+fieldnames = _eid title _service_id _D _category_id _F archived _archive_date _remark _parent_id
 bp_key = e_folder
+
+[f__oui_non_correct]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: item.get('_bpk') == u'e_folder' and item['archived'] in (u"OUI", u'Oui', u"NON", u'Non')
+key = string:archived
+value = python:item['archived'] in (u"OUI", u'Oui') and True or (item['archived'] not in (u"NON", u'Non') and item['archived'] or False)
 
 [F__1_folder_created_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -1073,7 +1079,7 @@ blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_folder'
 bp_key = e_folder
 store_key = _eid
-fieldnames = _ln title archived _archive_date _localisation _remark _service_id _category_id _parent_id _comment path _mar_ker
+fieldnames = _ln title archived _archive_date _remark _service_id _category_id _parent_id path _mar_ker
 yield = 0
 
 [f__dependency_sorter]
