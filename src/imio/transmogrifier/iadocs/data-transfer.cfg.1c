@@ -84,7 +84,7 @@ pipeline =
     e__category_full_match_store
     e__category_match_read
     e__1_category_match_check
-    e__1_mail_read
+;    e__1_mail_read  courriers.csv no more contains category_id
     e__1_folder_read
     e__1_category_reject
     e__1_store_used_category
@@ -818,8 +818,8 @@ bp_key = e_mail_category
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
-filename = eClassementDossiers.csv
-fieldnames = _A _eid _C _D _E _F _G _H _I _category_id _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO
+filename = dossiers-classement.csv
+fieldnames = _eid _B _C _D _category_id _F _G _H _I _J
 bp_key = e_folder_category
 
 [e__1_category_reject]
@@ -843,9 +843,9 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: modules['os'].path.exists(filename)
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
-;filename = eClassement_test.csv
-filename = eClassement.csv
-fieldnames = _A _eid _C _ecode _etitle _eactive _G _H _I _J _K _L
+;filename = codes-classement_test.csv
+filename = codes-classement.csv
+fieldnames = _eid _ecode _etitle _eactive
 bp_key = e_category
 
 [e__plone_category_write]
