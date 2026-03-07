@@ -1601,7 +1601,8 @@ dates = reception_date %Y%m%d 0 original_mail_date %Y%m%d 1
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:creation_date
-value = python:item['reception_date'] or item['original_mail_date']
+value = python:item['reception_date'] or (item['original_mail_date'] and modules['datetime'].datetime.combine(item['original_mail_date'], modules['datetime'].time.min))
+        or modules["datetime"].datetime.strptime("${config:default_creation_date}", "%Y%m%d-%H%M")
 
 [l__modification_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1742,7 +1743,7 @@ value = python:item['_eid']
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:_type
-value = python:(item['_source_id'] == u'3' or item['_nature_id'] == u'_180') and 'dmsincoming_email' or 'dmsincomingmail'
+value = python:(item['_source_id'] == u'6' or item['_nature_id'] == u'_180') and 'dmsincoming_email' or 'dmsincomingmail'
 
 [l__1_parent_insert]
 blueprint = imio.transmogrifier.iadocs.parent_path_insert
@@ -1932,7 +1933,8 @@ dates = outgoing_date %Y%m%d 0 mail_date %Y%m%d 1
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item.get('creation_date') is None
 key = string:creation_date
-value = python:item['outgoing_date'] and item['outgoing_date'] or modules['datetime'].datetime.combine(item['mail_date'], modules['datetime'].time.min)
+value = python:item['outgoing_date'] or (item['mail_date'] and modules['datetime'].datetime.combine(item['mail_date'], modules['datetime'].time.min))
+        or modules["datetime"].datetime.strptime("${config:default_creation_date}", "%Y%m%d-%H%M")
 
 [p__modification_date_insert]
 # insert modification date
@@ -2335,9 +2337,8 @@ d_condition = python:storage['commit'] is True and 's__to_correct_only' not in t
 # read folders links csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = eCourriersDossiers.csv
-;filename = eCourriersDossiers_test.csv
-fieldnames = _A _eid _folder_id _principal
+filename = dossiers-courriers.csv
+fieldnames = _eid _folder_id _principal
 bp_key = e_mail_folder
 
 [s__1_already_only]
