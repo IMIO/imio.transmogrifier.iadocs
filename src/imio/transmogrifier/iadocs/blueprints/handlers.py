@@ -764,6 +764,7 @@ class ECategoryUpdate(object):
         * decimal_import = O, identifier is decimal code if 1 (default 1)
         * parent_relation = O, parent_relation dictionary name containing (key: {'_parent_id': 'xx'}
         * category_code_eid = 0, dict containing category code and eid value (usefull if _eid is e_category main key)
+        * prefix = O, prefix of category code to be ignored as parent
     """
 
     classProvides(ISectionBlueprint)
@@ -784,6 +785,7 @@ class ECategoryUpdate(object):
         self.decimal_import = bool(int(options.get("decimal_import") or "1"))
         self.parent_relation = self.storage["data"].get(options.get("parent_relation", ""), {})
         self.category_code_eid = self.storage["data"].get(options.get("category_code_eid", ""), {})
+        self.prefix = options.get("prefix") or ""
         self.p_category = self.storage["data"]["p_category"]
 
     def __iter__(self):  # noqa
@@ -821,7 +823,10 @@ class ECategoryUpdate(object):
                     parent = self.portal.tree
                     if self.decimal_import:
                         parts = get_parents(item["_ecode"])
-                        for part in parts[:-1]:
+                        parent_start = 0
+                        if self.prefix:
+                            parent_start = len(self.prefix) - 1  # -1 to define the prefix as parent
+                        for part in parts[parent_start:-1]:
                             if part not in self.p_category:  # not already in Plone
                                 _p_key = part
                                 if self.category_code_eid:
