@@ -1252,7 +1252,7 @@ class I1ContactUpdate(object):
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
                 course_store(self, item)
                 # mainly address
-                if item["_addr_id"]:
+                if item.get("_addr_id"):
                     a_dic = self.storage["data"]["e_address"][item["_addr_id"]]
                     # _imp_addr _imp_pc _imp_city _imp_country _pc _city _box _street _number _phone _fax _cell
                     # _website _email
@@ -1296,6 +1296,10 @@ class I1ContactUpdate(object):
                     # _parent_id _addr_id
                     if item.get("_street"):
                         item["street"] = clean_value(item["_street"], osep=", ")
+                    if item.get("_street_nb"):
+                        item["number"] = item["_street_nb"]
+                    if item.get("_street_nb_box"):
+                        item["number"] = u"{} {}".format(item.get("number", ""), item["_street_nb_box"])
                     if item.get("_pc"):
                         item["zip_code"] = item["_pc"]
                     if item.get("_city"):
@@ -1303,7 +1307,7 @@ class I1ContactUpdate(object):
                     if item.get("_country") and item["_country"].lower() != u"belgique":
                         item["country"] = item["_country"]
                 # parent_address
-                if item["_parent_id"] and not (item.get("city") and item.get("zip_code") or item.get("street")):
+                if item.get("_parent_id") and not (item.get("city") and item.get("zip_code") or item.get("street")):
                     item["use_parent_address"] = True
                 else:
                     item["use_parent_address"] = False
@@ -1312,9 +1316,11 @@ class I1ContactUpdate(object):
                     item["phone"] = one_of_dict_values(item, ["_phone1", "_phone2", "_phone3"])
                 if not item.get("cell_phone"):
                     item["cell_phone"] = one_of_dict_values(item, ["_cell1", "_cell2", "_cell3"])
+                if item.get("_fax"):
+                    item["fax"] = item["_fax"]
                 if not item.get("email"):
                     item["email"] = one_of_dict_values(item, ["_email1", "_email2", "_email3"])
-                if not item.get("_website"):
+                if not item.get("_website") and item.get("_web"):
                     item["website"] = item["_web"]
                 # empty lastname
                 if not item["lastname"]:
@@ -2148,7 +2154,7 @@ class ParentPathInsert(object):
                 item["_parenth"] = u"/contacts"
             elif ptyp == "organization":
                 item["_parenth"] = u"/contacts"
-                if item["_parent_id"]:
+                if item.get("_parent_id"):
                     if item["_parent_id"] not in self.storage["data"][self.bp_key]:
                         log_error(item, u"Parent id not found '{}'".format(item["_parent_id"]))
                     else:
