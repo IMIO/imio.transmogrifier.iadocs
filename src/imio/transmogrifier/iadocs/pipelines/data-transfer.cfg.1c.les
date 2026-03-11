@@ -173,7 +173,7 @@ pipeline =
 ;    i__empty_creation_date_insert
     i__type_insert
 ;    i__1_parent_relation_store
-;    ilpq__1_contacts_store
+    lpq__1_contacts_store
 # AdressePrincipaleID used store ?
 ;    i__dependency_sorter
 ;    i__1_address_read
@@ -199,6 +199,7 @@ pipeline =
     lq__pickle_c_r
     l__1_mail_read
     l__pickle_i_w
+    l__1_I_mail_type_inserter
     l__1_I_correct
     l__1_E_only
     l__batched
@@ -1330,6 +1331,7 @@ parts = h
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
 filename = contacts.csv
+;filename = contacts_test.csv
 fieldnames = _eid lastname firstname _ptitle _ctyp _name2 _deactivate _country _pc _city _street _street_nb _street_nb_box _email1 _cell1 _phone1 _fax
 # new _street_nb _street_nb_box _fax
 #             _user_id _phone2 _phone3 _email2 _email3 _function enterprise_number creation_date modification_date _web _org _parent_id _addr_id
@@ -1416,7 +1418,7 @@ store_key = _eid
 fieldnames = _parent_id
 yield = 1
 
-[ilpq__1_contacts_store]
+[lpq__1_contacts_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_contact'
 bp_key = e_contact
@@ -1480,7 +1482,7 @@ value = python:item['_eid']
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact'
 key = string:_is_user
-value = python:bool(item['_user_id'])
+value = python:bool(item.get('_user_id', False))
 
 [i__1_ctyp_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1582,6 +1584,12 @@ blueprint = imio.transmogrifier.iadocs.pickle_data
 filename = 2_e_mail_i.pkl
 store_key = e_mail_i
 d_condition = python:storage['commit'] is True and 'l__to_correct_only' not in transmogrifier['transmogrifier']['pipeline'].split('\n')
+
+[l__1_I_mail_type_inserter]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: item.get('_bpk') == u'e_mail_i' and item['_etype'] == "I"
+key = string:mail_type
+value = string:note-interne
 
 [l__1_I_correct]
 blueprint = imio.transmogrifier.iadocs.inserter
