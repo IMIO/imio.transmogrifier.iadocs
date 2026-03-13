@@ -57,6 +57,8 @@ class CSVReader(object):
         self.dialect = safe_unicode(options.get("dialect") or "excel")
         self.csv_encoding = safe_unicode(options.get("csv_encoding") or "utf8")
         self.none_value = safe_unicode(options.get("none_value") or transmogrifier["config"].get("none_value"))
+        if transmogrifier["config"].get("csv_delimiter") and not options.get("fmtparam-delimiter"):
+            options["fmtparam-delimiter"] = "python:'%s'" % transmogrifier["config"]["csv_delimiter"]
         self.roe = bool(int(options.get("raise_on_error") or "1"))
         self.fmtparam = dict(
             (

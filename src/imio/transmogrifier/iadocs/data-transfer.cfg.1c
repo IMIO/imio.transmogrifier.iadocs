@@ -10,6 +10,7 @@ raise_on_error = 1
 internal_number_behavior_types = organization person held_position dmsincomingmail dmsincoming_email dmsoutgoingmail
 data_transfer_behavior_types = dmsincomingmail dmsincoming_email dmsoutgoingmail
 none_value = NULL
+csv_delimiter = ;
 creator = csvimport
 default_i_mail_type = courrier
 default_o_mail_type = courrier
@@ -463,8 +464,9 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
               or transmogrifier.storage['parts'] == 'a'
 filename = courriers.csv
-fieldnames = _A _B _C _eid _title _F _G _H _I _J _K _L _M _N _O _P _Q
+fieldnames = _A _etype _C _eid _title _F _G _H _I _J _K _L _M _N _O _P _Q
 bp_key = e_service
+#fmtparam-delimiter = python:';'
 
 [a__1_service_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
@@ -475,7 +477,7 @@ invalids = _eid NULL
 [a__service_reject]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'a') and item.get('_bpk') == u'e_service'
-condition2 = python: item.get('_eid') is not None
+condition2 = python: item.get('_eid') is not None and item["_etype"] in ("E", "S")
 
 [a__service_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
