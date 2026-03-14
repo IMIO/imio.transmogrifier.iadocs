@@ -2461,6 +2461,9 @@ class S1ClassificationFoldersUpdate(object):
             course_store(self, item)
             mail_path = self.paths[item["_eid"]]["path"]
             mail = get_obj_from_path(self.portal, path=mail_path)
+            if item[u"_folder_id"] not in self.storage["data"]["e_folder"]:
+                log_error(item, u"Cannot find folder_id '{}' in existing folders".format(item[u"_folder_id"]))
+                continue
             item2 = {
                 "_eid": item["_eid"],
                 "_folder_id": item["_folder_id"],
