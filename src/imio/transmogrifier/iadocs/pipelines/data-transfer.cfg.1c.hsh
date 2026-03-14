@@ -13,7 +13,7 @@ none_value = NULL
 csv_delimiter = ;
 creator = csvimport
 default_i_mail_type = courrier
-default_o_mail_type = courrier
+default_o_mail_type = demande
 default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
@@ -552,7 +552,7 @@ bp_key = e_mail_mailtype
 [b__1_mail_reject]
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'b') and item.get('_bpk') == 'e_mail_mailtype'
-condition2 = python: item.get('_etype') in ('E', 'S', 'I')
+condition2 = python: item.get('_etype') in ('E', 'S')
 
 [b__1_used_nature_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
