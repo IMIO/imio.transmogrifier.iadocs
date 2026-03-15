@@ -2058,6 +2058,7 @@ separator = python:u'\r\n'
 # insert send_modes
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o'
+            and not item.get("send_modes")
 key = string:send_modes
 value = python: item['_source_id'] and storage['data']['e_mailtype_match'][item['_source_id']]['S']['_key'] or u'${config:default_o_send_mode}'
 
