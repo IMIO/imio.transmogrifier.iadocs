@@ -286,6 +286,7 @@ pipeline =
     1rsxy__pickle_i_r
     1rsxy__pickle_o_r
     1tu__1_dmsfile_read
+    1tu__fs_path_correct
 ;    1__files_load
     1__already_only
     1__rsync_file_write
@@ -2135,6 +2136,13 @@ fieldnames = _eid _mail_id _desc _filename creation_date _ext _fs_path
 ;fieldnames = _A _eid _mail_id _filename _ext _fs_path _desc _H creation_date _J _K _version _M _last_version _O _P _Q _R _S _T _U _V _W _X _Y _Z
 ;             _order _size
 bp_key = e_file
+#fmtparam-delimiter = python:';'
+
+[1tu__fs_path_correct]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'tu') and item.get('_bpk') == u'e_file' and item.get("_fs_path")
+key = string:_fs_path
+value = python:item['_fs_path'].replace(u"\\", u"/")
 
 [1__files_load]
 # read files data as item

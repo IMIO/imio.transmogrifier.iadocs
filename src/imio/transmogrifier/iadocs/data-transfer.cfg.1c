@@ -285,6 +285,7 @@ pipeline =
     1rsxy__pickle_i_r
     1rsxy__pickle_o_r
     1tu__1_dmsfile_read
+    1tu__fs_path_correct
 ;    1__files_load
     1__already_only
     1__rsync_file_write
@@ -2128,6 +2129,12 @@ fieldnames = _eid _mail_id _desc _filename creation_date _ext _fs_path
 ;             _order _size
 bp_key = e_file
 
+[1tu__fs_path_correct]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'tu') and item.get('_bpk') == u'e_file' and item.get("_fs_path")
+key = string:_fs_path
+value = python:item['_fs_path'].replace(u"\\", u"/")
+
 [1__files_load]
 # read files data as item
 blueprint = imio.transmogrifier.iadocs.read_from_data
@@ -2260,8 +2267,8 @@ d_condition = python:storage['commit'] is True
 # read recipient groups csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = eCourriersServices.csv
-fieldnames = _A _eid _mail_id _service_id _principal1 _F _principal2 _H _I
+filename = courriers-services.csv
+fieldnames = _eid _mail_id _service_id _D _E
 bp_key = e_mail_rec_groups
 
 [r__1_already_only]
