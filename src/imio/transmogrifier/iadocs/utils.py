@@ -128,7 +128,7 @@ def get_file_content(section, item):
         fullpath, path = fullpaths[ext]
         item["_fs_path"] = path
     # get and adapt filename
-    filename = item.get("_filename", os.path.basename(fullpath))
+    filename = item.get("_filename") or os.path.basename(fullpath)
     (f_basename, f_ext) = os.path.splitext(filename)
     if not f_ext:
         filename = u"{}{}".format(filename, ext)
