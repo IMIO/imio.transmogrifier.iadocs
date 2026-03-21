@@ -2131,12 +2131,13 @@ update = 1
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 ;filename = fichiers_test.csv
-filename = fichiers.csv
+;filename = fichiers.csv
+filename = fichiers-partiel.csv
 fieldnames = _eid _mail_id _desc _filename creation_date _ext _fs_path
 ;fieldnames = _A _eid _mail_id _filename _ext _fs_path _desc _H creation_date _J _K _version _M _last_version _O _P _Q _R _S _T _U _V _W _X _Y _Z
 ;             _order _size
 bp_key = e_file
-#fmtparam-delimiter = python:';'
+fmtparam-delimiter = python:';'
 
 [1tu__fs_path_correct]
 blueprint = imio.transmogrifier.iadocs.inserter

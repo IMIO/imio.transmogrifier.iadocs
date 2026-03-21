@@ -238,9 +238,9 @@ pipeline =
     m__batched
     m__oui_non_correct
     m__1_mail_recipient_check
-#    m__1_principal_only
     m__count
     m__1_batch_store
+    m__1_principal_only
     m__1_assigned_user
 
 # pp  OM handling
@@ -1826,12 +1826,6 @@ invalids =
 booleans = _principal
 dates = _trm_date %Y%m%d 1
 
-[m__1_principal_only]
-# keep only principal recipients
-blueprint = imio.transmogrifier.iadocs.condition
-condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
-condition2 = python: item['_principal']
-
 [m__count]
 # IM recipients counter
 blueprint = imio.transmogrifier.iadocs.count
@@ -1846,6 +1840,13 @@ bp_key = assigned_users
 store_key = _eid
 fieldnames = _mail_id
 yield = 1
+
+[m__1_principal_only]
+# keep only principal recipients
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'm') and item.get('_bpk') == u'e_mail_recip_i'
+;condition2 = python: item['_principal'] and item["_contact_id"] and item["_contact_id"] in storage['data']['e_contacts_sender']
+condition2 = python: item["_contact_id"] and item["_contact_id"] in storage['data']['e_contacts_sender']
 
 [m__1_assigned_user]
 # put assigned user on item and add it also in data_transfer
@@ -2015,6 +2016,7 @@ separator = python:u'\r\n'
 # insert send_modes
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o'
+            and not item.get("send_modes")
 key = string:send_modes
 value = python: item['_source_id'] and storage['data']['e_mailtype_match'][item['_source_id']]['S']['_key'] or u'${config:default_o_send_mode}'
 
