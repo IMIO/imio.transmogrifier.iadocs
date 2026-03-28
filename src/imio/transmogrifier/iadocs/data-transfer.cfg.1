@@ -41,6 +41,7 @@ pipeline =
     b__1_mailtype_match_check
     b__mailtype_match_store
     b__1_mail_read
+    b__1_etype_correct
 #    b__1_mail_reject
     b__1_used_nature_store
     b__1_used_source_store
@@ -524,6 +525,12 @@ fieldnames = _A _eid _C _D _E _F _G _nature_id _I _J _K _L _M _etype _O _P _Q _R
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
              _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
 bp_key = e_mail_mailtype
+
+[b__1_etype_correct]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'b') and item.get('_bpk') == 'e_mail_mailtype'
+key = string:_etype
+value = python:u"E"
 
 [b__1_mail_reject]
 blueprint = imio.transmogrifier.iadocs.condition

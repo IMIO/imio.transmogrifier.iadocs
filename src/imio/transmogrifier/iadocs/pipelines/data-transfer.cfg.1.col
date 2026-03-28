@@ -8,7 +8,7 @@ debug = 0
 creating_group =
 raise_on_error = 1
 internal_number_behavior_types = organization person held_position dmsincomingmail dmsincoming_email dmsoutgoingmail
-data_transfer_behavior_types = dmsincomingmail dmsincoming_email dmsoutgoingmail
+data_transfer_behavior_types =
 none_value = NULL
 creator = csvimport
 default_i_mail_type = courrier
@@ -16,8 +16,8 @@ default_o_mail_type = courrier
 default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
-default_creation_date = 20090922-1200
-default_tg = 3
+default_creation_date = 20190101-1200
+default_tg = 3x
 default_category =
 to_treat = 10
 permitted_sections = 0abcdefFhilmp1qrstuwxy
@@ -460,7 +460,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('a__service_match_read', {}).get('filename', '_not_found_')))
               or transmogrifier.storage['parts'] == 'a'
 filename = eServices.csv
-fieldnames = _A _B _eid _title _pid _F _G _H _I _J _K _code _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT
+fieldnames = _A _eid _title _pid _E _F _G _H _I _J _code _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR
 bp_key = e_service
 
 [a__1_service_check]
@@ -521,9 +521,9 @@ yield = 1
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 filename = eCourriers.csv
-fieldnames = _A _B _eid _D _E _F _G _H _nature_id _J _K _L _M _N _etype _P _Q _R _S _T _U _V _to_del _X _source _source_id
+fieldnames = _A _eid _C _D _E _F _G _nature_id _I _J _K _L _M _etype _O _P _Q _R _S _T _U _to_del _W _source _source_id _Z
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR
+             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM
 bp_key = e_mail_mailtype
 
 [b__1_etype_correct]
@@ -563,7 +563,7 @@ yield = 0
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 filename = eNatures.csv
-fieldnames = _A _B _eid _etitle _E _nature _source _H _I _J _K _L _M _N _O _P
+fieldnames = _A _eid _etitle _D _nature _source _G _H _I _J _K _L _M _N _O
 bp_key = e_mailtype
 
 [b__mailtype_used_only]
@@ -635,14 +635,13 @@ yield = 0
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('c__1_user_match_read', {}).get('filename', '_not_found_')))
 filename = eUsers.csv
-fieldnames = _A _B _eid _elogin _E _active _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U _nom _prenom _X _Y _Z
+fieldnames = _A _eid _elogin _D _active _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _nom _prenom
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
              _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR _BS _BT _BU _BV _BW _BX _BY _BZ
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
              _DA _DB _DC _DD _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _DQ _DR _DS _DT _DU _DV _DW _DX _DY _DZ
              _EA _EB _EC _ED _EE _EF _EG _EH _EI _EJ _EK _EL _EM _EN _EO _EP _EQ _ER _ES _ET _EU _EV _EW _EX _EY _EZ
-             _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU _FV _FW _FX _FY _FZ
-             _GA _GB _GC _GD _GE
+             _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU _FV _FW _FX _FY
 bp_key = e_user
 
 [c__plone_user_write]
@@ -675,13 +674,13 @@ parts = c
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
 filename = eContacts.csv
-fieldnames = _A _B _eid _user_id _c_type _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
+fieldnames = _A _eid _user_id _c_type _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
              _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR _BS _BT _BU _BV _BW _BX _BY _BZ
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
              _DA _DB _DC _DD _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _DQ _DR _DS _DT _DU _DV _DW _DX _DY _DZ
              _EA _EB _EC _ED _EE _EF _EG _EH _EI _EJ _EK _EL _EM _EN _EO _EP _EQ _ER _ES _ET _EU _EV _EW _EX _EY _EZ
-             _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU _FV
+             _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU
 bp_key = e_contacts_sender
 
 [dm__1_contacts_userid_only]
@@ -701,9 +700,9 @@ yield = 0
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
 filename = eCourriers.csv
-fieldnames = _A _B _eid _D _E _F _G _H _I _sender_id _sender _service _M _N _etype _P _Q _R _S _T _U _V _W _X _Y _Z
+fieldnames = _A _eid _C _D _E _F _G _H _sender_id _sender _service _L _M _etype _O _P _Q _R _S _T _U _V _W _X _Y _Z
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR
+             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
 bp_key = e_mail_sender
 
 [d__1_S_only]
@@ -761,9 +760,9 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
 filename = eCourriers.csv
-fieldnames = _A _B _eid _D _E _F _G _H _I _J _K _L _M _N _O _P _category_id _R _S _T _U _V _W _X _Y _Z
+fieldnames = _A _eid _C _D _E _F _G _H _I _J _K _L _M _N _O _category_id _Q _R _S _T _U _V _W _X _Y _Z
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR
+             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
 bp_key = e_mail_category
 
 [e__1_folder_read]
@@ -771,7 +770,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
 filename = eClassementDossiers.csv
-fieldnames = _A _B _eid _D _E _F _G _H _I _J _category_id _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ
+fieldnames = _A _eid _C _D _E _F _G _H _I _category_id _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO
 bp_key = e_folder_category
 
 [e__1_category_reject]
@@ -797,7 +796,7 @@ b_condition = python: modules['os'].path.exists(filename)
               and not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_full_match_read', {}).get('filename', '_not_found_')))
 ;filename = eClassement_test.csv
 filename = eClassement.csv
-fieldnames = _A _B _eid _D _ecode _etitle _eactive _H _I _J _K _L _M
+fieldnames = _A _eid _C _ecode _etitle _eactive _G _H _I _J _K _L
 bp_key = e_category
 
 [e__plone_category_write]
@@ -920,8 +919,8 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('e__category_match_read', {}).get('filename', '_not_found_')))
 ;filename = eClassementDossiers_test.csv
 filename = eClassementDossiers.csv
-fieldnames = _A _B _eid title archived _archive_date _localisation _remark _service_id _J _category_id _parent_id _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
-             _AA _comment _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ
+fieldnames = _A _eid title archived _archive_date _localisation _remark _service_id _I _category_id _parent_id _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
+             _comment _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO
 bp_key = e_folder
 
 [F__1_folder_created_read]
@@ -1217,7 +1216,7 @@ yield = 0
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('h__contact_type_match_read', {}).get('filename', '_not_found_')))
 filename = eContactsType.csv
-fieldnames = _A _B _eid _etitle _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U
+fieldnames = _A _eid _etitle _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T
 bp_key = e_contact_type
 
 [h__contact_type_used_only]
@@ -1260,12 +1259,12 @@ parts = h
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
 filename = eContacts.csv
-fieldnames = _A _B _eid _user_id _ctyp _F lastname firstname _ptitle _street _pc _city _M _phone1 _phone2 _phone3 _Q _R _S _email1 _email2 _email3 _W _X _Y _function
-             _AA _AB _AC _AD _AE _AF _AG _AH enterprise_number _AJ _AK _AL creation_date _AN modification_date _cell1 _cell2 _cell3 _web _org _name2 _AV _AW _AX _AY _deactivate
-             _BA _BB _parent_id _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR _BS _BT _BU _BV _BW _BX _BY _BZ
+fieldnames = _A _eid _user_id _ctyp _E lastname firstname _ptitle _street _pc _city _L _phone1 _phone2 _phone3 _P _Q _R _email1 _email2 _email3 _V _W _X _function _Z
+             _AA _AB _AC _AD _AE _AF _AG enterprise_number _AI _AJ _AK creation_date _AM modification_date _cell1 _cell2 _cell3 _web _org _name2 _AU _AV _AW _AX _deactivate _AZ
+             _BA _parent_id _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR _BS _BT _BU _BV _BW _BX _BY _BZ
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
-             _DA _DB _DC _DD _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _DQ _country _DS _DT _DU _DV _DW _DX _DY _DZ
-             _EA _EB _EC _ED _EE _EF _EG _EH _EI _EJ _EK _EL _EM _EN _EO _EP _EQ _ER _ES _ET _EU _EV _EW _EX _EY _addr_id
+             _DA _DB _DC _DD _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _country _DR _DS _DT _DU _DV _DW _DX _DY _DZ
+             _EA _EB _EC _ED _EE _EF _EG _EH _EI _EJ _EK _EL _EM _EN _EO _EP _EQ _ER _ES _ET _EU _EV _EW _EX _addr_id _EZ
              _FA _FB _FC _FD _FE _FF _FG _FH _FI _FJ _FK _FL _FM _FN _FO _FP _FQ _FR _FS _FT _FU
 bp_key = e_contact
 
@@ -1482,10 +1481,10 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 ;filename = eCourriers_E_test.csv
 filename = eCourriers.csv
-fieldnames = _A _B _eid _D reception_date original_mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
-             _R _S _T _U _V _to_del _X _source _source_id
-             _AA creation_date _AC _AD _AE _AF _AG _AH _AI _AJ _meeting_link _meetingitem_link _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR
+fieldnames = _A _eid _C reception_date original_mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
+             _Q _R _S _T _U _to_del _W _source _source_id _Z
+             creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
+             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
 bp_key = e_mail_i
 
 [l__pickle_i_w]
@@ -1700,8 +1699,8 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition = python: modules['os'].path.exists(filename)
 # filename is relative to csvpath
 filename = eUsersServices.csv
-fieldnames = _A _B _euserid _eserviceid _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
-             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ _BA _BB _BC _BD
+fieldnames = _A _euserid _eserviceid _D _E _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U _V _W _X _Y _Z
+             _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ _BA _BB _BC
 bp_key = e_user_service
 
 [m__user_service_store]
@@ -1733,7 +1732,7 @@ d_condition = python:storage['commit'] is True
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 filename = eCourriersDestinataires.csv
-fieldnames = _A _B _eid _mail_id _contact_id _action _due_date _trm_date _I _trm_user_id _message _response _M _trt_date _O _P _Q _principal _comment _T _U _V _W _X
+fieldnames = _A _eid _mail_id _contact_id _action _due_date _trm_date _H _trm_user_id _message _response _L _trt_date _N _O _P _principal _comment _S _T _U _V _W
 bp_key = e_mail_recip_i
 
 [m__1_already_only]
@@ -1804,10 +1803,10 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 # filename = eCourriers_S_test.csv
 filename = eCourriers.csv
-fieldnames = _A _B _eid _D outgoing_date mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
-             _R _S _T _U _V _to_del _X _source _source_id
-             _AA creation_date _AC _AD _AE _AF _AG _AH _AI _AJ _meeting_link _meetingitem_link _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR
+fieldnames = _A _eid _C outgoing_date mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
+             _Q _R _S _T _U _to_del _W _source _source_id _Z
+             creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
+             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
 bp_key = e_mail_o
 
 [p__pickle_o_w]
@@ -2053,11 +2052,11 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 ;filename = eCourriersFichiers_test.csv
 filename = eCourriersFichiers.csv
-fieldnames = _A _B _eid _mail_id _filename _ext _fs_path _desc _I _upload_date _K _L _version _N _last_version _P _Q _R _S _T _U _V _W _X _Y _Z
+fieldnames = _A _eid _mail_id _filename _ext _fs_path _desc _H creation_date _J _K _version _M _last_version _O _P _Q _R _S _T _U _V _W _X _Y _Z
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
              _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _order _BS _BT _BU _BV _BW _BX _BY _BZ
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
-             _DA _DB _DC _size _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _DQ _DR _DS _DT _DU _DV _DW _DX
+             _DA _DB _DC _size _DE _DF _DG _DH _DI _DJ _DK _DL _DM _DN _DO _DP _DQ _DR _DS _DT _DU _DV _DW
 bp_key = e_file
 
 [1__files_load]
@@ -2106,7 +2105,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 ;filename = eCourriersDestinataires_test.csv
 filename = eCourriersDestinataires.csv
-fieldnames = _A _B _eid _mail_id _contact_id _action _due_date _trm_date _I _trm_user_id _message _response _M _trt_date _O _P _Q _principal _contact_text _T _U _V _W _X
+fieldnames = _A _eid _mail_id _contact_id _action _due_date _trm_date _H _trm_user_id _message _response _L _trt_date _N _O _P _principal _contact_text _S _T _U _V _W
 bp_key = e_mail_recip_o
 
 [q__1_already_only]
@@ -2188,7 +2187,7 @@ d_condition = python:storage['commit'] is True
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 filename = eCourriersServices.csv
-fieldnames = _A _B _eid _mail_id _service_id _principal1 _G _principal2 _I _J
+fieldnames = _A _eid _mail_id _service_id _principal1 _F _principal2 _H _I
 bp_key = e_mail_rec_groups
 
 [r__1_already_only]
@@ -2259,7 +2258,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 filename = eCourriersDossiers.csv
 ;filename = eCourriersDossiers_test.csv
-fieldnames = _A _B _eid _folder_id _principal
+fieldnames = _A _eid _folder_id _principal
 bp_key = e_mail_folder
 
 [s__1_already_only]
@@ -2347,9 +2346,9 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 #filename = eCourriers_E_test.csv
 filename = eCourriers.csv
-fieldnames = _A _B _eid _D _E _F _G _H _I _J _K _L _M _N _etype _P _Q _R _S _T _U _V _to_del _X _Y _Z
+fieldnames = _A _eid _C _D _E _F _G _H _I _J _K _L _M _etype _O _P _Q _R _S _T _U _to_del _W _X _Y _Z
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR
+             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
 bp_key = e_mail
 
 [t__1_E_only]
@@ -2511,7 +2510,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 # filename = eCourriersLiens_test.csv
 filename = eCourriersLiens.csv
-fieldnames = _A _B _eid _target_id _comment
+fieldnames = _A _eid _target_id _comment
 bp_key = e_meetingitem_link
 
 [w__1_not_only_mails]
@@ -2592,7 +2591,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 # filename = eCourriersLiens_test.csv
 filename = eCourriersLiens.csv
-fieldnames = _A _B _eid _target_id _comment
+fieldnames = _A _eid _target_id _comment
 bp_key = e_mail_link
 
 [x__1_already_only]
@@ -2859,7 +2858,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 [breakpoint]
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
-;condition = python:item.get('_eid', None) in (u'4533', u'')
+;condition = python:item.get('_eid', None) in (u'191013', u'')
 ;condition = python:True
 ;condition = python:storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) % 500 == 0
 
