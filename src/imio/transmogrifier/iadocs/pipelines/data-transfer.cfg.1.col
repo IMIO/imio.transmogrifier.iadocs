@@ -528,7 +528,7 @@ bp_key = e_mail_mailtype
 
 [b__1_etype_correct]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'b') and item.get('_bpk') == 'e_mail_mailtype'
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'b') and item.get('_bpk') == 'e_mail_mailtype' and item["_etype"] == u"I"
 key = string:_etype
 value = python:u"E"
 
@@ -598,7 +598,7 @@ related_storage = e_used_mailtype
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: not storage['data'].get('e_mailtype_match') and item.get('_bpk') == 'e_mailtype'
 key = string:_ptype
-value = python:item['_etype'] in (u'E', u'I') and u'te' or (item['_nature'] and u'ts' or (item['_source'] and u'fe' or u''))
+value = python:item['_etype'] in (u'E', u'I') and (item['_nature'] and u'te' or u'fee') or (item['_nature'] and u'ts' or (item['_source'] and u'fes' or u''))
 
 [b__mailtype_match_write]
 blueprint = imio.transmogrifier.iadocs.csv_writer
