@@ -27,7 +27,8 @@ itf = "imio.dms.mail.browser.settings.IImioDmsMailConfig"
 MAILTYPES = {
     "te": "{}.mail_types".format(itf),
     "ts": "{}.omail_types".format(itf),
-    "fe": "{}.omail_send_modes".format(itf),
+    "fee": "{}.imail_send_modes".format(itf),
+    "fes": "{}.omail_send_modes".format(itf),
 }
 
 
