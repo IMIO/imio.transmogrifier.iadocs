@@ -16,10 +16,12 @@ Features
 
     - data-transfer.cfg.1 : I8s (id on B column)
     - data-transfer.cfg.1b : I8s (id on C column)
+    - data-transfer.cfg.1c : I8s (new format)
     - data-transfer.cfg.2 : A8e
     - data-transfer.cfg.3 : B7c
     - data-transfer.cfg.4 : E8o
-    - data-transfer.cfg.5 : I8s (new unknown format)
+    - data-transfer.cfg.5E : H3y entrant
+    - data-transfer.cfg.5S : H3y sortant
 
 - production pipelines:
 
