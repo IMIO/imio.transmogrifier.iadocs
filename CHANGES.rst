@@ -4,6 +4,8 @@ Changelog
 2.0 (unreleased)
 ------------------
 
+- Part l: got mail_type from nature and send_modes from source, like part p.
+  [sgeulette]
 - Stored contacts and other texts in description when the data_transfer behavior is not used.
   [sgeulette]
 - Handling IMIO customer types 1 on dmsmail 3.1.x.
