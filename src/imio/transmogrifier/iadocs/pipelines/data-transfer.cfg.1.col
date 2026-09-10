@@ -11,16 +11,16 @@ internal_number_behavior_types = organization person held_position dmsincomingma
 data_transfer_behavior_types =
 none_value = NULL
 creator = csvimport
-default_i_mail_type = courrier
-default_o_mail_type = courrier
-default_o_send_mode = post
+default_i_mail_type = enature71
+default_o_mail_type = snature71
+default_o_send_mode = post-paper
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
 default_creation_date = 20190101-1200
-default_tg = 3x
+default_tg = 2
 default_category =
 to_treat = 10
-permitted_sections = 0abcdefFhilmp1qrstuwxy
+permitted_sections = 0abcdefFlmp1qrstuwxy
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -189,6 +189,8 @@ pipeline =
     l__batched
     l__count
     l__1_mail_check
+    l__1_internal_note_insert
+    l__1_etype_correct
     l__creation_date_insert
     l__modification_date_insert
     l__reception_date_insert
@@ -205,7 +207,8 @@ pipeline =
     l__mail_type_nature_insert
     l__1_nature_insert
     l__mail_type_default_insert
-    l__1_meetingitem_link_insert
+    l__send_modes_insert
+;    l__1_meetingitem_link_insert
     l__1_confidential_insert
     l__1_remark_insert
     l__empty_title_insert
@@ -762,7 +765,7 @@ b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system
 filename = eCourriers.csv
 fieldnames = _A _eid _C _D _E _F _G _H _I _J _K _L _M _N _O _category_id _Q _R _S _T _U _V _W _X _Y _Z
              _AA _AB _AC _AD _AE _AF _AG _AH _AI _AJ _AK _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
+             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM
 bp_key = e_mail_category
 
 [e__1_folder_read]
@@ -1484,7 +1487,7 @@ filename = eCourriers.csv
 fieldnames = _A _eid _C reception_date original_mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
              _Q _R _S _T _U _to_del _W _source _source_id _Z
              creation_date _AB _AC _AD _AE _AF _AG _AH _AI _meeting_link _meetingitem_link _AL _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
-             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ
+             _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM
 bp_key = e_mail_i
 
 [l__pickle_i_w]
@@ -1518,6 +1521,21 @@ invalids = reception_date 0 original_mail_date 0 due_date 0 _category_id 0
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans = _confidential _meetingitem_link
 dates = reception_date %Y%m%d 0 original_mail_date %Y%m%d 1 due_date %Y%m%d 1 creation_date %Y%m%d 0
+
+[l__1_internal_note_insert]
+# _etype I is an internal note: keep the info in description
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_etype'] == u'I'
+key = string:description
+value = python:u'NOTE INTERNE'
+separator = python:u'\r\n'
+
+[l__1_etype_correct]
+# then handle it as an E: part b stored the used mail types under the E type
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_etype'] == u'I'
+key = string:_etype
+value = python:u'E'
 
 [l__creation_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
@@ -1664,7 +1682,7 @@ value = python:item['_eid']
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:_type
-value = python:FAIL(item['_source_id'] == u'295' or item['_nature_id'] == u'180') and 'dmsincoming_email' or 'dmsincomingmail'
+value = python:(item['_source_id'] == u'57' or item['_nature_id'] == u'42') and 'dmsincoming_email' or 'dmsincomingmail'
 
 [l__1_parent_insert]
 blueprint = imio.transmogrifier.iadocs.parent_path_insert
