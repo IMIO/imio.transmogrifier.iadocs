@@ -30,6 +30,7 @@ pipeline =
     0__files_list
 # aa services
     a__service_match_read
+#    a__service_match_uid_verify
     a__service_match_store
     a__1_service_read
 #    a__1_service_check
@@ -449,6 +450,15 @@ bp_key = e_service_match
 # fmtparam-strict = python:True
 # fmtparam-delimiter = python:','
 # raise_on_error = ${config:raise_on_error}
+
+[a__service_match_uid_verify]
+# stop if a uid filled in 1_service_match.csv doesn't exist in the Plone organizations.
+blueprint = imio.transmogrifier.iadocs.stop
+condition = python: item.get('_bpk') == u'e_service_match'
+            and item['uid'] not in transmogrifier.storage['data']['p_orgs_all']
+            and (modules['imio.transmogrifier.iadocs.utils'].log_error(item,
+                 u"uid '{}' (line {}) not found in the Plone organizations".format(item['uid'], item['_ln']),
+                 level='critical', fld='eid') or True)
 
 [a__service_match_store]
 blueprint = imio.transmogrifier.iadocs.store_in_data
