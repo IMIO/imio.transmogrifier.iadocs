@@ -190,7 +190,8 @@ class BMailtypeUpdate(object):
             # o_logger.info("Part b: adding some mail types")
             for typ in self.to_add:
                 values = list(api.portal.get_registry_record(MAILTYPES[typ]))
-                for key in self.to_add[typ]:
+                keys = sorted(self.to_add[typ].keys(), key=lambda d: self.to_add[typ][d]["dtitle"].lower())
+                for key in keys:
                     values.append(self.to_add[typ][key])
                     o_logger.info("Part b: updating '{}' mail types with new value: {}".format(typ,
                                                                                                self.to_add[typ][key]))
