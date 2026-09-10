@@ -1523,7 +1523,7 @@ booleans = _confidential _meetingitem_link
 dates = reception_date %Y%m%d 0 original_mail_date %Y%m%d 1 due_date %Y%m%d 1 creation_date %Y%m%d 0
 
 [l__1_internal_note_insert]
-# _etype I is an internal note: keep the info in description
+# _etype I is an internal note: keep the info in data_transfer or description
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_etype'] == u'I'
 key = string:description
@@ -1621,7 +1621,7 @@ value = python:storage['data']['e_mailtype_match'][item['_nature_id']][item['_et
 [l__1_nature_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_nature_id')
-key = string:data_transfer
+key = string:description
 value = python:u'NATURE: {}.'.format(storage['data']['e_mailtype_match'][item['_nature_id']][item['_etype']]['_etitle'])
 separator = python:u'\r\n'
 
@@ -1635,7 +1635,7 @@ value = python: storage['data']['e_mailtype_match'][item['_source_id']][item['_e
 [l__1_source_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_source_id')
-key = string:data_transfer
+key = string:description
 value = python:u'SOURCE: {}.'.format(storage['data']['e_mailtype_match'][item['_source_id']][item['_etype']]['_etitle'])
 separator = python:u'\r\n'
 
@@ -1648,14 +1648,14 @@ value = python: u'${config:default_i_mail_type}'
 [l__1_meetingitem_link_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_meetingitem_link']
-key = string:data_transfer
+key = string:description
 value = python:u'LIEN AVEC UN POINT DELIB.'
 separator = python:u'\r\n'
 
 [l__1_confidential_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['_confidential']
-key = string:data_transfer
+key = string:description
 value = python:u'COURRIER CONFIDENTIEL.'
 separator = python:u'\r\n'
 
@@ -1804,7 +1804,7 @@ fieldnames = _mail_id
 yield = 1
 
 [m__1_assigned_user]
-# put assigned user on item and add it also in data_transfer
+# put assigned user on item and add it also in data_transfer or description
 blueprint = imio.transmogrifier.iadocs.m_1_assigned_user
 condition = python: item.get('_bpk') == u'e_mail_recip_i'
 store_key = e_mail_i
@@ -1950,10 +1950,10 @@ key = string:mail_type
 value = python:item['_nature_id'] and storage['data']['e_mailtype_match'][item['_nature_id']]['S']['_key'] or u'${config:default_o_mail_type}'
 
 [p__1_nature_insert]
-# insert nature in data_transfer
+# insert nature in data_transfer or description
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item['_nature_id']
-key = string:data_transfer
+key = string:description
 value = python:u'NATURE: {}.'.format(storage['data']['e_mailtype_match'][item['_nature_id']]['S']['_etitle'])
 separator = python:u'\r\n'
 
@@ -1965,31 +1965,31 @@ key = string:send_modes
 value = python: item['_source_id'] and storage['data']['e_mailtype_match'][item['_source_id']]['S']['_key'] or u'${config:default_o_send_mode}'
 
 [p__1_source_insert]
-# insert source in data_transfer
+# insert source in data_transfer or description
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item['_source_id']
-key = string:data_transfer
+key = string:description
 value = python:u'SOURCE: {}.'.format(storage['data']['e_mailtype_match'][item['_source_id']]['S']['_etitle'])
 separator = python:u'\r\n'
 
 [p__1_meetingitem_link_insert]
-# insert meetingitem link in data_transfer
+# insert meetingitem link in data_transfer or description
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item['_meetingitem_link']
-key = string:data_transfer
+key = string:description
 value = python:u'LIEN AVEC UN POINT DELIB.'
 separator = python:u'\r\n'
 
 [p__1_confidential_insert]
-# insert confidential in data_transfer
+# insert confidential in data_transfer or description
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item['_confidential']
-key = string:data_transfer
+key = string:description
 value = python:u'COURRIER CONFIDENTIEL.'
 separator = python:u'\r\n'
 
 [p__1_remark_insert]
-# insert remark in description
+# insert remark in data_transfer or description
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item.get('_remark')
 key = string:description
@@ -2330,7 +2330,7 @@ condition = python: item.get('_bpk') == u'classification_folders' and 's__to_cor
 kept_keys = classification_folders
 
 [s__1_remove_unfound_folder]
-# remove unfound folders links from description (correction)
+# remove unfound folders links from data_transfer or description (correction)
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 's') and item.get('_bpk') == u'classification_folders'
 key = string:description

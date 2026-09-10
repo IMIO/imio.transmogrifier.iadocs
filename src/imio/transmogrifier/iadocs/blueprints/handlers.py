@@ -268,7 +268,9 @@ class ContactAsTextUpdate(object):
                     )
                     continue
                 desc = mail.description and mail.description.split("\r\n") or []
-                d_t = mail.data_transfer and mail.data_transfer.split("\r\n") or []
+                d_t = getattr(mail, "data_transfer", None) and mail.data_transfer.split("\r\n") or []
+            if self.storage.get("desc_only"):  # no data_transfer field: everything goes to description
+                d_t = desc
             # if there is no contact_id, we pass the item or yield it following yield_original
             # if not item.get(self.contact_id_key):
             #     if self.yield_original:
@@ -1141,12 +1143,16 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
         sender, p_sender = get_contact_name(infos, parent_infos)
         if p_sender:
             change = True
-            dest1.append(u"{}{}: {}.".format(label, related_label, u", ".join(p_sender)))
-            dest2.append(u"{}{}: {}.".format(label, related_label, u", ".join(p_sender)))
+            line = u"{}{}: {}.".format(label, related_label, u", ".join(p_sender))
+            dest1.append(line)
+            if dest2 is not dest1:
+                dest2.append(line)
         if sender:
             change = True
-            dest1.append(u"{}: {}.".format(label, u", ".join(sender)))
-            dest2.append(u"{}: {}.".format(label, u", ".join(sender)))
+            line = u"{}: {}.".format(label, u", ".join(sender))
+            dest1.append(line)
+            if dest2 is not dest1:
+                dest2.append(line)
         # address
         p_address = all_of_dict_values(parent_infos, ["_street", "_street_nb" , "_street_nb_box", "_pc", "_city"])
         address = all_of_dict_values(infos, ["_street", "_street_nb" , "_street_nb_box", "_pc", "_city"])
@@ -1172,9 +1178,12 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
     if m_sender:
         lines = m_sender.split("\n")
         change = True
-        dest1.append(u"{} LIBRE: {}".format(label, lines[0]))
-        if len(lines) > 1:
-            dest2.append(u"{} LIBRE: {}".format(label, u", ".join(lines)))
+        if dest2 is dest1:
+            dest1.append(u"{} LIBRE: {}".format(label, u", ".join(lines)))
+        else:
+            dest1.append(u"{} LIBRE: {}".format(label, lines[0]))
+            if len(lines) > 1:
+                dest2.append(u"{} LIBRE: {}".format(label, u", ".join(lines)))
     return change
 
 
@@ -1671,6 +1680,8 @@ class L1SenderAsTextSet(object):
             course_store(self, item)
             desc = "description" in item and item.get("description").split("\r\n") or []
             d_t = "data_transfer" in item and item.get("data_transfer").split("\r\n") or []
+            if self.storage.get("desc_only"):  # no data_transfer field: everything goes to description
+                d_t = desc
             # if id_key value and not in contact: pass id_key to get infos from contact
             get_contact = (item[self.eid_key] and item[self.eid_key] not in self.eids) and self.eid_key or ""
             if get_contact_info(self, item, u"EXPÉDITEUR", get_contact, "_sender", desc, d_t):
@@ -1762,8 +1773,9 @@ class M1AssignedUserHandling(object):
                     "_act": "U",
                     "modification_date": imail.creation_date,
                 }
-                # store info in data_transfer
-                d_t = (imail.data_transfer or u"").split("\r\n")
+                # store info in data_transfer (or in description if there is no data_transfer field)
+                fld = self.storage.get("desc_only") and "description" or "data_transfer"
+                d_t = getattr(imail, fld) and getattr(imail, fld).split("\r\n") or []
                 r_name = u" ".join(all_of_dict_values(self.user_match[e_userid], ["_nom", "_prenom"]))
                 r_messages = u", ".join(
                     all_of_dict_values(
@@ -1777,7 +1789,7 @@ class M1AssignedUserHandling(object):
                 )
                 if r_infos not in d_t:
                     d_t.append(r_infos)
-                    item2["data_transfer"] = u"\r\n".join(d_t)
+                    item2[fld] = u"\r\n".join(d_t)
             # plone user is in the treating_group
             if p_userid and t_g and t_g in self.p_u_s_editor[p_userid]:
                 if item.get("_principal") or not a_u:
@@ -1788,7 +1800,7 @@ class M1AssignedUserHandling(object):
             else:
                 # comblain: cannot put user service in copy because most users have more than one service
                 pass
-            if "data_transfer" in item2 or "assigned_user" in item2 or self.original_item:
+            if "data_transfer" in item2 or "description" in item2 or "assigned_user" in item2 or self.original_item:
                 # o_logger.debug(item)
                 yield item2
 
@@ -2253,8 +2265,10 @@ class Q1RecipientsAsTextUpdate(object):
                 "_bpk": "o_recipients",
                 "_act": "U",
             }
-            desc = (omail.description or u"").split("\r\n")
-            d_t = (omail.data_transfer or u"").split("\r\n")
+            desc = omail.description and omail.description.split("\r\n") or []
+            d_t = getattr(omail, "data_transfer", None) and omail.data_transfer.split("\r\n") or []
+            if self.storage.get("desc_only"):  # no data_transfer field: everything goes to description
+                d_t = desc
             if get_contact_info(self, item, u"DESTINATAIRE", self.contact_id_key, "_comment", desc, d_t):
                 item2["description"] = u"\r\n".join(desc)
                 r_messages = u", ".join(

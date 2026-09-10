@@ -198,6 +198,8 @@ class Initialization(object):
             transmogrifier["config"], "default_creation_date", log_error, fmt="%Y%m%d-%H%M", as_date=False
         )
         self.storage["csv"] = {}
+        # no data_transfer behavior: the field does not exist, all texts must go to description
+        self.storage["desc_only"] = not dtb_types
         self.storage["data"] = {}
         self.storage["course"] = OrderedDict()
         course_store(self, None)
