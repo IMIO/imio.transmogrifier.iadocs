@@ -324,7 +324,8 @@ class ContactAsTextUpdate(object):
                         d_t.append(additional)
                 if self.original_item:
                     item["description"] = u"\r\n".join(desc)
-                    item["data_transfer"] = u"\r\n".join(d_t)
+                    if not self.storage.get("desc_only"):
+                        item["data_transfer"] = u"\r\n".join(d_t)
                     yield item
                 else:
                     # item2 = {'_eid': item['_eid'], '_path': path,
@@ -1690,7 +1691,8 @@ class L1SenderAsTextSet(object):
             get_contact = (item[self.eid_key] and item[self.eid_key] not in self.eids) and self.eid_key or ""
             if get_contact_info(self, item, u"EXPÉDITEUR", get_contact, "_sender", desc, d_t):
                 item["description"] = u"\r\n".join(desc)
-                item["data_transfer"] = u"\r\n".join(d_t)
+                if not self.storage.get("desc_only"):
+                    item["data_transfer"] = u"\r\n".join(d_t)
             yield item
 
 
@@ -2284,7 +2286,8 @@ class Q1RecipientsAsTextUpdate(object):
                     r_messages = u"{}: {}".format(u"COMPLÉMENT DESTINATAIRE", u", {}".format(r_messages))
                     if r_messages not in d_t:
                         d_t.append(r_messages)
-                item2["data_transfer"] = u"\r\n".join(d_t)
+                if not self.storage.get("desc_only"):
+                    item2["data_transfer"] = u"\r\n".join(d_t)
                 yield item2
 
 
