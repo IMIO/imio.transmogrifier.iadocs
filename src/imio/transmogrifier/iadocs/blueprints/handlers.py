@@ -1153,6 +1153,10 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
             dest1.append(line)
             if dest2 is not dest1:
                 dest2.append(line)
+        # company name, when different from the contact name (customer 1)
+        if infos.get("_company") and infos["_company"] != infos.get("lastname"):
+            change = True
+            dest2.append(u"ORGANISATION: {}.".format(infos["_company"]))
         # address
         p_address = all_of_dict_values(parent_infos, ["_street", "_street_nb" , "_street_nb_box", "_pc", "_city"])
         address = all_of_dict_values(infos, ["_street", "_street_nb" , "_street_nb_box", "_pc", "_city"])

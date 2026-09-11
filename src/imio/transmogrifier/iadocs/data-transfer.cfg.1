@@ -172,6 +172,7 @@ pipeline =
     i__1_ctyp_insert
     i__org_title_insert
     i__1_empty_org_title_insert
+    i__1_company_insert
     i__1_alias_insert
     i__1_title_insert
     i__1_id_insert
@@ -1260,7 +1261,7 @@ parts = h
 blueprint = imio.transmogrifier.iadocs.csv_reader
 b_condition =
 filename = eContacts.csv
-fieldnames = _A _eid _user_id _ctyp _E lastname firstname _ptitle _street _pc _city _L _phone1 _phone2 _phone3 _P _Q _R _email1 _email2 _email3 _V _W _X _function _Z
+fieldnames = _A _eid _user_id _ctyp _E lastname firstname _ptitle _street _pc _city _company _phone1 _phone2 _phone3 _P _Q _R _email1 _email2 _email3 _V _W _X _function _Z
              _AA _AB _AC _AD _AE _AF _AG enterprise_number _AI _AJ _AK creation_date _AM modification_date _cell1 _cell2 _cell3 _web _org _name2 _AU _AV _AW _AX _deactivate _AZ
              _BA _parent_id _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR _BS _BT _BU _BV _BW _BX _BY _BZ
              _CA _CB _CC _CD _CE _CF _CG _CH _CI _CJ _CK _CL _CM _CN _CO _CP _CQ _CR _CS _CT _CU _CV _CW _CX _CY _CZ
@@ -1336,7 +1337,7 @@ blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_contact'
 bp_key = e_contact
 store_key = _eid
-fieldnames = _ln _type _user_id _ctyp lastname firstname _ptitle _street _pc _city _phone2 _phone2 _phone3 _email1 _email2 _email3
+fieldnames = _ln _type _user_id _ctyp lastname firstname _ptitle _street _pc _city _phone2 _phone2 _phone3 _email1 _email2 _email3 _company
              _function enterprise_number creation_date modification_date _cell1 _cell2 _cell3 _web _org _name2 _deactivate _parent_id _country _addr_id
 yield = 0
 
@@ -1422,6 +1423,14 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
             item['_type'] == u'organization' and item['_name2']
 key = string:description
 value = python:u'NOM INTERNE: {}.'.format(item['_name2'])
+separator = python:u'\r\n'
+
+[i__1_company_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'i') and item.get('_bpk') == u'e_contact' and
+            item.get('_company') and item['_company'] != item['lastname']
+key = string:description
+value = python:u'ORGANISATION: {}.'.format(item['_company'])
 separator = python:u'\r\n'
 
 [i__1_title_insert]
