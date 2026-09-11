@@ -34,15 +34,12 @@ tables = OrderedDict(
         # ('eCourriers', {'c': "isnull(Supprime, '0') != '1' and (dateentree = 0 OR dateentree < 20200101) AND "
         #                      "(dateencodage IS NULL OR dateencodage < 20200101)",
         #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
-        ('eCourriers', {'c': "isnull(Supprime, '0') != '1' and (dateentree != 0 "
-                             "and DateEntree >= 20200101 or (dateencodage is not NULL and dateencodage >= 20200101))",
+        ('eCourriers', {'c': "isnull(Supprime, '0') != '1' and case when isnull(dateentree, 0) != 0 then dateentree "
+                             "else isnull(dateencodage, 0) end >= 20200101",
                         'o': "isnull(DateEncodage, dateentree), dateentree"}),
         # ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'",
         #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
         # ('eCourriers', {'c': "TypeEntrantSortant = 'I' and isnull(Supprime, '0') != '1'",
-        #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
-        # ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1' and (dateentree != 0 "
-        #                      "and DateEntree  > 20100100 or (dateencodage is not NULL and dateencodage > 20100100))",
         #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
         # ('eCourriers', {'c': "(TypeEntrantSortant != 'I' or isnull(NatureID, '') not in (select id from eNatures "
         #                      "where description like 'Délibération%' or description like 'Séance%') ) and "
