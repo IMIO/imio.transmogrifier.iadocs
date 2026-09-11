@@ -36,7 +36,7 @@ tables = OrderedDict(
         #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
         ('eCourriers', {'c': "isnull(Supprime, '0') != '1' and case when isnull(dateentree, 0) != 0 then dateentree "
                              "else isnull(dateencodage, 0) end >= 20200101",
-                        'o': "isnull(DateEncodage, dateentree), dateentree"}),
+                        'o': "case when isnull(dateentree, 0) != 0 then dateentree else isnull(dateencodage, 0) end"}),
         # ('eCourriers', {'c': "TypeEntrantSortant in ('E', 'S') and isnull(Supprime, '0') != '1'",
         #                 'o': "isnull(DateEncodage, dateentree), dateentree"}),
         # ('eCourriers', {'c': "TypeEntrantSortant = 'I' and isnull(Supprime, '0') != '1'",
