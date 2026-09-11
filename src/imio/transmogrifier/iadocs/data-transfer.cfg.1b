@@ -209,6 +209,7 @@ pipeline =
     l__1_meetingitem_link_insert
     l__1_confidential_insert
     l__1_remark_insert
+    l__1_ref_recom_insert
     l__empty_title_insert
     l__1_id_insert
     l__1_type_insert
@@ -1493,7 +1494,7 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 filename = eCourriers.csv
 fieldnames = _A _B _eid _D reception_date original_mail_date external_reference_no due_date _nature_id _sender_id _sender _service_id title _remark _etype _confidential _category_id
              _R _S _T _U _V _to_del _X _source _source_id
-             _AA creation_date _AC _AD _AE _AF _AG _AH _AI _AJ _meeting_link _meetingitem_link _AM _AN _AO _AP _AQ _AR _AS _AT _AU _AV _AW _AX _AY _AZ
+             _AA creation_date _AC _AD _AE _AF _AG _AH _AI _AJ _meeting_link _meetingitem_link _AM _AN _AO _AP _ref_recom _AR _AS _AT _AU _AV _AW _AX _AY _AZ
              _BA _BB _BC _BD _BE _BF _BG _BH _BI _BJ _BK _BL _BM _BN _BO _BP _BQ _BR
 bp_key = e_mail_i
 
@@ -1652,6 +1653,13 @@ blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_remark')
 key = string:description
 value = python: u'REMARQUES: {}.'.format(item['_remark'])
+separator = python:u'\r\n'
+
+[l__1_ref_recom_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_ref_recom')
+key = string:description
+value = python: u'ENVOI N°: {}.'.format(item['_ref_recom'])
 separator = python:u'\r\n'
 
 [l__empty_title_insert]
