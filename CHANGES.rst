@@ -4,6 +4,8 @@ Changelog
 2.0 (unreleased)
 ------------------
 
+- Added 2_missing_files.csv output files to list missing files
+  [sgeulette]
 - Added _company info in contact, _ref_recom in mails
   [sgeulette]
 - Part l: got mail_type from nature and send_modes from source, like part p.

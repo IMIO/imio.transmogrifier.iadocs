@@ -278,6 +278,7 @@ pipeline =
     1tu__1_dmsfile_read
 ;    1__files_load
     1__already_only
+    1__missing_files_write
     1__rsync_file_write
 
 # qq  OM recipients
@@ -2094,6 +2095,17 @@ fieldnames = f
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '1') and item.get('_bpk') == u'e_file'
 condition2 = python: item['_mail_id'] in storage['data']['e_mail']
+
+[1__missing_files_write]
+# write csv of files not found in plone
+blueprint = imio.transmogrifier.iadocs.csv_writer
+b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('1tu__pickle_f_r', {}).get('filename', '_not_found_')))
+condition = python: item.get('_bpk') == u'e_file' and item['_eid'] not in storage['data']['e_files']
+filename = 2_missing_files.csv
+fieldnames = _eid _mail_id _fs_path _filename _ext
+headers = file_id mail_id fs_path real_filename ext status
+bp_key = 1_missing_files
+yield = 0
 
 [1__rsync_file_write]
 # write rsync file

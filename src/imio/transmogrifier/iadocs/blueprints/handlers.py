@@ -2441,7 +2441,8 @@ class RsyncFileWrite(object):
                 o_logger.info(u"Writing '{}'".format(self.filename))
             course_store(self, item)
             if item["_eid"] not in self.files:
-                log_error(item, u"Cannot find '{}' eid in browsed files".format(item["_eid"]))
+                # log_error(item, u"not found,{},{},{},{}".format(
+                #     item["_mail_id"], item["_fs_path"] or u"", item["_filename"] or u"", item["_ext"] or u""))
                 continue
             for ext, path in self.files[item["_eid"]]["f"]:
                 self.fh.write("{}/{}{}\n".format(path, item["_eid"], ext))
