@@ -2612,6 +2612,9 @@ blueprint = imio.transmogrifier.iadocs.t_1_dmsfile_creation
 condition = python: item.get('_bpk') == u'e_file'
 bp_key = e_dmsfile_i
 store_key = e_mail_i
+categories =
+    dmsmainfile annexes_types/incoming_dms_files/incoming-dms-file
+    dmsappendixfile annexes_types/incoming_appendix_files/incoming-appendix-file
 
 [t__1_path_insert]
 blueprint = imio.transmogrifier.iadocs.path_insert
@@ -2674,6 +2677,9 @@ blueprint = imio.transmogrifier.iadocs.t_1_dmsfile_creation
 condition = python: item.get('_bpk') == u'e_file'
 bp_key = e_dmsfile_o
 store_key = e_mail_o
+categories =
+    dmsommainfile annexes_types/outgoing_dms_files/outgoing-scanned-dms-file
+    dmsappendixfile annexes_types/outgoing_appendix_files/outgoing-appendix-file
 
 [u__1_path_insert]
 blueprint = imio.transmogrifier.iadocs.path_insert

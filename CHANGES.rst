@@ -4,6 +4,8 @@ Changelog
 2.0 (unreleased)
 ------------------
 
+- Added content_category value on files
+  [sgeulette]
 - Added 2_missing_files.csv output files to list missing files
   [sgeulette]
 - Added _company info in contact, _ref_recom in mails

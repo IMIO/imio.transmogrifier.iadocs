@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup as Soup
 from collective.classification.tree.utils import create_category
 from collective.classification.tree.utils import get_parents
 from collective.contact.plonegroup.utils import get_selected_org_suffix_principal_ids
+from collective.iconifiedcategory.utils import calculate_category_id
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from datetime import datetime
@@ -22,6 +23,7 @@ from imio.helpers.transmogrifier import str_to_date
 from imio.pyutils.system import full_path
 from imio.pyutils.utils import all_of_dict_values
 from imio.pyutils.utils import one_of_dict_values
+from imio.pyutils.utils import safe_encode
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import e_logger
 from imio.transmogrifier.iadocs import o_logger
@@ -2611,6 +2613,7 @@ class T1DmsfileCreation(object):
         * store_key = M, storage main key to find mail path
         * disk_files_key = M, storage disk files key to get path
         * condition = O, condition expression
+        * categories = O, lines of "portal_type category_path" (path relative to portal) to set content_category
     """
 
     classProvides(ISectionBlueprint)
@@ -2632,6 +2635,10 @@ class T1DmsfileCreation(object):
         self.disk_files = self.storage["data"][disk_files_key]
         self.files = {}
         self.ext = {}
+        self.categories = {}
+        for line in safe_unicode(options["categories"]).strip().splitlines():
+            typ, path = line.split()
+            self.categories[typ] = calculate_category_id(self.portal.unrestrictedTraverse(safe_encode(path).strip("/")))
 
     def __iter__(self):
         for item in self.previous:
@@ -2679,6 +2686,7 @@ class T1DmsfileCreation(object):
                 "label": item["_desc"],
                 "_id": item["_eid"],
                 "title": item["_desc"],
+                "content_category": self.categories[typ],
                 "creation_date": item["creation_date"],
                 "modification_date": item["creation_date"],
             }

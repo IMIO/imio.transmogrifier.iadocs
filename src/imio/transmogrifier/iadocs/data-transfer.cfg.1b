@@ -2451,6 +2451,9 @@ condition = python: item.get('_bpk') == u'e_file'
 bp_key = e_dmsfile_i
 store_key = e_mail_i
 disk_files_key = e_files
+categories =
+    dmsmainfile annexes_types/incoming_dms_files/incoming-dms-file
+    dmsappendixfile annexes_types/incoming_appendix_files/incoming-appendix-file
 
 [t__1_path_insert]
 # insert _path field value
@@ -2523,6 +2526,9 @@ condition = python: item.get('_bpk') == u'e_file'
 bp_key = e_dmsfile_o
 store_key = e_mail_o
 disk_files_key = e_files
+categories =
+    dmsommainfile annexes_types/outgoing_dms_files/outgoing-scanned-dms-file
+    dmsappendixfile annexes_types/outgoing_appendix_files/outgoing-appendix-file
 
 [u__1_path_insert]
 # insert _path field value
