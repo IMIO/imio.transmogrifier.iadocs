@@ -189,6 +189,10 @@ class EnhancedInserter(object):
                 obj = None
                 if self.get_obj:
                     obj = get_obj_from_path(self.portal, item)
+                    if obj is None:
+                        e_logger.error(u"{}: {} ({})".format(self.name, self.error(item), u"object not found for item"))
+                        yield item
+                        continue
                 # if condition2 is defined and not matched, we yield the item
                 if self.condition2 is not None and not self.condition2(item, key=key, storage=self.storage, obj=obj):
                     yield item
