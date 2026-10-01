@@ -17,11 +17,11 @@ default_i_send_mode = post
 default_o_send_mode = post
 default_contact = contacts/notencoded "Non encodé"
 generic_service = contacts/plonegroup-organization/reprise-de-donnees "Reprise de données"
-default_creation_date = 20080101-1200
+default_creation_date = 20120101-1200
 default_tg = 59
 default_category =
 to_treat = 10
-permitted_sections = 0abcdefFhilmp1qrstuwxy
+permitted_sections = 0abcdelmp1qrstuwxy
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
@@ -185,6 +185,7 @@ pipeline =
     l__need
     lq__pickle_c_r
     l__5_mail_read
+    l__5_etype_insert
     l__pickle_i_w
     l__batched
     l__count
@@ -196,16 +197,19 @@ pipeline =
     l__1_internal_number_insert
     l__treating_groups_insert
 ;    l__1_recipient_groups_set
-    l__1_category_id_insert
+;    l__1_category_id_insert
     l__contact_set
+    l__5_sender_id_insert
+    l__5_sender_insert
+    l__5_sender_contact_store
     l__1_sender_as_text_set
     l__mail_type_insert
     l__1_nature_insert
-    l__send_modes_insert
-    l__1_source_insert
-    l__1_meetingitem_link_insert
-    l__1_confidential_insert
-    l__1_remark_insert
+;    l__send_modes_insert
+;    l__1_source_insert
+;    l__1_meetingitem_link_insert
+;    l__1_confidential_insert
+    l__5_ar_insert
     l__empty_title_insert
     l__1_id_insert
     l__1_type_insert
@@ -1464,7 +1468,8 @@ yield = 1
 
 [l__need]
 blueprint = imio.transmogrifier.iadocs.need_other
-parts = abce
+;parts = abce
+parts = ab
 
 [lq__pickle_c_r]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -1476,9 +1481,14 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 filename = Courriers_E_test.csv
 ;filename = Courriers.csv
-#fieldnames = _eid _B _C _nature_id reception_date original_mail_date _G _H _I _J _K _L _M _N _sender_id title _Q _R _S _service_id _U _ar
-fieldnames = _eid _B _C _nature_id reception_date original_mail_date _G _ptitle _street _pc _city _L _M _N _sender_id title _Q _R _S _service_id _U _ar
+fieldnames = _eid _B _C _nature_id reception_date original_mail_date _G lastname _street _pc _city _L _phone1 _N _O title _Q _R _S _service_id _U _ar
 bp_key = e_mail_i
+
+[l__5_etype_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
+key = string:_etype
+value = string:E
 
 [l__pickle_i_w]
 blueprint = imio.transmogrifier.iadocs.pickle_data
@@ -1502,10 +1512,9 @@ bp_key = e_mail_i
 condition = python: item.get('_bpk') == u'e_mail_i'
 clean_value =
 replace_newline =
-invalids = reception_date "1900-01-00 00:00:00" original_mail_date "1900-01-00 00:00:00" _ptitle "?|??|???|????|?????|-|,,,,"
-           _street "-|_|<|?????|?|*|,|0, 0|0, 23"  _pc "-|'(àà|'é&è" _city "-|?|²"
+invalids = _nature_id 0 reception_date "1900-01-00 00:00:00" original_mail_date "1900-01-00 00:00:00" lastname "?|??|???|????|?????|-|,,,," _street "-|_|<|?????|?|*|,|0, 0|0, 23" _pc "-|'(àà|'é&è" _city "-|?|²" _phone1 "-"
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
-booleans =
+booleans = _ar
 dates = reception_date "%Y-%m-%d %H:%M:%S" 0 original_mail_date "%Y-%m-%d %H:%M:%S" 1
 
 [l__reception_date_insert]
@@ -1522,7 +1531,7 @@ value = python:item['reception_date'].date()
 
 [l__creation_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['creation_date'] is None
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:creation_date
 value = python:item['reception_date']
 
@@ -1569,6 +1578,28 @@ condition = python: item.get('_bpk') == u'e_mail_i'
 contact_store_key = e_contact_path
 original_item = 1
 skip_contact_user = 0
+
+[l__5_sender_id_insert]
+# temporary contact id (mail eid) pointing to e_contact data built below
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
+key = string:_sender_id
+value = python:item['_eid']
+
+[l__5_sender_insert]
+# no free text sender, but key needed by l__5_sender_as_text_set
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
+key = string:_sender
+value = python:None
+
+[l__5_sender_contact_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_mail_i'
+bp_key = e_contact
+store_key = _sender_id
+fieldnames = lastname _street _pc _city _phone1
+yield = 1
 
 [l__1_sender_as_text_set]
 blueprint = imio.transmogrifier.iadocs.l_1_sender_as_text_set
@@ -1618,11 +1649,11 @@ key = string:data_transfer
 value = python:u'COURRIER CONFIDENTIEL.'
 separator = python:u'\r\n'
 
-[l__1_remark_insert]
+[l__5_ar_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
-condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_remark')
-key = string:description
-value = python: u'REMARQUES: {}.'.format(item['_remark'])
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item.get('_ar')
+key = string:data_transfer
+value = python: u'ACCUSÉ DE RÉCEPTION.'
 separator = python:u'\r\n'
 
 [l__empty_title_insert]
@@ -1641,7 +1672,7 @@ value = python:item['_eid']
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:_type
-value = python:FAIL(item['_source_id'] == u'295' or item['_nature_id'] == u'180') and 'dmsincoming_email' or 'dmsincomingmail'
+value = python:item['_nature_id'] == u'10' and 'dmsincoming_email' or 'dmsincomingmail'
 
 [l__1_parent_insert]
 blueprint = imio.transmogrifier.iadocs.parent_path_insert
