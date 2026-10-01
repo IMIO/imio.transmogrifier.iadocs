@@ -190,6 +190,7 @@ pipeline =
     l__batched
     l__count
     l__1_mail_check
+    l__5_title_only
     l__reception_date_insert
     l__original_mail_date_insert
     l__creation_date_insert
@@ -1513,10 +1514,15 @@ bp_key = e_mail_i
 condition = python: item.get('_bpk') == u'e_mail_i'
 clean_value =
 replace_newline =
-invalids = _nature_id 0 reception_date "1900-01-00 00:00:00" original_mail_date "1900-01-00 00:00:00" lastname "?|??|???|????|?????|-|,,,," _street "-|_|<|?????|?|*|,|0, 0|0, 23" _pc "-|'(àà|'é&è" _city "-|?|²" _phone1 "-"
+invalids = _nature_id 0 reception_date "1900-01-00 00:00:00" original_mail_date "1900-01-00 00:00:00" lastname "?|??|???|????|?????|-|,,,," _street "-|_|<|?????|?|*|,|0, 0|0, 23" _pc "-|'(àà|'é&è" _city "-|?|²" _phone1 "-" title "$|/"
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans = _ar
 dates = reception_date "%Y-%m-%d %H:%M:%S" 0 original_mail_date "%Y-%m-%d %H:%M:%S" 1
+
+[l__5_title_only]
+blueprint = imio.transmogrifier.iadocs.condition
+condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
+condition2 = python: item["title"]
 
 [l__reception_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
