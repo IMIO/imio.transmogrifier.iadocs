@@ -2406,6 +2406,7 @@ class RsyncFileWrite(object):
         * b_condition = O, blueprint condition expression (available: storage, filename)
         * filename = M, filename to write
         * bp_key = data key to get files info
+        * unused_filename = O, filename to write with files not used by items
     """
 
     classProvides(ISectionBlueprint)
@@ -2429,6 +2430,10 @@ class RsyncFileWrite(object):
             return
         self.bp_key = safe_unicode(options["bp_key"])
         self.files = self.storage["data"].get(self.bp_key)
+        self.unused_filename = safe_unicode(options.get("unused_filename") or u"")
+        if self.unused_filename and not os.path.isabs(self.unused_filename):
+            self.unused_filename = os.path.join(self.storage["csvp"], self.unused_filename)
+        self.used = set()
 
     def __iter__(self):
         for item in self.previous:
@@ -2442,6 +2447,7 @@ class RsyncFileWrite(object):
                     raise Exception("Cannot create file '{}': {}".format(self.filename, m))
                 o_logger.info(u"Writing '{}'".format(self.filename))
             course_store(self, item)
+            self.used.add(item["_eid"])
             if item["_eid"] not in self.files:
                 # log_error(item, u"not found,{},{},{},{}".format(
                 #     item["_mail_id"], item["_fs_path"] or u"", item["_filename"] or u"", item["_ext"] or u""))
@@ -2451,6 +2457,13 @@ class RsyncFileWrite(object):
         if self.fh is not None:
             self.fh.close()
             self.fh = None
+        if is_in_part(self, self.parts) and self.doit and self.unused_filename and self.files:
+            o_logger.info(u"Writing '{}'".format(self.unused_filename))
+            with open(self.unused_filename, mode="w") as fh:
+                lines = [u"{}/{}{}\n".format(path, basename, ext) for basename in set(self.files) - self.used
+                         for ext, path in self.files[basename]["f"]]
+                for line in sorted(lines):
+                    fh.write(line.encode("utf8"))
 
 
 class S1ClassificationFoldersUpdate(object):
