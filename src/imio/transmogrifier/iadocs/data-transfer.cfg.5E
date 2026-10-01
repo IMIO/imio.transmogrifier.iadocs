@@ -203,6 +203,7 @@ pipeline =
     l__5_sender_insert
     l__5_sender_contact_store
     l__1_sender_as_text_set
+    l__5_sender_contact_remove
     l__mail_type_insert
     l__1_nature_insert
 ;    l__send_modes_insert
@@ -1587,7 +1588,7 @@ key = string:_sender_id
 value = python:item['_eid']
 
 [l__5_sender_insert]
-# no free text sender, but key needed by l__5_sender_as_text_set
+# no free text sender, but key needed by l__1_sender_as_text_set
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
 key = string:_sender
@@ -1604,6 +1605,13 @@ yield = 1
 [l__1_sender_as_text_set]
 blueprint = imio.transmogrifier.iadocs.l_1_sender_as_text_set
 condition = python: item.get('_bpk') == u'e_mail_i'
+
+[l__5_sender_contact_remove]
+# remove temporary contact from e_contact (memory) and reset _sender_id
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i'
+key = string:_sender_id
+value = python:storage['data']['e_contact'].pop(item['_sender_id'], None) and None
 
 [l__mail_type_insert]
 # insert mail_type, from nature
