@@ -301,8 +301,11 @@ pipeline =
     r__need
     r__pickle_mail_rec_groups_w
     r__1_mail_rec_groups_read
+    r__5_eid_inserter
+    r__5_mail_rec_groups_check
     r__1_already_only
     r__batched
+    r__1_empty_service_store
     r__1_recipient_groups_update
     r__count
     r__1_batch_store
@@ -1483,8 +1486,8 @@ store_key = e_contact_path
 [l__5_mail_read]
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = Courriers_E_test.csv
-;filename = Courriers.csv
+;filename = Courriers_E_test.csv
+filename = Courriers.csv
 fieldnames = _eid _B _C _nature_id reception_date original_mail_date _G lastname _street _pc _city _L _phone1 _N _O title _Q _R _S _service_id _U _ar
 bp_key = e_mail_i
 
@@ -1516,7 +1519,7 @@ bp_key = e_mail_i
 condition = python: item.get('_bpk') == u'e_mail_i'
 clean_value =
 replace_newline =
-invalids = _nature_id 0 reception_date "1900-01-00 00:00:00" original_mail_date "1900-01-00 00:00:00" lastname "?|??|???|????|?????|-|,,,," _street "-|_|<|?????|?|*|,|0, 0|0, 23" _pc "-|'(àà|'é&è" _city "-|?|²" _phone1 "-" title "$|/"
+invalids = _nature_id 0 reception_date "1900-01-00 00:00:00" original_mail_date "1900-01-00 00:00:00" lastname "?|??|???|????|?????|-|,,,," _street "-|_|<|?????|?|*|,|0, 0|0, 23" _pc "-|'(àà|'é&è" _city "-|?|²" _phone1 "-" _service_id 0
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans = _ar
 dates = reception_date "%Y-%m-%d %H:%M:%S" 0 original_mail_date "%Y-%m-%d %H:%M:%S" 1
@@ -2233,9 +2236,23 @@ d_condition = python:storage['commit'] is True
 # read recipient groups csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = eCourriersServices.csv
-fieldnames = _A _eid _mail_id _service_id _principal1 _F _principal2 _H _I
+filename = CourriersServices.csv
+fieldnames = _mail_id _service_id
 bp_key = e_mail_rec_groups
+
+[r__5_eid_inserter]
+# add _eid
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'r') and item.get('_bpk') == u'e_mail_rec_groups'
+key = string:_eid
+value = python:u"{}_{}".format(item['_mail_id'], item["_service_id"])
+
+[r__5_mail_rec_groups_check]
+# check om recipient groups
+blueprint = imio.transmogrifier.iadocs.common_input_checks
+bp_key = e_mail_rec_groups
+condition = python: item.get('_bpk') == u'e_mail_rec_groups'
+invalids = _service_id 0
 
 [r__1_already_only]
 # keep plone loaded mails recipient groups
@@ -2249,6 +2266,17 @@ blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'r') and item.get('_bpk') == u'e_mail_rec_groups'
 condition2 = python:not storage['batch_nb'] and True or ((item['_mail_id'] not in storage['data']['recipient_groups'] or item['_service_id'] not in storage['data']['recipient_groups'][item['_mail_id']])
              and storage.get('count', {}).get('r__count', {}).get('recipient_groups', {}).get('c', 0) < storage['batch_nb'])
+
+[r__1_empty_service_store]
+# store empty service items for batch and skip them
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_mail_rec_groups' and not item['_service_id']
+bp_key = recipient_groups
+store_key = _mail_id
+store_subkey = _service_id
+fieldnames = _eid
+check_subkey_uniqueness = 0
+yield = 0
 
 [r__1_recipient_groups_update]
 # yield new mail item with recipient_groups field value
