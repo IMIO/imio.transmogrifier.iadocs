@@ -333,7 +333,7 @@ pipeline =
 #     t__1_i_only
     t__batched
 ;    t__1_upload_date_modify
-    t__1_dmsfile_check
+;    t__1_dmsfile_check
 #    t__1_fspath_insert
     t__1_dmsfile_creation
     t__1_path_insert
@@ -2388,7 +2388,7 @@ store_key = e_dmsfile_i
 d_condition = python:storage['commit'] is True
 
 [t__1_mail_read]
-# read mails csv file
+# read mails csv file UNUSED
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
 #filename = eCourriers_E_test.csv
@@ -2399,13 +2399,14 @@ fieldnames = _A _eid _C _D _E _F _G _H _I _J _K _L _M _etype _O _P _Q _R _S _T _
 bp_key = e_mail
 
 [t__1_E_only]
+# UNUSED
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 't') and item.get('_bpk') == u'e_mail'
 condition2 = python: item.get('_etype') in ('E', 'I') and str(item['_to_del']) != '1'
 # condition2 = python: item.get('_etype') in ('E',) and str(item['_to_del']) != '1'
 
 [t__1_store_mail]
-# store mails in dic
+# store mails in dic UNUSED
 blueprint = imio.transmogrifier.iadocs.store_in_data
 condition = python: item.get('_bpk') == u'e_mail'
 bp_key = e_mail
@@ -2417,15 +2418,16 @@ yield = 0
 # keep plone loaded mails
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 't') and item.get('_bpk') == u'e_file'
-condition2 = python: item['_mail_id'] in storage['data']['e_mail_i'] and item['_last_version'] != '0' and item['_eid'] not in storage['data']['e_dmsfile_unfound']
+condition2 = python: item["_eid"] and item['_mail_id'] in storage['data']['e_mail_i'] and item['_eid'] not in storage['data']['e_dmsfile_unfound']
 
 [t__1_i_only]
+# UNUSED
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 't') and item.get('_bpk') == u'e_file'
 condition2 = python: item['_mail_id'] in storage['data']['e_mail']
 
 [t__1_upload_date_modify]
-# insert creation_date field value
+# insert creation_date field value UNUSED
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 't') and item.get('_bpk') == u'e_file'
 key = string:creation_date
@@ -2463,6 +2465,7 @@ condition = python: item.get('_bpk') == u'e_file'
 bp_key = e_dmsfile_i
 store_key = e_mail_i
 disk_files_key = e_files
+title_key = _eid
 categories =
     dmsmainfile annexes_types/incoming_dms_files/incoming-dms-file
     dmsappendixfile annexes_types/incoming_appendix_files/incoming-appendix-file

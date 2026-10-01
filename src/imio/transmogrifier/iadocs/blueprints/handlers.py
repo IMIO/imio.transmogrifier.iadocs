@@ -2627,6 +2627,8 @@ class T1DmsfileCreation(object):
         * disk_files_key = M, storage disk files key to get path
         * condition = O, condition expression
         * categories = O, lines of "portal_type category_path" (path relative to portal) to set content_category
+        * title_key = O, item title key. If not defined, _desc
+
     """
 
     classProvides(ISectionBlueprint)
@@ -2646,6 +2648,7 @@ class T1DmsfileCreation(object):
         disk_files_key = safe_unicode(options["disk_files_key"])
         self.paths = self.storage["data"][store_key]
         self.disk_files = self.storage["data"][disk_files_key]
+        self.title_key = safe_unicode(options.get("title_key", u"_desc"))
         self.files = {}
         self.ext = {}
         self.categories = {}
@@ -2696,9 +2699,9 @@ class T1DmsfileCreation(object):
                 "_parenth": self.paths[item["_mail_id"]]["path"],
                 "_type": typ,
                 "_bpk": self.bp_key,
-                "label": item["_desc"],
+                # "label": item["_desc"],
                 "_id": item["_eid"],
-                "title": item["_desc"],
+                "title": item[self.title_key],
                 "content_category": self.categories[typ],
                 "creation_date": item["creation_date"],
                 "modification_date": item["creation_date"],

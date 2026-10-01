@@ -98,7 +98,7 @@ def get_file_content(section, item):
     df = section.disk_files
     # get all paths (on item and from disk
     paths = []
-    if item["_fs_path"]:
+    if item.get("_fs_path"):
         paths.append(item["_fs_path"])
     if item['_eid'] in df:
         for ext, path in df[item['_eid']]['f']:  # {'f': [(u'.pdf', u'PDF_0-999')]}
