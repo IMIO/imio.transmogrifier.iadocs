@@ -2322,6 +2322,13 @@ class R1RecipientGroupsUpdate(object):
                 yield item
                 continue
             course_store(self, item)
+            # if item["_service_id"] not in self.storage["data"]["e_service_match"]:
+            #     self.storage["data"]["recipient_groups"].setdefault(item["_mail_id"], {})[item["_service_id"]] = {
+            #         u"_eid": item["_eid"]
+            #     }
+            #     log_error(item, u"Cannot find recipient groups '{}'".format(item["_service_id"]))
+            #     continue
+            # continue
             mail_path = self.paths[item["_mail_id"]]["path"]
             mail = get_obj_from_path(self.portal, path=mail_path)
             if mail is None:

@@ -311,6 +311,7 @@ pipeline =
     r__5_eid_inserter
     r__5_mail_rec_groups_check
     r__1_already_only
+    r__5_unknown_service_id_inserter
     r__batched
     r__1_empty_service_store
     r__1_recipient_groups_update
@@ -2318,6 +2319,15 @@ invalids = _service_id 0
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'r') and item.get('_bpk') == u'e_mail_rec_groups'
 condition2 = python: item['_mail_id'] in storage['data']['e_mail']
+
+[r__5_unknown_service_id_inserter]
+# empties _service_id
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'r') and item.get('_bpk') == u'e_mail_rec_groups'
+            and item["_service_id"] in ('1220964151', '1270192591', '1339491734', '1339571294', '1341830702', '1392274873', '-2066590442',
+            '379402674', '96624134', '972284019')
+key = string:_service_id
+value = python:None
 
 [r__batched]
 # keep only not already treated mails recipient groups
