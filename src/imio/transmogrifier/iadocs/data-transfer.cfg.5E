@@ -1533,7 +1533,7 @@ condition2 = python: item["title"]
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'l') and item.get('_bpk') == u'e_mail_i' and item['reception_date'] is None
 key = string:reception_date
-value = python:item['original_mail_date'] or modules["datetime"].datetime.strptime("${config:default_creation_date}", "%Y%m%d-%H%M")
+value = python:(item['original_mail_date'] and modules['datetime'].datetime.combine(item['original_mail_date'], modules['datetime'].time.min)) or modules["datetime"].datetime.strptime("${config:default_creation_date}", "%Y%m%d-%H%M")
 
 [l__original_mail_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter
