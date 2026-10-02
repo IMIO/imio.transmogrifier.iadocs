@@ -278,6 +278,7 @@ pipeline =
 ;    1rswxy__pickle_o_r
     1tu__5_dmsfile_read
     1tu__5_mail_check
+    1tu__creation_date_insert
     1tu__5_eid_inserter
 ;    1__files_load
     1__already_only
@@ -2080,15 +2081,21 @@ blueprint = imio.transmogrifier.iadocs.csv_reader
 ;filename = eCourriersFichiers_test.csv
 filename = ${l__5_mail_read:filename}
 #fieldnames = _A _eid _mail_id _filename _ext _fs_path _desc _H creation_date _J _K _version _M _last_version _O _P _Q _R _S _T _U _V _W _X _Y _Z
-fieldnames = _mail_id _B _file_id _D creation_date _F _G _H _I _J _K _L _M _N _O _P _Q _R _S _T _U _V
+fieldnames = _mail_id _B _file_id _D creation_date _original_mail_date _G _H _I _J _K _L _M _N _O _title _Q _R _S _T _U _V
 bp_key = e_file
 
 [1tu__5_mail_check]
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_file
 condition = python: item.get('_bpk') == u'e_file'
-invalids = _file_id 0
-dates = creation_date "%Y-%m-%d %H:%M:%S" 0
+invalids = _file_id 0 creation_date "1900-01-00 00:00:00|0" _original_mail_date "1900-01-00 00:00:00"
+dates = creation_date "%Y-%m-%d %H:%M:%S" 0 _original_mail_date "%Y-%m-%d %H:%M:%S" 1
+
+[1tu__creation_date_insert]
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '1tu') and item.get('_bpk') == u'e_file' and item['creation_date'] is None
+key = string:creation_date
+value = python:(item['_original_mail_date'] and modules['datetime'].datetime.combine(item['_original_mail_date'], modules['datetime'].time.min)) or modules["datetime"].datetime.strptime("${config:default_creation_date}", "%Y%m%d-%H%M")
 
 [1tu__5_eid_inserter]
 # create eid from columns
