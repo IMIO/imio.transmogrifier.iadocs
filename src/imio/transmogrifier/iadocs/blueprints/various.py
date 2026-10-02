@@ -246,7 +246,7 @@ class EnhancedManipulator(object):
 
     def __iter__(self):
         for item in self.previous:
-            if self.condition(item):
+            if self.condition(item, storage=self.storage):
                 course_store(self, item)
                 for key in item.keys():
                     match = self.keys(key)[1]
@@ -297,6 +297,7 @@ class ItemFieldSplit(object):
         * separator = M, separator to split field
         * part_pattern = O, pattern to check accepted part (default none)
         * yield_original = O, flag to yield original item (0 or 1, default 0)
+        * index_key = O, item key where to store part index (0-based)
     """
 
     classProvides(ISectionBlueprint)
@@ -315,6 +316,7 @@ class ItemFieldSplit(object):
         self.sep = self.sep[0].decode("utf8")
         self.pattern = options.get("part_pattern") or u""
         self.yield_original = bool(int(options.get("yield_original") or "0"))
+        self.index_key = safe_unicode(options.get("index_key") or u"")
 
     def __iter__(self):
         for item in self.previous:
@@ -339,10 +341,12 @@ class ItemFieldSplit(object):
             #             break
             #     if error:
             #         continue
-            for part in parts:
+            for i, part in enumerate(parts):
                 item2 = model_item.copy()
                 item2["_bpk"] = self.bpk
                 item2[self.field] = part
+                if self.index_key:
+                    item2[self.index_key] = i
                 yield item2
 
 

@@ -2448,6 +2448,10 @@ class RsyncFileWrite(object):
                 o_logger.info(u"Writing '{}'".format(self.filename))
             course_store(self, item)
             self.used.add(item["_eid"])
+            if item.get("_fs_path"):  # path given in csv
+                self.used.add(os.path.splitext(os.path.basename(item["_fs_path"]))[0])
+                self.fh.write(u"{}\n".format(item["_fs_path"]).encode("utf8"))
+                continue
             if item["_eid"] not in self.files:
                 # log_error(item, u"not found,{},{},{},{}".format(
                 #     item["_mail_id"], item["_fs_path"] or u"", item["_filename"] or u"", item["_ext"] or u""))
@@ -2694,6 +2698,8 @@ class T1DmsfileCreation(object):
                 #         item['_eid'], item['_mail_id'], order, len(self.files[item['_mail_id']]['ids'])))
                 self.files[item["_mail_id"]]["lo"] = order
                 self.files[item["_mail_id"]]["ids"].append(item["_eid"])
+            if item.get("_fs_idx"):  # split from a multiple _fs_path: always an appendix, even in a new batch
+                typ = "dmsappendixfile"
             item2 = {
                 "_eid": item["_eid"],
                 "_parenth": self.paths[item["_mail_id"]]["path"],

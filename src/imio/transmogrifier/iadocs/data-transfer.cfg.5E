@@ -276,10 +276,16 @@ pipeline =
     1tu__pickle_f_r
     1rswxy__pickle_i_r
 ;    1rswxy__pickle_o_r
+    1t__missing_path_read
+    1t__missing_path_store
     1tu__5_dmsfile_read
     1tu__5_mail_check
     1tu__creation_date_insert
     1tu__5_eid_inserter
+    1t__fspath_insert
+    1t__fspath_split
+    1t__fspath_check
+    1t__split_eid_insert
 ;    1__files_load
     1__already_only
     1__missing_files_write
@@ -2074,6 +2080,22 @@ store_key = e_mail
 d_condition = python:False
 update = 1
 
+[1t__missing_path_read]
+# read missing files csv completed with found path(s) (multiple paths separated by newline)
+blueprint = imio.transmogrifier.iadocs.csv_reader
+b_condition = python: modules['os'].path.exists(filename)
+filename = 2_missing_files_complete.csv
+fieldnames = _eid _mail_id _status _fs_path
+bp_key = e_missing_path
+
+[1t__missing_path_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_missing_path'
+bp_key = e_missing_path
+store_key = _eid
+fieldnames = _fs_path
+yield = 0
+
 [1tu__5_dmsfile_read]
 # read mails files links csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
@@ -2104,6 +2126,36 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 key = string:_eid
 value = python: (item["_file_id"] and item["creation_date"]) and u"{}{:0>5}".format(item["creation_date"].strftime("%y%m%d"), item["_file_id"]) or None
 
+[1t__fspath_insert]
+# insert _fs_path from completed missing files csv. Multiple paths joined by | (shortest first = main file)
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '1t') and item.get('_bpk') == u'e_file' and item['_eid'] in storage['data'].get('e_missing_path', {})
+key = string:_fs_path
+value = python: u"|".join(sorted([p.strip() for p in storage['data']['e_missing_path'][item['_eid']]['_fs_path'].split(u"\n") if p.strip()], key=len))
+
+[1t__fspath_split]
+# yield one e_file item by path
+blueprint = imio.transmogrifier.iadocs.item_field_split
+condition = python: item.get('_bpk') == u'e_file' and u"|" in (item.get('_fs_path') or u"")
+bp_key = e_file
+field = _fs_path
+separator = |
+index_key = _fs_idx
+
+[1t__fspath_check]
+# remove _fs_path if file doesn't exist
+blueprint = imio.transmogrifier.iadocs.manipulator
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, '1t') and item.get('_bpk') == u'e_file' and item.get('_fs_path') and
+            not modules['os'].path.exists(modules['os'].path.join(storage['filesp'], item['_fs_path']))
+delete = _fs_path
+
+[1t__split_eid_insert]
+# new _eid for split items other than first
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: item.get('_bpk') == u'e_file' and item.get('_fs_idx')
+key = string:_eid
+value = python: u"{}-{}".format(item['_eid'], item['_fs_idx'] + 1)
+
 [1__files_load]
 # read files data as item
 blueprint = imio.transmogrifier.iadocs.read_from_data
@@ -2121,7 +2173,7 @@ condition2 = python: item["_eid"] and item['_mail_id'] in storage['data']['e_mai
 # write csv of files not found in plone
 blueprint = imio.transmogrifier.iadocs.csv_writer
 b_condition = python: modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('1tu__pickle_f_r', {}).get('filename', '_not_found_')))
-condition = python: item.get('_bpk') == u'e_file' and item['_eid'] not in storage['data']['e_files']
+condition = python: item.get('_bpk') == u'e_file' and item['_eid'] not in storage['data']['e_files'] and not item.get('_fs_path')
 filename = 2_missing_files.csv
 fieldnames = _eid _mail_id
 headers = file_id mail_id status
