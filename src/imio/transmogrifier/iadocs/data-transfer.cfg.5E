@@ -21,7 +21,7 @@ default_creation_date = 20120101-1200
 default_tg = 59
 default_category =
 to_treat = 10
-permitted_sections = 0abcdelmp1qrstuwxy
+permitted_sections = 0abl1rty
 # CHANGE l__1_type_insert FOR EACH CUSTOMER
 
 [transmogrifier]
