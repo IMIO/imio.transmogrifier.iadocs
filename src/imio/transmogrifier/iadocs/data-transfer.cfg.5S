@@ -1840,8 +1840,8 @@ parts = ab
 # read mails csv file
 blueprint = imio.transmogrifier.iadocs.csv_reader
 #b_condition = python: not modules['os'].path.exists(modules['imio.pyutils.system'].full_path(storage['csvp'], transmogrifier.get('b__mailtype_match_read', {}).get('filename', '_not_found_')))
-filename = Courriers_S_test.csv
-;filename = Courriers.csv
+;filename = Courriers_S_test.csv
+filename = Courriers.csv
 fieldnames = _eid _B _ref2 _D lastname _street _pc _city title _remark _service_id mail_date creation_date _N _ref1 _ref_dos _clas1 _clas2 _S _source_id _U _V _pub
 bp_key = e_mail_o
 
