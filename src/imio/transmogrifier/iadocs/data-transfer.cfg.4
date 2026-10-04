@@ -619,6 +619,7 @@ pipeline =
     constructor
 #    1__service_correct
     schemaupdater
+    u__iconified_attributes_set
     datesupdater
     uidupdater
     ownerset
@@ -3197,6 +3198,12 @@ blueprint = imio.transmogrifier.iadocs.path_insert
 condition = python: item.get('_bpk') == u'e_dmsfile_o'
 bp_key = e_dmsfile_o
 id_keys = _eid
+
+[u__iconified_attributes_set]
+# set iconifiedcategory attributes on created files (after schemaupdater)
+blueprint = imio.transmogrifier.iadocs.iconified_attributes_set
+condition = python: item.get('_bpk') == u'e_dmsfile_o'
+values = python: {'to_print': False, 'to_sign': item['_type'] == 'dmsommainfile', 'signed': item['_type'] == 'dmsommainfile', 'to_approve': False, 'approved': False}
 
 [u__count]
 # loaded files counter

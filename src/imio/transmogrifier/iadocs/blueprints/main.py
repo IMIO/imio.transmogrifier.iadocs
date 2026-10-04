@@ -3,6 +3,8 @@ from collections import OrderedDict
 from collective.classification.tree.utils import create_category
 from collective.contact.plonegroup.config import get_registry_organizations
 from collective.contact.plonegroup.config import set_registry_organizations
+from collective.iconifiedcategory.utils import get_category_object
+from collective.iconifiedcategory.utils import update_categorized_elements
 from collective.documentviewer.settings import GlobalSettings
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
@@ -1044,6 +1046,45 @@ class SetState(object):
                     change = True
                 if change:
                     obj.workflow_history[self.workflow_id] = tuple(wfh)
+            yield item
+
+
+class SetIconifiedAttributes(object):
+    """Sets iconifiedcategory attributes (to_print, to_sign, signed, ...) on created object.
+
+    Parameters:
+        * values = M, expression returning a dict {attribute: value}
+        * condition = O, condition expression
+    """
+
+    classProvides(ISectionBlueprint)
+    implements(ISection)
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.name = name
+        self.portal = transmogrifier.context
+        self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
+        self.parts = get_related_parts(name)
+        if not is_in_part(self, self.parts):
+            return
+        self.values = Expression(options["values"], transmogrifier, name, options)
+        self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
+
+    def __iter__(self):
+        for item in self.previous:
+            if is_in_part(self, self.parts) and self.condition(item):
+                course_store(self, item)
+                try:
+                    obj = self.portal.unrestrictedTraverse(safe_unicode(item["_path"][1:]).encode("utf8"))
+                except (AttributeError, KeyError):
+                    log_error(item, "The corresponding object '{}' cannot be found".format(item["_path"]))
+                    yield item
+                    continue
+                for attr, value in self.values(item).items():
+                    setattr(obj, attr, value)
+                # refresh parent categorized_elements
+                update_categorized_elements(obj.aq_parent, obj, get_category_object(obj, obj.content_category))
             yield item
 
 

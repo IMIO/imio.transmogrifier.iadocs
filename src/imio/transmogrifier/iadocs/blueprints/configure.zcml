@@ -308,6 +308,12 @@
     />
 
   <utility
+    name="imio.transmogrifier.iadocs.iconified_attributes_set"
+    component=".main.SetIconifiedAttributes"
+    provides="collective.transmogrifier.interfaces.ISectionBlueprint"
+    />
+
+  <utility
     name="imio.transmogrifier.iadocs.stop"
     component=".various.Stop"
     provides="collective.transmogrifier.interfaces.ISectionBlueprint"
