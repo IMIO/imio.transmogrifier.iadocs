@@ -359,7 +359,7 @@ pipeline =
     u__1_already_only
     u__batched
 ;    u__1_upload_date_modify
-    u__1_dmsfile_check
+;    u__1_dmsfile_check
 #    u__1_fspath_insert
     u__1_dmsfile_creation
     u__1_path_insert
@@ -2625,7 +2625,7 @@ d_condition = python:storage['commit'] is True
 # keep plone loaded OM files
 blueprint = imio.transmogrifier.iadocs.condition
 condition1 = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'u') and item.get('_bpk') == u'e_file'
-condition2 = python: item['_mail_id'] in storage['data']['e_mail_o'] and item['_last_version'] != '0' and item['_eid'] not in storage['data']['e_dmsfile_unfound']
+condition2 = python: item["_eid"] and item['_mail_id'] in storage['data']['e_mail_o'] and item['_eid'] not in storage['data']['e_dmsfile_unfound']
 
 [u__1_upload_date_modify]
 # insert creation_date field value
@@ -2666,6 +2666,8 @@ condition = python: item.get('_bpk') == u'e_file'
 bp_key = e_dmsfile_o
 store_key = e_mail_o
 disk_files_key = e_files
+# no _desc column: title replaced by filename anyway
+title_key = _fs_path
 categories =
     dmsommainfile annexes_types/outgoing_dms_files/outgoing-scanned-dms-file
     dmsappendixfile annexes_types/outgoing_appendix_files/outgoing-appendix-file
