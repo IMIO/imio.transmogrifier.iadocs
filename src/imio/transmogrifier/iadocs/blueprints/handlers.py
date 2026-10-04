@@ -215,7 +215,7 @@ class ContactAsTextUpdate(object):
         * related_label = O, related label
         * contact_free_key = M, contact free item key name
         * original_item = M, flag to know if mail is item or not (0 or 1)
-        * yield_original = M, flag to know if original item must be yielded (0 or 1)
+        * yield_original = M, flag to know if original item must be yielded (0 or 1). Always yielded if original_item
         * skip_real_contact = M, flag to skip a real contact (if contact_store contains created contacts) (0 or 1)
         * skip_contact_user = O, skip a contact that is a user (defaut 0)
     """
@@ -296,9 +296,11 @@ class ContactAsTextUpdate(object):
                     if self.skip_real_contact or (
                         self.skip_contact_user and self.e_c[item[self.contact_id_key]]["_is_user"]
                     ):
+                        if self.original_item:  # original item must not be lost
+                            yield item
                         continue  # is it necessary to consider free field only when there is a contact_id ?
             elif not item.get(self.contact_free_key):
-                if self.yield_original:
+                if self.yield_original or self.original_item:
                     yield item
                 continue
 
@@ -344,6 +346,8 @@ class ContactAsTextUpdate(object):
                         "modification_date": mail.creation_date,
                     }
                     yield item2
+            elif self.original_item:  # no contact info: original item must not be lost
+                yield item
 
 
 class ContactSet(object):

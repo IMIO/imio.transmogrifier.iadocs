@@ -257,6 +257,11 @@ pipeline =
 #    p__assigned_user ?
     p__1_sender_set
 ;    p__default_contact_set
+    p__5_recipient_id_insert
+    p__5_recipient_insert
+    p__5_recipient_contact_store
+    p__1_recipient_as_text_set
+    p__5_recipient_contact_remove
 ;    p__1_category_id_insert
     p__mail_type_insert
 ;    p__1_nature_insert
@@ -1874,7 +1879,7 @@ blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_o
 condition = python: item.get('_bpk') == u'e_mail_o'
 replace_newline = external_reference_no " - "
-invalids = _ref_dos "-|testttt" _clas1 "-|testttt" _clas2 "-|hjbhjbjb"
+invalids = _ref_dos "-|testttt" _clas1 "-|testttt" _clas2 "-|hjbhjbjb" _pc "--|0000|''àà|''àéà" _city "---|**|***"
 clean_value = title python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" python:u'\n' _remark python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" python:u'\r\n' _sender python:u'\n' " " "python:[(r'^-+$', u''), (r'\s{2,}', u' ')]" python:u'\n'
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans = _pub
@@ -1957,6 +1962,51 @@ blueprint = imio.transmogrifier.iadocs.default_contact_set
 fieldname = recipients
 is_list = 1
 condition = python: item.get('_bpk') == u'e_mail_o'
+
+[p__5_recipient_id_insert]
+# temporary contact id (mail eid) pointing to e_contact data built below
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o'
+key = string:_recipient_id
+value = python:item['_eid']
+
+[p__5_recipient_insert]
+# no free text recipient, but key needed by p__1_recipient_as_text_set
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o'
+key = string:_recipient
+value = python:None
+
+[p__5_recipient_contact_store]
+blueprint = imio.transmogrifier.iadocs.store_in_data
+condition = python: item.get('_bpk') == u'e_mail_o'
+bp_key = e_contact
+store_key = _recipient_id
+fieldnames = lastname _street _pc _city
+yield = 1
+
+[p__1_recipient_as_text_set]
+blueprint = imio.transmogrifier.iadocs.contact_as_text_update
+condition = python: item.get('_bpk') == u'e_mail_o'
+bp_key = e_mail_o
+mail_store_key = e_mail_o
+contact_store_key = e_contact
+mail_id_key = _eid
+contact_id_key = _recipient_id
+contact_label = DESTINATAIRE
+related_label =
+contact_free_key = _recipient
+original_item = 1
+yield_original = 0
+skip_real_contact = 0
+skip_contact_user = 0
+
+[p__5_recipient_contact_remove]
+# remove temporary contact from e_contact (memory) and reset _recipient_id
+blueprint = imio.transmogrifier.iadocs.inserter
+condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o'
+key = string:_recipient_id
+value = python:storage['data']['e_contact'].pop(item['_recipient_id'], None) and None
 
 [p__1_category_id_insert]
 # insert classification_categories PAS UTILISE
@@ -2980,7 +3030,7 @@ blueprint = imio.transmogrifier.iadocs.short_log
 # run ipdb if condition is matched
 blueprint = imio.transmogrifier.iadocs.breakpoint
 ;condition = python:item.get('_eid', None) in (u'191013', u'')
-condition = python:True
+;condition = python:True
 ;condition = python:storage.get('count', {}).get('m__count', {}).get('e_mail_recip_i', {}).get('c', 0) % 500 == 0
 
 [stop]
