@@ -2086,7 +2086,7 @@ separator = python:u'\r\n'
 blueprint = imio.transmogrifier.iadocs.inserter
 condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(transmogrifier, 'p') and item.get('_bpk') == u'e_mail_o' and item.get('_remark')
 key = string:description
-value = python:u'OBJET 2: {}.'.format(item['_remark'])
+value = python:u'OBJET: {}.'.format(item['_remark'])
 separator = python:u'\r\n'
 
 [p__empty_title_insert]
