@@ -1881,13 +1881,13 @@ condition = python: item.get('_bpk') == u'e_mail_o'
 blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_mail_o
 condition = python: item.get('_bpk') == u'e_mail_o'
-replace_newline = external_reference_no " - "
-invalids = _ref_dos "-|testttt" _clas1 "-|testttt" _clas2 "-|hjbhjbjb" _pc "--|0000|''àà|''àéà" _city "---|**|***"
+replace_newline = external_reference_no " - " _pc ""
+invalids = _ref_dos "-|testttt" _clas1 "-|testttt" _clas2 "-|hjbhjbjb" _pc "0|--|0000|''àà|''àéà" _city "---|**|***"
 clean_value = title python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" python:u'\n' _remark python:u'\n' " " "python:[(r'^[""\' ]+$', u'')]" python:u'\r\n' _sender python:u'\n' " " "python:[(r'^-+$', u''), (r'\s{2,}', u' ')]" python:u'\n'
 split_text = title 300 description 0 python:'\n' python:'\r\n' "SUITE TITRE: "
 booleans = _pub
-dates = mail_date "%m/%d/%y %H:%M:%S" 1 creation_date "%m/%d/%y %H:%M:%S" 0
-# dates = mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
+;dates = mail_date "%m/%d/%y %H:%M:%S" 1 creation_date "%m/%d/%y %H:%M:%S" 0
+dates = mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
 
 [p__creation_date_insert]
 # insert creation date NON UTILISE
@@ -2186,8 +2186,8 @@ blueprint = imio.transmogrifier.iadocs.common_input_checks
 bp_key = e_file
 condition = python: item.get('_bpk') == u'e_file'
 invalids =
-dates = mail_date "%m/%d/%y %H:%M:%S" 1 creation_date "%m/%d/%y %H:%M:%S" 0
-# dates = mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
+;dates = mail_date "%m/%d/%y %H:%M:%S" 1 creation_date "%m/%d/%y %H:%M:%S" 0
+dates = mail_date "%Y-%m-%d %H:%M:%S" 1 creation_date "%Y-%m-%d %H:%M:%S" 0
 
 [1tu__creation_date_insert]
 blueprint = imio.transmogrifier.iadocs.inserter PAS UTILISE

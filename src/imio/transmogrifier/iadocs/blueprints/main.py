@@ -50,6 +50,7 @@ from imio.transmogrifier.iadocs.utils import get_users_groups
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from imio.transmogrifier.iadocs.utils import print_item  # noqa
+from OFS.ObjectManager import bad_id
 from plone import api
 from plone.dexterity.fti import DexterityFTIModificationDescription
 from plone.dexterity.fti import ftiModified
@@ -750,6 +751,8 @@ class InsertPath(object):
                 else:
                     if "_id" in item:
                         new_id = item["_id"]
+                        if bad_id(new_id):  # ex: non ascii char in eid
+                            new_id = idnormalizer.normalize(new_id)
                     else:
                         new_id = idnormalizer.normalize(title)
                     item["_path"] = "/".join([item["_parenth"], new_id])
