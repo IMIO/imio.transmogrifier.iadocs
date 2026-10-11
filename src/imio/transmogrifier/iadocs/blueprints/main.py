@@ -57,21 +57,24 @@ from plone.dexterity.fti import ftiModified
 from plone.i18n.normalizer import IIDNormalizer
 from Products.CMFPlone.utils import safe_unicode
 from Products.cron4plone.browser.configlets.cron_configuration import ICronConfiguration
+from six.moves import cPickle
 from zope.annotation import IAnnotations
 from zope.component import getUtility
 from zope.component import queryUtility
-from zope.interface import classProvides
-from zope.interface import implements
+from zope.interface import implementer
+from zope.interface import provider
 from zope.lifecycleevent import ObjectModifiedEvent
 from zope.schema.interfaces import IVocabularyFactory
 
-import cPickle
 import csv
 import json
 import logging
 import os
+import six
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class Initialization(object):
     """Initializes global variables to be used in next sections.
 
@@ -79,9 +82,6 @@ class Initialization(object):
         * basepath = O, absolute directory. If empty, buildout dir will be used.
         * subpath = O, if given, it will be appended to basepath.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):  # noqa C901
         self.previous = previous
@@ -253,7 +253,7 @@ class Initialization(object):
                     self.portal.unrestrictedTraverse("/".join(params[0].split("/")[0:-1])),
                     "organization",
                     id=params[0].split("/")[-1],
-                    title=params[1].decode("utf8"),
+                    title=safe_unicode(params[1]),
                 )
                 o_logger.info("Created object '{}'".format(param))
             if service:
@@ -325,7 +325,7 @@ class Initialization(object):
                 fields_dic.update({k: {'typ': letter} for k in profiles if k})
             flds_opt = transmogrifier["config"]["fields"].replace("\n", " ")
             flds_opt = next(csv.reader([flds_opt.strip()], delimiter=" ", quotechar='"', skipinitialspace=True))
-            flds_opt = [cell.decode("utf8") for cell in flds_opt]
+            flds_opt = [safe_unicode(cell) for cell in flds_opt]
             flds_opt = [tup for tup in pool_tuples(flds_opt, 4, "fields option")]
             for prd, e_fld, p_fld, transform in flds_opt:
                 fields_dic[prd][e_fld] = p_fld
@@ -376,6 +376,8 @@ class Initialization(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class AddDataInItem(object):
     """Add item keys from a stored dictionary.
 
@@ -392,9 +394,6 @@ class AddDataInItem(object):
         * condition = O, condition expression
         * marker = 0, marker name added in '_mar_ker' key if given
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -441,6 +440,8 @@ class AddDataInItem(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class CommonInputChecks(object):
     """Checks input values of the corresponding external type.
 
@@ -464,9 +465,6 @@ class CommonInputChecks(object):
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
@@ -483,7 +481,7 @@ class CommonInputChecks(object):
         self.cleans = next(
             csv.reader([options.get("clean_value", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True)
         )
-        self.cleans = [cell.decode("utf8") for cell in self.cleans]
+        self.cleans = [safe_unicode(cell) for cell in self.cleans]
         self.cleans = [
             (
                 tup[0],
@@ -500,17 +498,17 @@ class CommonInputChecks(object):
                 [options.get("replace_newline", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True
             )
         )
-        self.repl_nl = [cell.decode("utf8") for cell in self.repl_nl]
+        self.repl_nl = [safe_unicode(cell) for cell in self.repl_nl]
         self.repl_nl = [tup for tup in pool_tuples(self.repl_nl, 2, "replace_newline option") if tup[0] in fieldnames]
         self.invalids = next(
             csv.reader([options.get("invalids", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True)
         )
-        self.invalids = [cell.decode("utf8") for cell in self.invalids]
+        self.invalids = [safe_unicode(cell) for cell in self.invalids]
         self.invalids = [tup for tup in pool_tuples(self.invalids, 2, "invalids option") if tup[0] in fieldnames]
         self.concats = next(
             csv.reader([options.get("concatenate", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True)
         )
-        self.concats = [cell.decode("utf8") for cell in self.concats]
+        self.concats = [safe_unicode(cell) for cell in self.concats]
         self.concats = [
             tup
             for tup in pool_tuples(self.concats, 4, "concat option")
@@ -519,7 +517,7 @@ class CommonInputChecks(object):
         self.splits = next(
             csv.reader([options.get("split_text", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True)
         )
-        self.splits = [cell.decode("utf8") for cell in self.splits]
+        self.splits = [safe_unicode(cell) for cell in self.splits]
         self.splits = [
             (
                 tup[0],
@@ -537,7 +535,7 @@ class CommonInputChecks(object):
         self.dates = next(
             csv.reader([options.get("dates", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True)
         )
-        self.dates = [cell.decode("utf8") for cell in self.dates]
+        self.dates = [safe_unicode(cell) for cell in self.dates]
         self.dates = pool_tuples(self.dates, 3, "dates option")
         self.evals = [key for key in safe_unicode(options.get("evals", "")).split() if key in fieldnames]
 
@@ -599,6 +597,8 @@ class CommonInputChecks(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class DependencySorter(object):
     """Handles dependencies.
 
@@ -608,9 +608,6 @@ class DependencySorter(object):
         * condition = O, condition expression
         * parent_relation = M, parent_relation dictionary (key: {'_parent_id': 'xx'}
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -643,6 +640,8 @@ class DependencySorter(object):
             item["_level"] = get_org_level(self.parent_relation, main_key)
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class FilesList(object):
     """Files list.
 
@@ -651,9 +650,6 @@ class FilesList(object):
         * condition = O, condition expression
         * exclude_patterns = O, folder patterns list to exclude
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -684,6 +680,8 @@ class FilesList(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class InsertPath(object):
     """Adds _path if not yet defined, to create new items.
 
@@ -694,9 +692,6 @@ class InsertPath(object):
         * condition = O, condition expression
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -762,11 +757,10 @@ class InsertPath(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class LastSection(object):
     """Last section to do things at the end of each item process or global process."""
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -805,6 +799,8 @@ class LastSection(object):
         course_print(self)
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class PickleData(object):
     """Pickle data.
 
@@ -814,9 +810,6 @@ class PickleData(object):
         * d_condition = O, dump condition expression (default: False)
         * update = O, int for boolean to update (1) or set (0) storage. (default 0)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -851,6 +844,8 @@ class PickleData(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class ReadFromData(object):
     """Read items from a dictionary.
 
@@ -865,9 +860,6 @@ class ReadFromData(object):
         * condition = O, condition expression to yield item
         * sort_value = O, python expression for sort method return (default: 'k')
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -920,6 +912,8 @@ class ReadFromData(object):
                     yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class SetOwner(object):
     """Sets ownership on created object.
 
@@ -927,9 +921,6 @@ class SetOwner(object):
         * owner = M, owner id
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -967,6 +958,8 @@ class SetOwner(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class SetState(object):
     """Sets state in workflow history.
 
@@ -980,9 +973,6 @@ class SetState(object):
         * condition = O, condition expression
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1006,7 +996,7 @@ class SetState(object):
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self, item)
                 try:
-                    obj = self.portal.unrestrictedTraverse(safe_unicode(item["_path"][1:]).encode("utf8"))
+                    obj = self.portal.unrestrictedTraverse(six.ensure_str(item["_path"][1:]))
                 except (AttributeError, KeyError):
                     log_error(item, "The corresponding object '{}' cannot be found".format(item["_path"]))
                     continue
@@ -1052,6 +1042,8 @@ class SetState(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class SetIconifiedAttributes(object):
     """Sets iconifiedcategory attributes (to_print, to_sign, signed, ...) on created object.
 
@@ -1059,9 +1051,6 @@ class SetIconifiedAttributes(object):
         * values = M, expression returning a dict {attribute: value}
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1079,7 +1068,7 @@ class SetIconifiedAttributes(object):
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self, item)
                 try:
-                    obj = self.portal.unrestrictedTraverse(safe_unicode(item["_path"][1:]).encode("utf8"))
+                    obj = self.portal.unrestrictedTraverse(six.ensure_str(item["_path"][1:]))
                 except (AttributeError, KeyError):
                     log_error(item, "The corresponding object '{}' cannot be found".format(item["_path"]))
                     yield item
@@ -1091,6 +1080,8 @@ class SetIconifiedAttributes(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class StoreInData(object):
     """Store items in a dictionary.
 
@@ -1105,9 +1096,6 @@ class StoreInData(object):
         * check_subkey_uniqueness = O, flag (0 or 1: default 1)
         * yield = O, flag to know if a yield must be done (0 or 1: default 0)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous

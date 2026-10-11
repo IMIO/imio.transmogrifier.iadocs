@@ -20,7 +20,9 @@ from plone import api
 from zope.component import getUtility
 from zope.schema.interfaces import IVocabularyFactory
 
+import io
 import os
+import six
 
 
 itf = "imio.dms.mail.browser.settings.IImioDmsMailConfig"
@@ -66,15 +68,17 @@ def course_print(section):
 
 
 def encode_list(lst, encoding):
-    """Encode a list following encoding.
+    """Encode a list following encoding (Python 2 csv module). Unchanged on Python 3 (text file).
 
     :param lst: lst to transform
     :param encoding: encoding
     :return: new list
     """
+    if not six.PY2:
+        return list(lst)
     new_list = []
     for content in lst:
-        if isinstance(content, unicode):  # noqa
+        if isinstance(content, six.text_type):
             content = content.encode(encoding)
         new_list.append(content)
     return new_list
@@ -390,3 +394,16 @@ def time_display(section, item):
     section.storage["o_logger"].info(
         "{} : {}, {}".format(datetime.now().strftime("%H:%M:%S.%f"), section.name, item.get("_eid", ""))
     )
+
+
+def open_csv(filename, encoding, mode="r"):
+    """Open a csv file: bytes for the Python 2 csv module, text in the given encoding on Python 3.
+
+    :param filename: file path
+    :param encoding: file encoding (Python 3)
+    :param mode: r, w or a
+    :return: file handler
+    """
+    if six.PY2:
+        return open(filename, mode + "b")
+    return io.open(filename, mode, encoding=encoding, newline="")

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
-from collective.transmogrifier.utils import openFileReference
 from imio.helpers.transmogrifier import Condition
 from imio.helpers.transmogrifier import Expression
 from imio.helpers.transmogrifier import get_obj_from_path  # noqa
@@ -13,11 +12,12 @@ from imio.transmogrifier.iadocs.utils import encode_list
 from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
+from imio.transmogrifier.iadocs.utils import open_csv
 from imio.transmogrifier.iadocs.utils import print_item  # noqa
 from Products.CMFPlone.utils import safe_unicode
 from zope.annotation import IAnnotations
-from zope.interface import classProvides
-from zope.interface import implements
+from zope.interface import implementer
+from zope.interface import provider
 
 import csv
 import os
@@ -25,6 +25,8 @@ import re
 import six
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class CSVReader(object):
     """Reads a csv file.
 
@@ -41,9 +43,6 @@ class CSVReader(object):
         * none_value = O, value to replace by None.
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -77,7 +76,7 @@ class CSVReader(object):
         if not b_condition(None, filename=self.filename, storage=self.storage):
             self.filename = None
             return
-        file_ = openFileReference(transmogrifier, self.filename)
+        file_ = os.path.isfile(self.filename) and open_csv(self.filename, self.csv_encoding) or None
         if file_ is None:
             raise Exception("Cannot open file '{}'".format(self.filename))
         self.bp_key = safe_unicode(options["bp_key"])
@@ -161,12 +160,12 @@ def writerow(csv_d, item):
     if csv_d["fh"] is None:
         header = True
         try:
-            mode = "wb"
+            mode = "w"
             if csv_d["append"]:
-                mode = "ab"
+                mode = "a"
                 if os.path.exists(csv_d["fp"]):
                     header = False
-            csv_d["fh"] = open(csv_d["fp"], mode=mode)
+            csv_d["fh"] = open_csv(csv_d["fp"], csv_d["we"], mode=mode)
         except IOError as m:
             raise Exception("Cannot create file '{}': {}".format(csv_d["fp"], m))
         o_logger.info(u"Writing '{}'".format(csv_d["fp"]))
@@ -176,6 +175,8 @@ def writerow(csv_d, item):
     csv_d["wh"].writerow(encode_list([item.get(fd, u"") for fd in csv_d["fd"]], csv_d["we"]))
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class CSVWriter(object):
     """Writes a csv file.
 
@@ -196,9 +197,6 @@ class CSVWriter(object):
         * raise_on_error = O, raises exception if 1. Default 1. Can be set to 0.
         * yield = O, flag to know if a yield must be done (0 or 1: default 1)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous

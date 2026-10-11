@@ -19,7 +19,7 @@ from imio.transmogrifier.iadocs.testing import get_transmogrifier
 from imio.transmogrifier.iadocs.testing import IMIO_TRANSMOGRIFIER_IADOCS_INTEGRATION_TESTING  # noqa
 from zope.testing.loggingsupport import InstalledHandler
 
-import ipdb
+import pdb
 import re
 import six
 import sys
@@ -195,9 +195,9 @@ class TestBluePrintVarious(unittest.TestCase):
 
     def test_breakpoint(self):
         calls = []
-        orig_set_trace = ipdb.set_trace
-        ipdb.set_trace = lambda: calls.append(1)
-        self.addCleanup(setattr, ipdb, "set_trace", orig_set_trace)
+        orig_set_trace = pdb.set_trace
+        pdb.set_trace = lambda: calls.append(1)
+        self.addCleanup(setattr, pdb, "set_trace", orig_set_trace)
         tr = self.get_transmogrifier()
         # default condition: False
         self.assertEqual(list(Breakpoint(tr, "bp", {}, iter([{"_eid": u"1"}]))), [{"_eid": u"1"}])

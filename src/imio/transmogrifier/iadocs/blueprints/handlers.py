@@ -43,16 +43,17 @@ from persistent.list import PersistentList
 from plone import api
 from plone.i18n.normalizer import IIDNormalizer
 from Products.CMFPlone.utils import safe_unicode
+from six.moves import cPickle
 from z3c.relationfield import RelationValue
 from zc.relation.interfaces import ICatalog
 from zope.annotation import IAnnotations
 from zope.component import getUtility
-from zope.interface import classProvides
-from zope.interface import implements
+from zope.interface import implementer
+from zope.interface import provider
 from zope.intid import IIntIds
 
-import cPickle
 import csv
+import io
 import os
 import re
 import transaction
@@ -64,15 +65,14 @@ except ImportError:
     from imio.helpers.security import separate_fullname  # 3.1 version
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class AServiceUpdate(object):
     """Update plonegroup services with external id value.
 
     Parameters:
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -114,6 +114,8 @@ class AServiceUpdate(object):
             self.storage["data"]["p_orgs_all"], self.storage["data"]["p_eid_to_orgs"] = get_plonegroup_orgs(self.portal)
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class BMailtypesByType(object):
     """Modify mailtypes items following use.
 
@@ -121,9 +123,6 @@ class BMailtypesByType(object):
         * related_storage = M, related data storage
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -147,15 +146,14 @@ class BMailtypesByType(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class BMailtypeUpdate(object):
     """Store mailtype if necessary.
 
     Parameters:
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -201,6 +199,8 @@ class BMailtypeUpdate(object):
             self.storage["data"]["p_mailtype"] = get_mailtypes(self.portal)
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class ContactAsTextUpdate(object):
     """Handles im sender or om recipient.
 
@@ -219,9 +219,6 @@ class ContactAsTextUpdate(object):
         * skip_real_contact = M, flag to skip a real contact (if contact_store contains created contacts) (0 or 1)
         * skip_contact_user = O, skip a contact that is a user (defaut 0)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -350,6 +347,8 @@ class ContactAsTextUpdate(object):
                 yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class ContactSet(object):
     """Set contact. Try to find a contact or set default contact.
 
@@ -367,9 +366,6 @@ class ContactSet(object):
         * yield = M, flag to know if a item yield must be done when original item is 0 (0 or 1, default 0)
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -473,6 +469,8 @@ class ContactSet(object):
                     yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class DefaultContactSet(object):
     """Set default contact.
 
@@ -481,9 +479,6 @@ class DefaultContactSet(object):
         * is_list = M, int for boolean (1 if the field is a list)
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -589,6 +584,8 @@ def hp_dic(section, bpk, e_userid, item, transitions=("deactivate",)):
     return []
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class DOMSenderCreation(object):
     """Create sender held_position if necessary.
 
@@ -596,9 +593,6 @@ class DOMSenderCreation(object):
         * condition = O, condition expression
         * sender_user_dic = M, sender user dictionary
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -703,15 +697,14 @@ class DOMSenderCreation(object):
             o_logger.info("Part d: some internal persons or/and held positions have been added.")
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class DPersonnelCreation(object):
     """Create or link person.
 
     Parameters:
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -764,6 +757,8 @@ class DPersonnelCreation(object):
             o_logger.info("Part d: some internal persons or/and held positions have been added.")
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class ECategoryUpdate(object):
     """Update category or create a new one.
 
@@ -776,9 +771,6 @@ class ECategoryUpdate(object):
         * category_code_eid = 0, dict containing category code and eid value (usefull if _eid is e_category main key)
         * prefix = O, prefix of category code to be ignored as parent
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -913,15 +905,14 @@ class ECategoryUpdate(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class F1Level3Handler(object):
     """Handles level 3 folder.
 
     Parameters:
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -948,6 +939,8 @@ class F1Level3Handler(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class F2FolderSubfolderSplit(object):
     """Yield part of current item as new item.
 
@@ -956,9 +949,6 @@ class F2FolderSubfolderSplit(object):
         * bp_key = M, blueprint key
         * prefix = M, prefix to replace
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -984,6 +974,8 @@ class F2FolderSubfolderSplit(object):
             yield item2
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class F3TextCategoriesToId(object):
     """Handles text categories.
 
@@ -995,9 +987,6 @@ class F3TextCategoriesToId(object):
         * separator = M, separator to split field
         * part_pattern = O, pattern to check accepted part (default none)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1198,6 +1187,8 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
     return change
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class HContactTypeUpdate(object):
     """Store contact type if necessary.
 
@@ -1205,9 +1196,6 @@ class HContactTypeUpdate(object):
         * condition = O, condition expression
         * clean_unused = O, clean unmatched plone values (default 0)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1239,7 +1227,7 @@ class HContactTypeUpdate(object):
 
         if len(p_types) != self.storage["data"]["p_dir_org_types_len"]:  # modified
             new_value = []
-            for token in p_types.keys():
+            for token in list(p_types.keys()):
                 if self.clean_unused and not p_types[token].get("_used", False) and token != "non-defini":
                     del p_types[token]
                 else:
@@ -1248,15 +1236,14 @@ class HContactTypeUpdate(object):
             self.storage["plone"]["directory"].organization_types = new_value
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class I1ContactUpdate(object):
     """Add contact fields.
 
     Parameters:
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1354,6 +1341,8 @@ class I1ContactUpdate(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class I2ContactUpdate(object):
     """Handles contact _type, adds contact fields
 
@@ -1362,9 +1351,6 @@ class I2ContactUpdate(object):
         * paths_key = M, key containing paths
         * plonegroup_org_id = M, plonegroup organization id
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1485,6 +1471,8 @@ class I2ContactUpdate(object):
                 yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class J2ContactUpdate(object):
     """Completes contact information
 
@@ -1492,9 +1480,6 @@ class J2ContactUpdate(object):
         * condition = O, condition expression
         * paths_key = M, key containing paths
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1619,6 +1604,8 @@ class J2ContactUpdate(object):
                 yield item2
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class L1RecipientGroupsSet(object):
     """Handles recipient_groups.
 
@@ -1627,9 +1614,6 @@ class L1RecipientGroupsSet(object):
         * global_recipient_service = O, title of the global recipient group
         * global_recipient_tg_exceptions = O, list of eid (service) for which the global recipient is not set
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1666,11 +1650,10 @@ class L1RecipientGroupsSet(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class L1SenderAsTextSet(object):
     """Handles contact. Set sender as text (from sender_id if not already used and from sender text value)."""
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1702,6 +1685,8 @@ class L1SenderAsTextSet(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class M1AssignedUserHandling(object):
     """Handles assigned user. If user is in treating_group, set assigned_user.
 
@@ -1713,9 +1698,6 @@ class M1AssignedUserHandling(object):
         * functions = O, functions group (IM or OM. Default IM)
         * contact_id_key = O, contact field name (default: _contact_id)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1817,6 +1799,8 @@ class M1AssignedUserHandling(object):
                 yield item2
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class MavalHandling(object):
     """Handles fields from maval file.
 
@@ -1827,9 +1811,6 @@ class MavalHandling(object):
         * functions = O, functions group (IM or OM. Default IM)
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):  # noqa :C901
         self.previous = previous
@@ -1846,7 +1827,7 @@ class MavalHandling(object):
         self.batch_store = self.storage["data"].setdefault(self.bp_key, {})
         self.flds_opt = transmogrifier["config"]["fields"].replace("\n", " ")
         self.flds_opt = next(csv.reader([self.flds_opt.strip()], delimiter=" ", quotechar='"', skipinitialspace=True))
-        self.flds_opt = [cell.decode("utf8") for cell in self.flds_opt]
+        self.flds_opt = [safe_unicode(cell) for cell in self.flds_opt]
         self.flds_opt = [tup for tup in pool_tuples(self.flds_opt, 4, "fields option")]
 
         dependency_graph = {}
@@ -2071,6 +2052,8 @@ class MavalHandling(object):
         return value
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class POMSenderSet(object):
     """Set sender held_position.
 
@@ -2078,9 +2061,6 @@ class POMSenderSet(object):
         * condition = O, condition expression
         * contact_sender_key = O, contacts sender storage key (default: e_contact)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2132,15 +2112,14 @@ class POMSenderSet(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class ParentPathInsert(object):
     """Add parent path key following type.
 
     Parameters:
         * bp_key = O, blueprint key (here used to get parent path from pickle)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2187,11 +2166,10 @@ class ParentPathInsert(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class PostActions(object):
     """Do post actions after creation"""
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2225,6 +2203,8 @@ class PostActions(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class Q1RecipientsAsTextUpdate(object):
     """Handles om recipients. Yet used ??
 
@@ -2232,9 +2212,6 @@ class Q1RecipientsAsTextUpdate(object):
         * condition = O, condition expression
         * store_key = M, storage main key to find mail path
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2297,6 +2274,8 @@ class Q1RecipientsAsTextUpdate(object):
                 yield item2
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class R1RecipientGroupsUpdate(object):
     """Handles recipient_groups assignments.
 
@@ -2304,9 +2283,6 @@ class R1RecipientGroupsUpdate(object):
         * condition = O, condition expression
         * store_key = M, storage main key to find mail path
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2370,6 +2346,8 @@ class R1RecipientGroupsUpdate(object):
                 yield item2
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class ReadLabelForRecipientGroup(object):
     """Handles recipient_group read label.
 
@@ -2377,9 +2355,6 @@ class ReadLabelForRecipientGroup(object):
         * condition = O, condition expression
         * store_key = M, storage main key to find mail path
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2410,6 +2385,8 @@ class ReadLabelForRecipientGroup(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class RsyncFileWrite(object):
     """Writes rsync file containing used files.
 
@@ -2419,9 +2396,6 @@ class RsyncFileWrite(object):
         * bp_key = data key to get files info
         * unused_filename = O, filename to write with files not used by items
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2453,7 +2427,7 @@ class RsyncFileWrite(object):
                 continue
             if self.fh is None and self.files:  # only doing one time
                 try:
-                    self.fh = open(self.filename, mode="w")
+                    self.fh = io.open(self.filename, mode="w", encoding="utf8")
                 except IOError as m:
                     raise Exception("Cannot create file '{}': {}".format(self.filename, m))
                 o_logger.info(u"Writing '{}'".format(self.filename))
@@ -2461,26 +2435,28 @@ class RsyncFileWrite(object):
             self.used.add(item["_eid"])
             if item.get("_fs_path"):  # path given in csv
                 self.used.add(os.path.splitext(os.path.basename(item["_fs_path"]))[0])
-                self.fh.write(u"{}\n".format(item["_fs_path"]).encode("utf8"))
+                self.fh.write(u"{}\n".format(item["_fs_path"]))
                 continue
             if item["_eid"] not in self.files:
                 # log_error(item, u"not found,{},{},{},{}".format(
                 #     item["_mail_id"], item["_fs_path"] or u"", item["_filename"] or u"", item["_ext"] or u""))
                 continue
             for ext, path in self.files[item["_eid"]]["f"]:
-                self.fh.write("{}/{}{}\n".format(path, item["_eid"], ext))
+                self.fh.write(u"{}/{}{}\n".format(path, item["_eid"], ext))
         if self.fh is not None:
             self.fh.close()
             self.fh = None
         if is_in_part(self, self.parts) and self.doit and self.unused_filename and self.files:
             o_logger.info(u"Writing '{}'".format(self.unused_filename))
-            with open(self.unused_filename, mode="w") as fh:
+            with io.open(self.unused_filename, mode="w", encoding="utf8") as fh:
                 lines = [u"{}/{}{}\n".format(path, basename, ext) for basename in set(self.files) - self.used
                          for ext, path in self.files[basename]["f"]]
                 for line in sorted(lines):
-                    fh.write(line.encode("utf8"))
+                    fh.write(line)
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class S1ClassificationFoldersUpdate(object):
     """Handles classification folders assignments.
 
@@ -2489,9 +2465,6 @@ class S1ClassificationFoldersUpdate(object):
         * store_key = M, storage main key to find mail path
         * fill_empty_mail_category = O, fill empty mail category with folder one (1 or 0, default: 1)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2555,6 +2528,8 @@ class S1ClassificationFoldersUpdate(object):
                 yield item2
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class S3ClassificationFoldersUpdate(object):
     """Handles classification folders assignments.
 
@@ -2564,9 +2539,6 @@ class S3ClassificationFoldersUpdate(object):
         * mail_id_key = O, mail id key (default _eid)
         * replace_default_category = O, replace mail default category by folder one (default 0)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2633,6 +2605,8 @@ class S3ClassificationFoldersUpdate(object):
                 yield item2
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class T1DmsfileCreation(object):
     """Create file.
 
@@ -2645,9 +2619,6 @@ class T1DmsfileCreation(object):
         * title_key = O, item title key. If not defined, _desc
 
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2742,6 +2713,8 @@ class T1DmsfileCreation(object):
         # o_logger.info(self.ext)
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class X1ReplyToUpdate(object):
     """Handles mail links (reply_to field).
 
@@ -2751,9 +2724,6 @@ class X1ReplyToUpdate(object):
         * batch_store = O, store_key where to store batch info
         * batch_key = O, item batch key to use
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2822,6 +2792,8 @@ class X1ReplyToUpdate(object):
             yield item2
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class WorkflowHistoryUpdate(object):
     """Update workflow history.
 
@@ -2829,9 +2801,6 @@ class WorkflowHistoryUpdate(object):
         * owner = M, owner id
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2859,6 +2828,8 @@ class WorkflowHistoryUpdate(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class XmlContactStore(object):
     """Handles xml contact column and stores infos in bp_key.
 
@@ -2876,9 +2847,6 @@ class XmlContactStore(object):
         * empty_store = O, flag to know if the storage must be initially emptied (0 or 1: default 0)
         * yield_original = O, flag to know if original item must be yielded (0 or 1: default 1)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous

@@ -10,9 +10,11 @@ from imio.pyutils.utils import safe_encode
 import argparse
 import codecs
 import csv
+import io
 import logging
 import os
 import re
+import six
 
 
 logging.basicConfig()
@@ -46,7 +48,7 @@ def main(input_dir, output_dir, counter_col, input_filter, input_sep, only_new, 
                 (out, err, code) = runCommand(cmd)
                 if code != 0:
                     stop(u"Error while converting file '{}' with iconv: {}".format(input_name, err), logger)
-        with codecs.open(input_name, "r", encoding="utf8") as ifh, open(output_name, "wb") as ofh:
+        with codecs.open(input_name, "r", encoding="utf8") as ifh, open_output(output_name) as ofh:
             csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC, lineterminator="\n")
             rec_nb, last_rec_pos = get_records_info(ifh, crlf)
             cols = get_cols(ifh, input_sep, crlf)
@@ -66,6 +68,13 @@ def main(input_dir, output_dir, counter_col, input_filter, input_sep, only_new, 
             if writed != rec_nb:
                 logger.error("We don't have the correct records number: writed {}, must have {}".format(writed, rec_nb))
     logger.info("Script duration: %s" % (datetime.now() - start))
+
+
+def open_output(output_name):
+    """Output csv file: bytes for the Python 2 csv module, utf8 text on Python 3."""
+    if six.PY2:
+        return open(output_name, "wb")
+    return io.open(output_name, "w", encoding="utf8", newline="")
 
 
 def get_values(cols, fh, count_dic, input_sep):
@@ -177,7 +186,7 @@ if __name__ == "__main__":
         ns.output_dir,
         ns.count_col,
         ns.input_filter,
-        ns.input_sep.decode(),
+        six.ensure_text(ns.input_sep),
         ns.only_new,
         ns.iconv,
         ns.input_crlf,

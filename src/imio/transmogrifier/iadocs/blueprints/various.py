@@ -17,24 +17,23 @@ from imio.transmogrifier.iadocs.utils import short_log
 from imio.transmogrifier.iadocs.utils import time_display
 from Products.CMFPlone.utils import safe_unicode
 from zope.annotation.interfaces import IAnnotations
-from zope.interface import classProvides
-from zope.interface import implements
+from zope.interface import implementer
+from zope.interface import provider
 
 import copy
 import csv
-import ipdb
+import pdb
 import re
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class Breakpoint(object):
-    """Stops with ipdb if condition is matched.
+    """Stops with pdb if condition is matched.
 
     Parameters:
         * condition = M, matching condition.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         condition = options.get("condition") or "python:False"
@@ -48,11 +47,12 @@ class Breakpoint(object):
     def __iter__(self):
         for item in self.previous:
             if self.condition(item, storage=self.storage):
-                # ipdb.set_trace(sys._getframe().f_back)  # Break!
-                ipdb.set_trace()  # Break!
+                pdb.set_trace()  # Break!
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class Count(object):
     """Count items.
 
@@ -60,9 +60,6 @@ class Count(object):
         * group_key = O, item key to group counting.
         * condition = O, matching condition.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -92,6 +89,8 @@ class Count(object):
             o_logger.info("{} '{}' = {}".format(self.name, group, counter[group]["c"]))
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class EnhancedCondition(object):
     """Yield item if condition2 is matched, only applied if condition1 is matched.
     Pass storage and item in condition.
@@ -102,9 +101,6 @@ class EnhancedCondition(object):
         * get_obj = O, flag to get object from path (default 0)
         * error = O, error message to display
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.condition1 = Condition(options["condition1"], transmogrifier, name, options)
@@ -138,6 +134,8 @@ class EnhancedCondition(object):
                 yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class EnhancedInserter(object):
     """Set or append value in key, if condition is matched.
 
@@ -151,9 +149,6 @@ class EnhancedInserter(object):
         * error = O, error message to display
         * error_value = O, value to set when error occurs
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -219,6 +214,8 @@ class EnhancedInserter(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class EnhancedManipulator(object):
     """Manipulate item if condition is matched: copy, move or discard keys.
 
@@ -228,9 +225,6 @@ class EnhancedManipulator(object):
         * delete = O, keys to delete or move.
         * condition = O, matching condition.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         keys = options.get("keys") or ""
@@ -248,7 +242,7 @@ class EnhancedManipulator(object):
         for item in self.previous:
             if self.condition(item, storage=self.storage):
                 course_store(self, item)
-                for key in item.keys():
+                for key in list(item.keys()):
                     match = self.keys(key)[1]
                     if match:
                         dest = self.dest(item, key=key, match=match)
@@ -258,6 +252,8 @@ class EnhancedManipulator(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class FilterItem(object):
     """Filter item to keep only some fields. Useful when correcting...
 
@@ -265,9 +261,6 @@ class FilterItem(object):
         * kept_keys = M, keys to keep
         * condition = O, condition to filter (default True)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -287,6 +280,8 @@ class FilterItem(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class ItemFieldSplit(object):
     """Splits an item field and yield multiple items.
 
@@ -300,9 +295,6 @@ class ItemFieldSplit(object):
         * index_key = O, item key where to store part index (0-based)
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
@@ -313,7 +305,7 @@ class ItemFieldSplit(object):
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.field = safe_unicode(options["field"])
         self.sep = next(csv.reader([options["separator"]], delimiter=" ", quotechar='"', skipinitialspace=True))
-        self.sep = self.sep[0].decode("utf8")
+        self.sep = safe_unicode(self.sep[0])
         self.pattern = options.get("part_pattern") or u""
         self.yield_original = bool(int(options.get("yield_original") or "0"))
         self.index_key = safe_unicode(options.get("index_key") or u"")
@@ -350,15 +342,14 @@ class ItemFieldSplit(object):
                 yield item2
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class NeedOther(object):
     """Stops if needed other part or section is not there.
 
     Parameters:
         * parts = O, needed parts (one letter list).
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -381,6 +372,8 @@ class NeedOther(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class PrintItem(object):
     """Print item without big fields.
 
@@ -389,9 +382,6 @@ class PrintItem(object):
         * condition = O, condition to print (default True)
         * separator = O, separator char between print (default empty)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -410,6 +400,8 @@ class PrintItem(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class ReplaceVariables(object):
     """Replace variable in stored dict or item.
 
@@ -424,9 +416,6 @@ class ReplaceVariables(object):
         * modify_dict = M, flag to know if the dict must be modified (0 or 1)
         * yield = M, flag to know if a yield must be done (0 or 1)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -486,11 +475,10 @@ class ReplaceVariables(object):
                 yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class ShortLog(object):
     """Logs shortly item."""
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -507,15 +495,14 @@ class ShortLog(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class Stop(object):
     """Stops if condition is matched.
 
     Parameters:
         * condition = M, matching condition.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.condition = Condition(options["condition"], transmogrifier, name, options)
@@ -530,15 +517,14 @@ class Stop(object):
             yield item
 
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
 class TimeDisplay(object):
     """Displays time if condition is matched.
 
     Parameters:
         * condition = O, matching condition.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.condition = Condition(options.get("condition", "python:False"), transmogrifier, name, options)
