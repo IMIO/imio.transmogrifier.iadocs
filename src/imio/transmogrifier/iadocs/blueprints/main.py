@@ -3,9 +3,9 @@ from collections import OrderedDict
 from collective.classification.tree.utils import create_category
 from collective.contact.plonegroup.config import get_registry_organizations
 from collective.contact.plonegroup.config import set_registry_organizations
+from collective.documentviewer.settings import GlobalSettings
 from collective.iconifiedcategory.utils import get_category_object
 from collective.iconifiedcategory.utils import update_categorized_elements
-from collective.documentviewer.settings import GlobalSettings
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from copy import copy

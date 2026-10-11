@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Blueprints tests for this package."""
 from imio.transmogrifier.iadocs.blueprints.handlers import get_contact_info
-from imio.transmogrifier.iadocs.blueprints.various import EnhancedCondition
-from imio.transmogrifier.iadocs.blueprints.various import EnhancedInserter
 from imio.transmogrifier.iadocs.testing import get_storage
 from imio.transmogrifier.iadocs.testing import IMIO_TRANSMOGRIFIER_IADOCS_INTEGRATION_TESTING  # noqa
 

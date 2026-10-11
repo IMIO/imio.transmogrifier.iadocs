@@ -1165,8 +1165,8 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
             change = True
             dest2.append(u"ORGANISATION: {}.".format(infos["_company"]))
         # address
-        p_address = all_of_dict_values(parent_infos, ["_street", "_street_nb" , "_street_nb_box", "_pc", "_city"])
-        address = all_of_dict_values(infos, ["_street", "_street_nb" , "_street_nb_box", "_pc", "_city"])
+        p_address = all_of_dict_values(parent_infos, ["_street", "_street_nb", "_street_nb_box", "_pc", "_city"])
+        address = all_of_dict_values(infos, ["_street", "_street_nb", "_street_nb_box", "_pc", "_city"])
         if address:
             change = True
             dest2.append(u"ADRESSE {}: {}.".format(label, u" ".join(address)))

@@ -19,7 +19,7 @@ PIPELINE_ID = "imio.transmogrifier.iadocs.pipeline"
 USAGE = """
 Usage : bin/instance run -O{plonepath} \
 src/imio.transmogrifier.iadocs/src/imio/transmogrifier/iadocs/execute_pipeline.py \
-{PILELINE_FILE} -c0 -p 
+{PILELINE_FILE} -c0 -p
 """
 
 if "app" not in locals() or "obj" not in locals():
