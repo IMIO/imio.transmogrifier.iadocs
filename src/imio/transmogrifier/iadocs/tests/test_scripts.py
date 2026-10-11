@@ -190,7 +190,9 @@ class TestScripts(unittest.TestCase):
             ["eCourriers", "eCourriersDestinataires", "eCourriersFichiers", "eCourriersDossiers", "eCourriersServices"],
         )
         self.assertTrue(
-            logs.records[3].getMessage().endswith(
+            logs.records[3]
+            .getMessage()
+            .endswith(
                 'from eCourriersFichiers order by CourrierID, OrdreAffichage, DateUpload" -o "/srv/sqlcmd.fwf" -s";"'
             )
         )

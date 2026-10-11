@@ -468,7 +468,8 @@ class TestDataTransfer1(unittest.TestCase):
         rows = read_csv(self.path("3_folder_created.csv"))
         self.assertEqual(len(rows), 3)
         self.assertListEqual(
-            rows[1][:3] + rows[1][5:7], [u"700", u"Dossier armes", folder.UID(), u"/folders/700", u"ClassificationFolder"]
+            rows[1][:3] + rows[1][5:7],
+            [u"700", u"Dossier armes", folder.UID(), u"/folders/700", u"ClassificationFolder"],
         )
         self.assertEqual(rows[2][2], subfolder.UID())
         self.assertDictEqual(
@@ -535,7 +536,7 @@ class TestDataTransfer1(unittest.TestCase):
         self.assertEqual(mail.portal_type, "dmsincoming_email")
         self.assertTrue(len(mail.title) <= 300)
         self.assertTrue(mail.description.startswith(u"SUITE TITRE: "))
-        self.assertEqual(mail.title + mail.description[len(u"SUITE TITRE: "):], LONG_TITLE)
+        self.assertEqual(mail.title + mail.description[len(u"SUITE TITRE: ") :], LONG_TITLE)
         self.assertEqual(mail.due_date, date(2023, 3, 15))
         self.assertEqual(mail.treating_groups, self.dg.UID())
         self.assertEqual((mail.mail_type, mail.send_modes), (u"facture", [u"email"]))
@@ -655,7 +656,9 @@ class TestDataTransfer1(unittest.TestCase):
         self.assertEqual(mail.description, u"EXPÉDITEUR LIBRE: Jean Dupont\r\nREMARQUES: À payer.\r\nDOSSIER: None")
         self.assertIsNone(mail.classification_folders)
         errors = self.log(errors=True)
-        self.assertIn(u"e_mail_folder: _eid 1001, Cannot find folder_id in plone '700' => put in in description", errors)
+        self.assertIn(
+            u"e_mail_folder: _eid 1001, Cannot find folder_id in plone '700' => put in in description", errors
+        )
         self.assertIn(u"e_mail_folder: _eid 1002, Cannot find folder_id '702' in existing folders", errors)
         # the empty mail category is filled with the folder one
         mail = self.get("incoming-mail/202309/1003")
@@ -700,4 +703,3 @@ class TestDataTransfer1(unittest.TestCase):
         self.assertEqual(storage["course"]["y__type"], 1)  # only the modified mail is updated
         self.assertEqual(omail.modification_date, omail.creation_date)
         self.assertIn(u"e_mail:2001,OM,?,/outgoing-mail/202302/2001", self.log())
-

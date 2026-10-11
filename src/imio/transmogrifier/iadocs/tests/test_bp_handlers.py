@@ -145,8 +145,17 @@ class TestBluePrintHandlers(unittest.TestCase):
     def test_get_contact_name(self):
         # person, without parent
         self.assertEqual(
-            get_contact_name({u"lastname": u"Dupont", u"firstname": u"Jean", u"_email1": None, u"_email2": u"j@d.be",
-                              u"_function": u"Directeur", u"enterprise_number": u"0123"}, {}),
+            get_contact_name(
+                {
+                    u"lastname": u"Dupont",
+                    u"firstname": u"Jean",
+                    u"_email1": None,
+                    u"_email2": u"j@d.be",
+                    u"_function": u"Directeur",
+                    u"enterprise_number": u"0123",
+                },
+                {},
+            ),
             ([u"Dupont Jean", u"j@d.be", u"Directeur", u"NE:0123"], []),
         )
         # same values as parent are not repeated
@@ -178,10 +187,22 @@ class TestBluePrintHandlers(unittest.TestCase):
     def test_get_contact_info(self):
         section = self
         self.storage.setdefault("data", {})["e_contact"] = {
-            u"1": {u"lastname": u"Dupont", u"firstname": u"Jean", u"_parent_id": u"2", u"_function": u"Gérant",
-                   u"_company": u"Dupont SPRL", u"_other": u"Tél. après 17h"},
-            u"2": {u"lastname": u"Électricité SA", u"_street": u"Rue Basse", u"_pc": u"7000", u"_city": u"Mons",
-                   u"_phone1": u"065/1", u"_cell1": u"0475/1"},
+            u"1": {
+                u"lastname": u"Dupont",
+                u"firstname": u"Jean",
+                u"_parent_id": u"2",
+                u"_function": u"Gérant",
+                u"_company": u"Dupont SPRL",
+                u"_other": u"Tél. après 17h",
+            },
+            u"2": {
+                u"lastname": u"Électricité SA",
+                u"_street": u"Rue Basse",
+                u"_pc": u"7000",
+                u"_city": u"Mons",
+                u"_phone1": u"065/1",
+                u"_cell1": u"0475/1",
+            },
             u"3": {u"lastname": u"Dupont SPRL", u"_company": u"Dupont SPRL"},
         }
         # parent information, company, parent address and phones, complement
@@ -203,14 +224,16 @@ class TestBluePrintHandlers(unittest.TestCase):
         self.assertTrue(all(isinstance(line, six.text_type) for line in desc + d_t))
         # empty related label, company equal to the name
         desc, d_t = [], []
-        self.assertTrue(get_contact_info(section, {u"_cid": u"3"}, u"DESTINATAIRE", u"_cid", u"", desc, d_t,
-                                         related_label=u""))
+        self.assertTrue(
+            get_contact_info(section, {u"_cid": u"3"}, u"DESTINATAIRE", u"_cid", u"", desc, d_t, related_label=u"")
+        )
         self.assertListEqual(desc, [u"DESTINATAIRE: Dupont SPRL."])
         self.assertListEqual(d_t, [u"DESTINATAIRE: Dupont SPRL."])
         # nothing: no contact id field, only quotes in free text
         desc, d_t = [], []
-        self.assertFalse(get_contact_info(section, {u"_cid": u"1", u"_free": u'""\n'}, u"EXPÉDITEUR", u"", u"_free",
-                                          desc, d_t))
+        self.assertFalse(
+            get_contact_info(section, {u"_cid": u"1", u"_free": u'""\n'}, u"EXPÉDITEUR", u"", u"_free", desc, d_t)
+        )
         self.assertFalse(get_contact_info(section, {u"_cid": None}, u"EXPÉDITEUR", u"_cid", u"", desc, d_t))
         self.assertListEqual(desc + d_t, [])
 
@@ -414,9 +437,7 @@ class TestAServiceUpdate(DmsTestCase):
         )
         # plonegroup services are reloaded in storage at the end
         self.assertIn(("dto", "INFO", "Part a: some services have been updated."), self.logs.records)
-        self.assertDictEqual(
-            storage["data"]["p_eid_to_orgs"], {u"5": {"uid": grh.UID()}, u"10": {"uid": secr.UID()}}
-        )
+        self.assertDictEqual(storage["data"]["p_eid_to_orgs"], {u"5": {"uid": grh.UID()}, u"10": {"uid": secr.UID()}})
         self.assertListEqual(storage["data"]["p_orgs_all"][secr.UID()]["eids"], [u"10"])
         self.assertDictEqual(dict(storage["course"]), {"a__service_update": 6})
 
@@ -480,9 +501,18 @@ class TestBMailtypeUpdate(DmsTestCase):
         ts_before = [dict(dic) for dic in api.portal.get_registry_record(MAILTYPES["ts"])]
 
         def match(eid, c_type, key, title, active=True):
-            return {u"_bpk": u"e_mailtype_match", u"_eid": eid, u"_etype": u"E", u"_etitle": title,
-                    u"_enature": u"", u"_esource": u"", u"_c_type": c_type, u"_key": key, u"_title": title,
-                    u"_active": active}
+            return {
+                u"_bpk": u"e_mailtype_match",
+                u"_eid": eid,
+                u"_etype": u"E",
+                u"_etitle": title,
+                u"_enature": u"",
+                u"_esource": u"",
+                u"_c_type": c_type,
+                u"_key": key,
+                u"_title": title,
+                u"_active": active,
+            }
 
         items = [
             match(u"1", u"te", u"courrier", u"Courrier"),  # already existing
@@ -609,16 +639,22 @@ class TestContactAsTextUpdate(DmsTestCase):
         )
 
         def recip(eid, mail_id, contact_id=None, text=None, **kw):
-            dic = {u"_bpk": u"e_mail_recip_o", u"_eid": eid, u"_mail_id": mail_id, u"_contact_id": contact_id,
-                   u"_contact_text": text}
+            dic = {
+                u"_bpk": u"e_mail_recip_o",
+                u"_eid": eid,
+                u"_mail_id": mail_id,
+                u"_contact_id": contact_id,
+                u"_contact_text": text,
+            }
             dic.update(kw)
             return dic
 
         items = [
             recip(u"1", u"100", u"7"),  # contact already created as object: passed
             recip(u"2", u"100"),  # no contact: passed
-            recip(u"3", u"100", u"8", u"Remis en main propre", _action=u"pour suite", _message=u"urgent",
-                  _response=None),
+            recip(
+                u"3", u"100", u"8", u"Remis en main propre", _action=u"pour suite", _message=u"urgent", _response=None
+            ),
             recip(u"4", u"101", u"8"),  # mail not found
             recip(u"5", u"100", None, u"Service X\nRue Y 2"),
             {u"_bpk": u"e_mail_o", u"_eid": u"6"},
@@ -666,8 +702,10 @@ class TestContactAsTextUpdate(DmsTestCase):
         storage = self.make_storage(
             "q",
             e_mail_o={u"100": {u"path": om_path}},
-            e_contact_path={u"7": {u"path": u"/contacts/jeancourant", u"_is_user": True},
-                            u"8": {u"path": u"/contacts/jeancourant", u"_is_user": False}},
+            e_contact_path={
+                u"7": {u"path": u"/contacts/jeancourant", u"_is_user": True},
+                u"8": {u"path": u"/contacts/jeancourant", u"_is_user": False},
+            },
             e_contact=self.e_contact,
             desc_only=True,
         )
@@ -734,7 +772,7 @@ class TestContactAsTextUpdate(DmsTestCase):
             recip(u"1", u"100", u"7"),  # skipped real contact
             recip(u"2", u"100"),  # no contact
             recip(u"3", u"100", u"8", description=u"Desc", data_transfer=u"DT"),
-            recip(u"4", u"100", text=u"\"\""),  # only quotes: no contact info
+            recip(u"4", u"100", text=u'""'),  # only quotes: no contact info
         ]
         bp = self.section(ContactAsTextUpdate, "q__1_recipients_as_text", options, items, storage)
         self.assertListEqual(
@@ -750,7 +788,7 @@ class TestContactAsTextUpdate(DmsTestCase):
                     data_transfer=u"DT\r\nDESTINATAIRE: Dupont Jean, jean@dupont.be.\r\n"
                     u"ADRESSE DESTINATAIRE: Rue Haute 7340 Colfontaine.\r\nTÉL DESTINATAIRE: 065/123456.",
                 ),
-                recip(u"4", u"100", text=u"\"\""),
+                recip(u"4", u"100", text=u'""'),
             ],
         )
         self.assertNotIn(u"_eid", storage["data"]["e_mail_recipient"])  # no batch store with original item
@@ -928,8 +966,9 @@ class TestContactSet(DmsTestCase):
         storage["plone"]["def_contact"] = None
         items = [{u"_bpk": u"e_mail_recip_o", u"_eid": u"1", u"_mail_id": u"100", u"_contact_id": u"6"}]
         bp = self.section(ContactSet, "q__1_recipients", self.options2, items, storage)
-        self.assertListEqual(list(bp), [{u"_bpk": u"e_mail_recip_o", u"_eid": u"1", u"_mail_id": u"100",
-                                         u"_contact_id": u"6"}])
+        self.assertListEqual(
+            list(bp), [{u"_bpk": u"e_mail_recip_o", u"_eid": u"1", u"_mail_id": u"100", u"_contact_id": u"6"}]
+        )
         bp = self.section(ContactSet, "q__1_recipients", dict(self.options2, **{"yield": "0"}), items, storage)
         self.assertListEqual(list(bp), [])
         # part not run
@@ -1045,8 +1084,17 @@ class TestHandlersFunctions(DTestCase):
         lecteur.firstname = None
         lecteur.userid = None
         # existing person: fields completed if empty
-        res = person_dic(bp, u"personnel", u"u9", {u"_eid": u"1"}, u"lecteur", "lecteur", u"Existing",
-                         firstname=u"Jef", lastname=u"Lecteur")
+        res = person_dic(
+            bp,
+            u"personnel",
+            u"u9",
+            {u"_eid": u"1"},
+            u"lecteur",
+            "lecteur",
+            u"Existing",
+            firstname=u"Jef",
+            lastname=u"Lecteur",
+        )
         self.assertListEqual(
             res,
             [
@@ -1074,12 +1122,22 @@ class TestHandlersFunctions(DTestCase):
         self.assertEqual(res[0][u"internal_number"], u"u8")
         self.assertNotIn("userid", res[0])
         # new person, without userid nor firstname and without deactivation
-        res = person_dic(bp, u"personnel", u"u7", {u"_eid": u"4"}, None, "dupont", u"Unmatched", lastname=u"Dupont",
-                         transitions=())
+        res = person_dic(
+            bp, u"personnel", u"u7", {u"_eid": u"4"}, None, "dupont", u"Unmatched", lastname=u"Dupont", transitions=()
+        )
         self.assertListEqual(
             res,
-            [self.new_person_dic("/contacts/personnel-folder/dupont", u"4", u"u7", u"Unmatched", bpk=u"personnel",
-                                 _deactivate=False, lastname=u"Dupont")],
+            [
+                self.new_person_dic(
+                    "/contacts/personnel-folder/dupont",
+                    u"4",
+                    u"u7",
+                    u"Unmatched",
+                    bpk=u"personnel",
+                    _deactivate=False,
+                    lastname=u"Dupont",
+                )
+            ],
         )
         self.assertNotIn(u"u7", storage["data"]["p_euid_to_pers"])  # stored by post_actions after creation
 
@@ -1121,8 +1179,12 @@ class TestDOMSenderCreation(DTestCase):
         self.assertIs(bp.eid_to_orgs, storage["data"]["p_eid_to_orgs"])
         self.assertIs(bp.e_c_s, storage["data"]["e_contacts_sender"])
         self.assertIs(bp.e_u_m, storage["data"]["e_user_match"])
-        bp = self.section(DOMSenderCreation, "d__om_sender_creation", dict(self.options, sender_user_dic="e_contact"),
-                          storage=self.make_storage("d"))
+        bp = self.section(
+            DOMSenderCreation,
+            "d__om_sender_creation",
+            dict(self.options, sender_user_dic="e_contact"),
+            storage=self.make_storage("d"),
+        )
         self.assertDictEqual(bp.e_c_s, {})
         self.assertDictEqual(bp.e_u_m, {})
 
@@ -1163,8 +1225,9 @@ class TestDOMSenderCreation(DTestCase):
         path = "/contacts/personnel-folder/scanner"
         self.assertDictEqual(
             pdic,
-            self.new_person_dic(path, u"102", u"u2", u"Matched", userid=u"scanner", firstname=u"Jean",
-                                lastname=u"Scanner"),
+            self.new_person_dic(
+                path, u"102", u"u2", u"Matched", userid=u"scanner", firstname=u"Jean", lastname=u"Scanner"
+            ),
         )
         self.new_person(pdic, storage)
         hpdic = next(gen)
@@ -1187,8 +1250,9 @@ class TestDOMSenderCreation(DTestCase):
         self.new_person(pdic, storage)
         self.assertEqual(next(gen)["_path"], path + "/" + dg.UID())
         self.assertListEqual(list(gen), [{u"_bpk": u"e_mail_o", u"_eid": u"105"}])
-        self.assertIn(("dto", "INFO", "Part d: some internal persons or/and held positions have been added."),
-                      self.logs.records)
+        self.assertIn(
+            ("dto", "INFO", "Part d: some internal persons or/and held positions have been added."), self.logs.records
+        )
         self.assertDictEqual(dict(storage["course"]), {"d__om_sender_creation": 5, "post_actions": 3})
         # nothing to add
         bp = self.section(DOMSenderCreation, "d__om_sender_creation", self.options, items[:2], storage)
@@ -1238,14 +1302,23 @@ class TestDPersonnelCreation(DTestCase):
                     u"title": u"Existing",
                     "_act": "U",
                 },
-                self.new_person_dic("/contacts/personnel-folder/scanner", u"21", u"u2", u"Matched", bpk=u"personnel",
-                                    userid=u"scanner", firstname=u"Jean", lastname=u"Scanner"),
+                self.new_person_dic(
+                    "/contacts/personnel-folder/scanner",
+                    u"21",
+                    u"u2",
+                    u"Matched",
+                    bpk=u"personnel",
+                    userid=u"scanner",
+                    firstname=u"Jean",
+                    lastname=u"Scanner",
+                ),
                 {u"_bpk": u"e_mail_sender", u"_eid": u"24"},
             ],
         )
         self.assertEqual(storage["data"]["p_euid_to_pers"][u"u1"], agent.UID())
-        self.assertIn(("dto", "INFO", "Part d: some internal persons or/and held positions have been added."),
-                      self.logs.records)
+        self.assertIn(
+            ("dto", "INFO", "Part d: some internal persons or/and held positions have been added."), self.logs.records
+        )
         self.assertDictEqual(dict(storage["course"]), {"d__personnel_creation": 4})
         # last name first
         storage = self.d_storage()
@@ -1295,8 +1368,14 @@ class TestECategoryUpdate(DmsTestCase):
         self.assertFalse(bp.b_cond)
         storage = self.make_storage("e", e_category_parent={u"A1": {u"_parent_id": u"-1"}}, e_category_code={u"x": 1})
         storage["data"]["p_category"] = {}
-        options = dict(self.options2, title_replace_slash="0", decimal_import="0", parent_relation="e_category_parent",
-                       category_code_eid="e_category_code", prefix="-1")
+        options = dict(
+            self.options2,
+            title_replace_slash="0",
+            decimal_import="0",
+            parent_relation="e_category_parent",
+            category_code_eid="e_category_code",
+            prefix="-1",
+        )
         bp = self.section(ECategoryUpdate, "e__category_create", options, storage=storage)
         self.assertTrue(bp.b_cond)
         self.assertFalse(bp.replace_slash)
@@ -1313,8 +1392,17 @@ class TestECategoryUpdate(DmsTestCase):
         options = dict(self.options, b_condition="python: True")
 
         def match(eid, ecode, etitle, pcode, ptitle, **kw):
-            dic = {u"_bpk": u"e_category_match", u"_eid": eid, u"_ecode": ecode, u"_etitle": etitle, u"_eactive": True,
-                   u"_pcode": pcode, u"_puid": u"", u"_ptitle": ptitle, u"_pactive": False}
+            dic = {
+                u"_bpk": u"e_category_match",
+                u"_eid": eid,
+                u"_ecode": ecode,
+                u"_etitle": etitle,
+                u"_eactive": True,
+                u"_pcode": pcode,
+                u"_puid": u"",
+                u"_ptitle": ptitle,
+                u"_pactive": False,
+            }
             dic.update(kw)
             return dic
 
@@ -1328,10 +1416,26 @@ class TestECategoryUpdate(DmsTestCase):
         self.assertListEqual(
             list(bp),
             [
-                match(u"1", u"1.753", u"Armes / munitions", u"-1.753", u"Armes - munitions", _pactive=True, _act="U",
-                      _type="ClassificationCategory", title=u"Armes - munitions"),
-                match(u"2", u"1.7", u"Police", u"-1.7", u"Tâches de police.", _type="ClassificationCategory",
-                      title=u"Tâches de police."),
+                match(
+                    u"1",
+                    u"1.753",
+                    u"Armes / munitions",
+                    u"-1.753",
+                    u"Armes - munitions",
+                    _pactive=True,
+                    _act="U",
+                    _type="ClassificationCategory",
+                    title=u"Armes - munitions",
+                ),
+                match(
+                    u"2",
+                    u"1.7",
+                    u"Police",
+                    u"-1.7",
+                    u"Tâches de police.",
+                    _type="ClassificationCategory",
+                    title=u"Tâches de police.",
+                ),
                 {u"_bpk": u"e_category", u"_eid": u"4"},
             ],
         )
@@ -1370,13 +1474,33 @@ class TestECategoryUpdate(DmsTestCase):
         self.assertListEqual(
             result,
             [
-                cat(u"50", u"-1.759.1", u"Marchés / foires", _pcode=u"-1.759.1", _ptitle=u"Marchés - foires",
-                    _puid=tree[u"-1.759.1"]["uid"], _pactive=True, _act="N", _type="ClassificationCategory",
-                    title=u"Marchés - foires"),
+                cat(
+                    u"50",
+                    u"-1.759.1",
+                    u"Marchés / foires",
+                    _pcode=u"-1.759.1",
+                    _ptitle=u"Marchés - foires",
+                    _puid=tree[u"-1.759.1"]["uid"],
+                    _pactive=True,
+                    _act="N",
+                    _type="ClassificationCategory",
+                    title=u"Marchés - foires",
+                ),
                 cat(u"51", u"-1.759", u"Foires", _error=True, _type="ClassificationCategory", title=u""),
-                cat(u"52", u"-1.753", u"Armes", False, _pcode=u"-1.753-a", _ptitle=u"Armes",
-                    _puid=tree[u"-1.753-a"]["uid"], _pactive=False, _act="N", _error=True,
-                    _type="ClassificationCategory", title=u"Armes"),
+                cat(
+                    u"52",
+                    u"-1.753",
+                    u"Armes",
+                    False,
+                    _pcode=u"-1.753-a",
+                    _ptitle=u"Armes",
+                    _puid=tree[u"-1.753-a"]["uid"],
+                    _pactive=False,
+                    _act="N",
+                    _error=True,
+                    _type="ClassificationCategory",
+                    title=u"Armes",
+                ),
             ],
         )
         # Plone 4 behaviour (bug?): the parent title is not found in e_category (stored by code and eid): code used
@@ -1390,10 +1514,18 @@ class TestECategoryUpdate(DmsTestCase):
         self.assertListEqual(
             [rec for rec in self.logs.records if rec[0] == "dti"],
             [
-                ("dti", "ERROR", u"e_category: _eid 51, Same code '-1.759' with title 'Foires' previously created "
-                                 u"with title '-1.759'"),
-                ("dti", "ERROR", u"e_category: _eid 52, Same code '-1.753' with title 'Armes' previously created "
-                                 u"with title 'Armes - munitions'"),  # title updated above
+                (
+                    "dti",
+                    "ERROR",
+                    u"e_category: _eid 51, Same code '-1.759' with title 'Foires' previously created "
+                    u"with title '-1.759'",
+                ),
+                (
+                    "dti",
+                    "ERROR",
+                    u"e_category: _eid 52, Same code '-1.753' with title 'Armes' previously created "
+                    u"with title 'Armes - munitions'",
+                ),  # title updated above
             ],
         )
         # prefix: the prefix part is not a parent, title kept with slash
@@ -1406,8 +1538,9 @@ class TestECategoryUpdate(DmsTestCase):
         # not decimal codes: parent relation
         e_category_parent = {u"A1": {u"_parent_id": u"-1"}, u"A2": {u"_parent_id": u"ZZ"}}
         storage = self.make_storage("e", e_category={}, e_category_parent=e_category_parent)
-        options = dict(self.options2, b_condition="python: True", decimal_import="0",
-                       parent_relation="e_category_parent")
+        options = dict(
+            self.options2, b_condition="python: True", decimal_import="0", parent_relation="e_category_parent"
+        )
         items = [cat(u"54", u"A1", u"A un"), cat(u"55", u"A2", u"A deux"), cat(u"56", u"A3", u"A trois")]
         bp = self.section(ECategoryUpdate, "e__category_create", options, items, storage)
         self.assertListEqual([item[u"_pcode"] for item in bp], [u"A1", u"A2", u"A3"])
@@ -1416,13 +1549,24 @@ class TestECategoryUpdate(DmsTestCase):
         self.assertEqual(aq_parent(tree[u"A2"]["obj"]).getPhysicalPath(), self.portal.tree.getPhysicalPath())
         self.assertEqual(aq_parent(tree[u"A3"]["obj"]).getPhysicalPath(), self.portal.tree.getPhysicalPath())
         self.assertTrue(items[1][u"_error"])
-        self.assertIn(("dti", "ERROR", u"e_category: _eid 55, The parent 'ZZ' is not in the created categories."),
-                      self.logs.records)
+        self.assertIn(
+            ("dti", "ERROR", u"e_category: _eid 55, The parent 'ZZ' is not in the created categories."),
+            self.logs.records,
+        )
         # category code eid: e_category and parent relation stored by eid
-        storage = self.make_storage("e", e_category={u"61": {u"_ecode": u"-1.7"}}, e_category_code={u"-1.7": {}},
-                                    e_category_parent={u"60": {u"_parent_id": u"61"}})
-        options = dict(self.options2, b_condition="python: True", decimal_import="0",
-                       parent_relation="e_category_parent", category_code_eid="e_category_code")
+        storage = self.make_storage(
+            "e",
+            e_category={u"61": {u"_ecode": u"-1.7"}},
+            e_category_code={u"-1.7": {}},
+            e_category_parent={u"60": {u"_parent_id": u"61"}},
+        )
+        options = dict(
+            self.options2,
+            b_condition="python: True",
+            decimal_import="0",
+            parent_relation="e_category_parent",
+            category_code_eid="e_category_code",
+        )
         bp = self.section(ECategoryUpdate, "e__category_create", options, [cat(u"60", u"B1", u"B un")], storage)
         list(bp)
         self.assertEqual(aq_parent(get_categories(self.portal)[u"B1"]["obj"]).identifier, u"-1.7")
@@ -1458,8 +1602,15 @@ class TestF1Level3Handler(DmsTestCase):
         self.assertListEqual(
             list(bp),
             [
-                {u"_bpk": u"e_folder", u"_eid": u"4", u"_parent_id": u"2", u"title": u"Sous-dossier | Pièces",
-                 u"_level": 3, u"_type": "ClassificationSubfolder", u"_error": True},
+                {
+                    u"_bpk": u"e_folder",
+                    u"_eid": u"4",
+                    u"_parent_id": u"2",
+                    u"title": u"Sous-dossier | Pièces",
+                    u"_level": 3,
+                    u"_type": "ClassificationSubfolder",
+                    u"_error": True,
+                },
                 {u"_bpk": u"e_folder", u"_eid": u"3", u"_parent_id": u"2", u"title": u"Sous-dossier", u"_level": 2},
             ],
         )
@@ -1491,19 +1642,38 @@ class TestF2FolderSubfolderSplit(DmsTestCase):
     def test___iter__(self):
         storage = self.make_storage("f")
         items = [
-            {u"_bpk": u"e_folder", u"_eid": u"1", u"title": u"Dossier", u"_s__eid": u"1-1", u"_s_title": u"Farde",
-             u"_s__parent_id": u"1"},
+            {
+                u"_bpk": u"e_folder",
+                u"_eid": u"1",
+                u"title": u"Dossier",
+                u"_s__eid": u"1-1",
+                u"_s_title": u"Farde",
+                u"_s__parent_id": u"1",
+            },
             {u"_bpk": u"e_folder", u"_eid": u"2", u"title": u"Dossier 2", u"_s__eid": None},
         ]
         bp = self.section(F2FolderSubfolderSplit, "f__2_folder_subfolder", self.options, items, storage)
         self.assertListEqual(
             list(bp),
             [
-                {u"_bpk": u"e_folder", u"_eid": u"1", u"title": u"Dossier", u"_s__eid": u"1-1", u"_s_title": u"Farde",
-                 u"_s__parent_id": u"1"},
+                {
+                    u"_bpk": u"e_folder",
+                    u"_eid": u"1",
+                    u"title": u"Dossier",
+                    u"_s__eid": u"1-1",
+                    u"_s_title": u"Farde",
+                    u"_s__parent_id": u"1",
+                },
                 # prefixed keys are kept, bp_key is not used
-                {u"_bpk": u"e_folder", u"_eid": u"1-1", u"title": u"Farde", u"_parent_id": u"1", u"_s__eid": u"1-1",
-                 u"_s_title": u"Farde", u"_s__parent_id": u"1"},
+                {
+                    u"_bpk": u"e_folder",
+                    u"_eid": u"1-1",
+                    u"title": u"Farde",
+                    u"_parent_id": u"1",
+                    u"_s__eid": u"1-1",
+                    u"_s_title": u"Farde",
+                    u"_s__parent_id": u"1",
+                },
                 {u"_bpk": u"e_folder", u"_eid": u"2", u"title": u"Dossier 2", u"_s__eid": None},
             ],
         )
@@ -1563,10 +1733,20 @@ class TestF3TextCategoriesToId(DmsTestCase):
             list(bp),
             [
                 folder(u"1", u"-1.7/ -1.75", classification_categories=[cats[u"-1.7"]["uid"], cats[u"-1.75"]["uid"]]),
-                folder(u"2", u"-1.7/-9.9", classification_categories=[cats[u"-1"]["uid"]], _error=True,
-                       classification_informations=u"Info\r\nCLASSEMENT: -1.7/-9.9"),
-                folder(u"3", u"-1.7/abc", classification_categories=[cats[u"-1"]["uid"]], _error=True,
-                       classification_informations=u"CLASSEMENT: -1.7/abc"),
+                folder(
+                    u"2",
+                    u"-1.7/-9.9",
+                    classification_categories=[cats[u"-1"]["uid"]],
+                    _error=True,
+                    classification_informations=u"Info\r\nCLASSEMENT: -1.7/-9.9",
+                ),
+                folder(
+                    u"3",
+                    u"-1.7/abc",
+                    classification_categories=[cats[u"-1"]["uid"]],
+                    _error=True,
+                    classification_informations=u"CLASSEMENT: -1.7/abc",
+                ),
                 folder(u"4", u"-1.753", classification_categories=[cats[u"-1.753"]["uid"]]),
                 folder(u"5", None),
             ],
@@ -1587,8 +1767,13 @@ class TestF3TextCategoriesToId(DmsTestCase):
         )
         self.assertListEqual(next(iter(bp))[u"classification_categories"], [cats[u"-1"]["uid"]])
         # part not run
-        bp = self.section(F3TextCategoriesToId, "f__3_category_id_insert", self.options, [folder(u"1", u"-1.7")],
-                          self.make_storage("a"))
+        bp = self.section(
+            F3TextCategoriesToId,
+            "f__3_category_id_insert",
+            self.options,
+            [folder(u"1", u"-1.7")],
+            self.make_storage("a"),
+        )
         self.assertListEqual(list(bp), [folder(u"1", u"-1.7")])
 
 
@@ -1603,8 +1788,10 @@ class TestHContactTypeUpdate(DmsTestCase):
         for typ in ("types", "levels"):  # as the Initialization section
             key = "p_dir_org_{}".format(typ)
             storage["data"][key] = OrderedDict(
-                [(safe_unicode(t["token"]), {"name": safe_unicode(t["name"])})
-                 for t in getattr(directory, "organization_%s" % typ)]
+                [
+                    (safe_unicode(t["token"]), {"name": safe_unicode(t["name"])})
+                    for t in getattr(directory, "organization_%s" % typ)
+                ]
             )
             storage["data"]["{}_len".format(key)] = len(storage["data"][key])
         return storage
@@ -1622,13 +1809,18 @@ class TestHContactTypeUpdate(DmsTestCase):
         directory = self.portal["contacts"]
         types_before = [dict(dic) for dic in directory.organization_types]
         self.assertListEqual(
-            [dic["token"] for dic in types_before], [u"non-defini", u"sa", u"commune", u"cpas", u"intercommunale",
-                                                     u"zp", u"zs"]
+            [dic["token"] for dic in types_before],
+            [u"non-defini", u"sa", u"commune", u"cpas", u"intercommunale", u"zp", u"zs"],
         )
 
         def match(eid, pid, ptitle):
-            return {u"_bpk": u"e_contact_type_match", u"_eid": eid, u"_etitle": ptitle, u"_pid": pid,
-                    u"_ptitle": ptitle}
+            return {
+                u"_bpk": u"e_contact_type_match",
+                u"_eid": eid,
+                u"_etitle": ptitle,
+                u"_pid": pid,
+                u"_ptitle": ptitle,
+            }
 
         items = [
             match(u"1", u"commune", u"Commune"),
@@ -1658,8 +1850,9 @@ class TestHContactTypeUpdate(DmsTestCase):
         directory.organization_types = types_before
         bp = self.section(HContactTypeUpdate, "h__contact_type_update", {}, items[1:2], self.h_storage())
         list(bp)
-        self.assertListEqual([dict(dic) for dic in directory.organization_types],
-                             types_before + [{u"token": u"asbl", u"name": u"ASBL"}])
+        self.assertListEqual(
+            [dict(dic) for dic in directory.organization_types], types_before + [{u"token": u"asbl", u"name": u"ASBL"}]
+        )
         # Plone 4 behaviour (bug?): no new type, the directory is not updated (renamed or unused types)
         directory.organization_types = types_before
         bp = self.section(HContactTypeUpdate, "h__contact_type_update", self.options, items[3:4], self.h_storage())
@@ -1668,7 +1861,6 @@ class TestHContactTypeUpdate(DmsTestCase):
 
 
 class TestI1ContactUpdate(DmsTestCase):
-
     def test___init__(self):
         bp = self.section(I1ContactUpdate, "i__1_contact_update", {}, storage=self.make_storage("a"))
         self.assertEqual(bp.parts, "i")
@@ -1678,32 +1870,71 @@ class TestI1ContactUpdate(DmsTestCase):
 
     def test___iter__(self):
         def address(**kw):
-            dic = {u"_pc": u"", u"_city": u"", u"_number": u"", u"_box": u"", u"_street": u"", u"_imp_addr": u"",
-                   u"_imp_pc": u"", u"_imp_city": u"", u"_imp_country": u"", u"_phone": u"", u"_cell": u"",
-                   u"_fax": u"", u"_website": u"", u"_email": u""}
+            dic = {
+                u"_pc": u"",
+                u"_city": u"",
+                u"_number": u"",
+                u"_box": u"",
+                u"_street": u"",
+                u"_imp_addr": u"",
+                u"_imp_pc": u"",
+                u"_imp_city": u"",
+                u"_imp_country": u"",
+                u"_phone": u"",
+                u"_cell": u"",
+                u"_fax": u"",
+                u"_website": u"",
+                u"_email": u"",
+            }
             dic.update(kw)
             return dic
 
         def contact(eid, **kw):
-            dic = {u"_bpk": u"e_contact", u"_eid": eid, u"lastname": u"Dupont", u"firstname": u"Jean", u"_ptitle": None,
-                   u"_name2": None}
+            dic = {
+                u"_bpk": u"e_contact",
+                u"_eid": eid,
+                u"lastname": u"Dupont",
+                u"firstname": u"Jean",
+                u"_ptitle": None,
+                u"_name2": None,
+            }
             dic.update(kw)
             return dic
 
         e_address = {
-            u"A1": address(_pc=u"7340", _city=u"Colfontaine", _number=u"12", _box=u"b", _street=u"Rue Haute",
-                           _imp_addr=u"Rue Haute 12b", _imp_country=u"France", _phone=u"065/1", _cell=u"0475/1",
-                           _fax=u"065/2", _website=u"www.dupont.be", _email=u"j@dupont.be"),
-            u"A2": address(_pc=u"7000", _city=u"Mons", _box=u"3", _imp_addr=u"Grand-Place\n 1 ",
-                           _imp_country=u"Belgique"),
+            u"A1": address(
+                _pc=u"7340",
+                _city=u"Colfontaine",
+                _number=u"12",
+                _box=u"b",
+                _street=u"Rue Haute",
+                _imp_addr=u"Rue Haute 12b",
+                _imp_country=u"France",
+                _phone=u"065/1",
+                _cell=u"0475/1",
+                _fax=u"065/2",
+                _website=u"www.dupont.be",
+                _email=u"j@dupont.be",
+            ),
+            u"A2": address(
+                _pc=u"7000", _city=u"Mons", _box=u"3", _imp_addr=u"Grand-Place\n 1 ", _imp_country=u"Belgique"
+            ),
             u"A3": address(_imp_addr=u"Rue X 1", _imp_pc=u"1000", _imp_city=u"Bruxelles"),
         }
         items = [
             contact(u"1", _addr_id=u"A1"),
             contact(u"2", _addr_id=u"A2"),
             contact(u"3", _addr_id=u"A3", _phone2=u"02/1", _cell3=u"0476/1", _email1=u"x@y.be", _web=u"www.y.be"),
-            contact(u"4", _street=u"Rue Basse\n2", _street_nb=u"5", _street_nb_box=u"a", _pc=u"7340",
-                    _city=u"Colfontaine", _country=u"belgique", _fax=u"065/3"),
+            contact(
+                u"4",
+                _street=u"Rue Basse\n2",
+                _street_nb=u"5",
+                _street_nb_box=u"a",
+                _pc=u"7340",
+                _city=u"Colfontaine",
+                _country=u"belgique",
+                _fax=u"065/3",
+            ),
             contact(u"5", _street_nb_box=u"a", _country=u"France"),
             contact(u"6", _parent_id=u"1", lastname=u"", _ptitle=u"Directeur"),
             contact(u"7", lastname=u"", _name2=u"Service travaux"),
@@ -1716,22 +1947,63 @@ class TestI1ContactUpdate(DmsTestCase):
         self.assertListEqual(
             list(bp),
             [
-                contact(u"1", _addr_id=u"A1", zip_code=u"7340", city=u"Colfontaine", number=u"12 bte b",
-                        street=u"Rue Haute", country=u"France", phone=u"065/1", cell_phone=u"0475/1", fax=u"065/2",
-                        website=u"www.dupont.be", email=u"j@dupont.be", use_parent_address=False),
-                contact(u"2", _addr_id=u"A2", zip_code=u"7000", city=u"Mons", number=u"3", street=u"Grand-Place, 1",
-                        **empty),
-                contact(u"3", _addr_id=u"A3", _phone2=u"02/1", _cell3=u"0476/1", _email1=u"x@y.be", _web=u"www.y.be",
-                        street=u"Rue X 1", zip_code=u"1000", city=u"Bruxelles", phone=u"02/1", cell_phone=u"0476/1",
-                        email=u"x@y.be", website=u"www.y.be", use_parent_address=False),
-                contact(u"4", _street=u"Rue Basse\n2", _street_nb=u"5", _street_nb_box=u"a", _pc=u"7340",
-                        _city=u"Colfontaine", _country=u"belgique", _fax=u"065/3", street=u"Rue Basse, 2",
-                        number=u"5 a", zip_code=u"7340", city=u"Colfontaine", fax=u"065/3", **empty),
+                contact(
+                    u"1",
+                    _addr_id=u"A1",
+                    zip_code=u"7340",
+                    city=u"Colfontaine",
+                    number=u"12 bte b",
+                    street=u"Rue Haute",
+                    country=u"France",
+                    phone=u"065/1",
+                    cell_phone=u"0475/1",
+                    fax=u"065/2",
+                    website=u"www.dupont.be",
+                    email=u"j@dupont.be",
+                    use_parent_address=False,
+                ),
+                contact(
+                    u"2", _addr_id=u"A2", zip_code=u"7000", city=u"Mons", number=u"3", street=u"Grand-Place, 1", **empty
+                ),
+                contact(
+                    u"3",
+                    _addr_id=u"A3",
+                    _phone2=u"02/1",
+                    _cell3=u"0476/1",
+                    _email1=u"x@y.be",
+                    _web=u"www.y.be",
+                    street=u"Rue X 1",
+                    zip_code=u"1000",
+                    city=u"Bruxelles",
+                    phone=u"02/1",
+                    cell_phone=u"0476/1",
+                    email=u"x@y.be",
+                    website=u"www.y.be",
+                    use_parent_address=False,
+                ),
+                contact(
+                    u"4",
+                    _street=u"Rue Basse\n2",
+                    _street_nb=u"5",
+                    _street_nb_box=u"a",
+                    _pc=u"7340",
+                    _city=u"Colfontaine",
+                    _country=u"belgique",
+                    _fax=u"065/3",
+                    street=u"Rue Basse, 2",
+                    number=u"5 a",
+                    zip_code=u"7340",
+                    city=u"Colfontaine",
+                    fax=u"065/3",
+                    **empty
+                ),
                 # Plone 4 behaviour (bug?): box without number gives a leading space
                 contact(u"5", _street_nb_box=u"a", _country=u"France", number=u" a", country=u"France", **empty),
                 # no address: parent address, empty lastname replaced by title
-                dict(contact(u"6", _parent_id=u"1", lastname=u"Directeur", _ptitle=None), **dict(
-                    empty, use_parent_address=True)),
+                dict(
+                    contact(u"6", _parent_id=u"1", lastname=u"Directeur", _ptitle=None),
+                    **dict(empty, use_parent_address=True)
+                ),
                 contact(u"7", lastname=u"Service travaux", _name2=None, **empty),
                 {u"_bpk": u"e_service", u"_eid": u"8"},
             ],
@@ -1787,16 +2059,34 @@ class TestI2ContactUpdate(DmsTestCase):
         cdate = storage["creation_date"]
 
         def org(eid, title, division=u"", **kw):
-            dic = {u"_bpk": u"e_contact", u"_eid": eid, u"_organization": title, u"_division": division,
-                   u"_service": u"", u"_pc": u"7340", u"_city": u"Colfontaine", u"_street": u"Rue Haute",
-                   u"_email1": u"info@commune.be", u"_phone1": u"065/1", u"_phone2": u"065/2"}
+            dic = {
+                u"_bpk": u"e_contact",
+                u"_eid": eid,
+                u"_organization": title,
+                u"_division": division,
+                u"_service": u"",
+                u"_pc": u"7340",
+                u"_city": u"Colfontaine",
+                u"_street": u"Rue Haute",
+                u"_email1": u"info@commune.be",
+                u"_phone1": u"065/1",
+                u"_phone2": u"065/2",
+            }
             dic.update(kw)
             return dic
 
         def pers(eid, parent_id, lastname, firstname, **kw):
-            dic = {u"_bpk": u"e_contact", u"_eid": eid, u"_parent_id": parent_id, u"lastname": lastname,
-                   u"firstname": firstname, u"_cell1": u"0475/1", u"_phone1": u"065/3", u"_phone2": None,
-                   u"_email1": u"p@x.be"}
+            dic = {
+                u"_bpk": u"e_contact",
+                u"_eid": eid,
+                u"_parent_id": parent_id,
+                u"lastname": lastname,
+                u"firstname": firstname,
+                u"_cell1": u"0475/1",
+                u"_phone1": u"065/3",
+                u"_phone2": None,
+                u"_email1": u"p@x.be",
+            }
             dic.update(kw)
             return dic
 
@@ -1818,9 +2108,24 @@ class TestI2ContactUpdate(DmsTestCase):
         gen = iter(bp)
         self.assertDictEqual(
             next(gen),
-            dict(new, _bpk=u"e_contact", _eid=u"12", _division=u"", _service=u"", _id=u"12", _type="organization",
-                 _parenth=u"/contacts", internal_number=u"12", zip_code=u"7340", city=u"Colfontaine",
-                 street=u"Rue Haute", title=u"Commune", email=u"info@commune.be", phone=u"065/1", fax=u"065/2"),
+            dict(
+                new,
+                _bpk=u"e_contact",
+                _eid=u"12",
+                _division=u"",
+                _service=u"",
+                _id=u"12",
+                _type="organization",
+                _parenth=u"/contacts",
+                internal_number=u"12",
+                zip_code=u"7340",
+                city=u"Colfontaine",
+                street=u"Rue Haute",
+                title=u"Commune",
+                email=u"info@commune.be",
+                phone=u"065/1",
+                fax=u"065/2",
+            ),
         )
         self.assertEqual(
             storage["data"]["e_contact_path"][u"S5"], {"path": PLONEGROUP + "/direction-generale/secretariat"}
@@ -1828,32 +2133,76 @@ class TestI2ContactUpdate(DmsTestCase):
         self.assertIn(("dti", "INFO", u"Passed internal organization: S5"), self.logs.records)
         self.assertDictEqual(
             next(gen),
-            dict(new, _bpk=u"e_contact", _eid=u"13", _organization=u"Commune", _division=u"Travaux",
-                 _service=u"Voiries", _id=u"13", _type="organization", _parenth=u"/contacts", internal_number=u"13",
-                 zip_code=u"7340", city=u"Colfontaine", street=u"Rue Haute", title=u"Commune - Travaux - Voiries",
-                 email=u"info@commune.be", phone=u"065/1", fax=u"065/2"),
+            dict(
+                new,
+                _bpk=u"e_contact",
+                _eid=u"13",
+                _organization=u"Commune",
+                _division=u"Travaux",
+                _service=u"Voiries",
+                _id=u"13",
+                _type="organization",
+                _parenth=u"/contacts",
+                internal_number=u"13",
+                zip_code=u"7340",
+                city=u"Colfontaine",
+                street=u"Rue Haute",
+                title=u"Commune - Travaux - Voiries",
+                email=u"info@commune.be",
+                phone=u"065/1",
+                fax=u"065/2",
+            ),
         )
         # the organization "12" has been created by the next sections (an existing organization is used here)
         storage["data"]["e_contact_path"][u"12"] = {"path": "/contacts/electrabel"}
         pdic = next(gen)
         self.assertDictEqual(
-            pdic, {"_bpk": u"e_contact", "_eid": u"30a", "_type": "person", "lastname": u"Dupont", "firstname": u"Jean",
-                   "_parenth": u"/contacts"}
+            pdic,
+            {
+                "_bpk": u"e_contact",
+                "_eid": u"30a",
+                "_type": "person",
+                "lastname": u"Dupont",
+                "firstname": u"Jean",
+                "_parenth": u"/contacts",
+            },
         )
         pdic["_path"] = u"/contacts/30a"  # set by the next sections (path_insert)
         hp = next(gen)
         self.assertEqual(hp.pop(u"position").to_id, self.iid("/contacts/electrabel"))
         self.assertDictEqual(
             hp,
-            dict(new, _bpk=u"e_contact", _eid=u"30", _parent_id=u"12", lastname=u"Dupont", firstname=u"Jean",
-                 _type="held_position", _parenth=u"/contacts/30a", use_parent_address=True, _is_user=False,
-                 cell_phone=u"0475/1", phone=u"065/3", fax=None, email=u"p@x.be", _id=u"30", internal_number=u"30"),
+            dict(
+                new,
+                _bpk=u"e_contact",
+                _eid=u"30",
+                _parent_id=u"12",
+                lastname=u"Dupont",
+                firstname=u"Jean",
+                _type="held_position",
+                _parenth=u"/contacts/30a",
+                use_parent_address=True,
+                _is_user=False,
+                cell_phone=u"0475/1",
+                phone=u"065/3",
+                fax=None,
+                email=u"p@x.be",
+                _id=u"30",
+                internal_number=u"30",
+            ),
         )
         # existing internal person and held position: nothing yielded
         pdic = next(gen)
         self.assertDictEqual(
-            pdic, {"_bpk": u"e_contact", "_eid": u"32a", "_type": "person", "lastname": u"Lecteur", "firstname": u"Jef",
-                   "_parenth": u"/contacts/personnel-folder"}
+            pdic,
+            {
+                "_bpk": u"e_contact",
+                "_eid": u"32a",
+                "_type": "person",
+                "lastname": u"Lecteur",
+                "firstname": u"Jef",
+                "_parenth": u"/contacts/personnel-folder",
+            },
         )
         self.assertDictEqual(
             storage["data"]["e_contact_path"][u"31"],
@@ -1864,20 +2213,51 @@ class TestI2ContactUpdate(DmsTestCase):
         pdic["_path"] = u"/contacts/personnel-folder/32a"
         hp = next(gen)
         self.assertEqual(hp.pop(u"position").to_id, self.iid(PLONEGROUP + "/direction-generale/secretariat"))
-        self.assertEqual((hp[u"_type"], hp[u"_parenth"], hp[u"_is_user"]),
-                         ("held_position", u"/contacts/personnel-folder/32a", True))
-        self.assertDictEqual(
-            next(gen),
-            dict(new, _bpk=u"e_contact", _eid=u"33", _parent_id=u"40", lastname=u"Durand", firstname=u"Marie",
-                 _type="person", _parenth=u"/contacts", _is_user=False, zip_code=u"7000", city=u"Mons",
-                 street=u"Rue Neuve", cell_phone=u"0475/1", phone=u"065/3", fax=None, email=u"p@x.be", _id=u"33",
-                 internal_number=u"33"),
+        self.assertEqual(
+            (hp[u"_type"], hp[u"_parenth"], hp[u"_is_user"]), ("held_position", u"/contacts/personnel-folder/32a", True)
         )
         self.assertDictEqual(
             next(gen),
-            dict(new, _bpk=u"e_contact", _eid=u"34", _parent_id=None, lastname=u"Martin", firstname=u"Paul",
-                 _type="person", _parenth=u"/contacts", _is_user=False, cell_phone=u"0475/1", phone=u"065/3",
-                 fax=None, email=u"p@x.be", _id=u"34", internal_number=u"34"),
+            dict(
+                new,
+                _bpk=u"e_contact",
+                _eid=u"33",
+                _parent_id=u"40",
+                lastname=u"Durand",
+                firstname=u"Marie",
+                _type="person",
+                _parenth=u"/contacts",
+                _is_user=False,
+                zip_code=u"7000",
+                city=u"Mons",
+                street=u"Rue Neuve",
+                cell_phone=u"0475/1",
+                phone=u"065/3",
+                fax=None,
+                email=u"p@x.be",
+                _id=u"33",
+                internal_number=u"33",
+            ),
+        )
+        self.assertDictEqual(
+            next(gen),
+            dict(
+                new,
+                _bpk=u"e_contact",
+                _eid=u"34",
+                _parent_id=None,
+                lastname=u"Martin",
+                firstname=u"Paul",
+                _type="person",
+                _parenth=u"/contacts",
+                _is_user=False,
+                cell_phone=u"0475/1",
+                phone=u"065/3",
+                fax=None,
+                email=u"p@x.be",
+                _id=u"34",
+                internal_number=u"34",
+            ),
         )
         self.assertListEqual(list(gen), [{u"_bpk": u"e_service", u"_eid": u"S6"}])
         self.assertListEqual(
@@ -1886,8 +2266,9 @@ class TestI2ContactUpdate(DmsTestCase):
         )
         self.assertDictEqual(dict(storage["course"]), {"i__2_contact_update": 9})
         # part not run
-        bp = self.section(I2ContactUpdate, "i__2_contact_update", options, [org(u"S5", u"Secrétariat")],
-                          self.make_storage("a"))
+        bp = self.section(
+            I2ContactUpdate, "i__2_contact_update", options, [org(u"S5", u"Secrétariat")], self.make_storage("a")
+        )
         self.assertListEqual(list(bp), [org(u"S5", u"Secrétariat")])
 
 
@@ -1907,13 +2288,33 @@ class TestJ2ContactUpdate(DmsTestCase):
 
     def test___iter__(self):
         def contact(eid, o_eid=None, o_title=None, **kw):
-            dic = {u"_bpk": u"e_contact_c", u"_eid": eid, u"lastname": u"Dupont", u"firstname": u"Jean",
-                   u"_function": u"Directeur", u"person_title": u"Monsieur", u"phone": u"065/1", u"_phone2": None,
-                   u"fax": u"", u"email": u"jean@dupont.be", u"cell_phone": None, u"_p_enabled": u"1",
-                   u"_o_eid": o_eid, u"_o_title": o_title, u"street": u"Rue Haute", u"number": u"5", u"_box": u"b",
-                   u"zip_code": u"7340", u"city": u"Colfontaine", u"_o_phone": u"065/0", u"_o_fax": None,
-                   u"_o_email": u"info@commune.be", u"enterprise_number": u"0123", u"_o_enabled": u"1",
-                   u"country": u"Belgique"}
+            dic = {
+                u"_bpk": u"e_contact_c",
+                u"_eid": eid,
+                u"lastname": u"Dupont",
+                u"firstname": u"Jean",
+                u"_function": u"Directeur",
+                u"person_title": u"Monsieur",
+                u"phone": u"065/1",
+                u"_phone2": None,
+                u"fax": u"",
+                u"email": u"jean@dupont.be",
+                u"cell_phone": None,
+                u"_p_enabled": u"1",
+                u"_o_eid": o_eid,
+                u"_o_title": o_title,
+                u"street": u"Rue Haute",
+                u"number": u"5",
+                u"_box": u"b",
+                u"zip_code": u"7340",
+                u"city": u"Colfontaine",
+                u"_o_phone": u"065/0",
+                u"_o_fax": None,
+                u"_o_email": u"info@commune.be",
+                u"enterprise_number": u"0123",
+                u"_o_enabled": u"1",
+                u"country": u"Belgique",
+            }
             dic.update(kw)
             return dic
 
@@ -1933,17 +2334,38 @@ class TestJ2ContactUpdate(DmsTestCase):
         ]
         options = dict(self.options, condition="python: item['_bpk'] == u'e_contact_c'")
         bp = self.section(J2ContactUpdate, "j__2_contact_update", options, items, storage)
-        base = {"_bpk": u"e_contact_c", "street": u"Rue Haute", "number": u"5 b", "city": u"Colfontaine",
-                "zip_code": u"7340", "country": u""}
-        org = dict(base, _eid=u"12", _type="organization", title=u"Commune", enterprise_number=u"0123",
-                   phone=u"065/0", email=u"info@commune.be", _path=u"/contacts/electrabel")
+        base = {
+            "_bpk": u"e_contact_c",
+            "street": u"Rue Haute",
+            "number": u"5 b",
+            "city": u"Colfontaine",
+            "zip_code": u"7340",
+            "country": u"",
+        }
+        org = dict(
+            base,
+            _eid=u"12",
+            _type="organization",
+            title=u"Commune",
+            enterprise_number=u"0123",
+            phone=u"065/0",
+            email=u"info@commune.be",
+            _path=u"/contacts/electrabel",
+        )
         self.assertListEqual(
             list(bp),
             [
                 org,
                 # Plone 4 behaviour (bug?): updated held position and person have no _path
-                dict(base, _eid=u"34", _type="held_position", label=u"Directeur", phone=u"065/1", fax=u"",
-                     email=u"jean@dupont.be"),
+                dict(
+                    base,
+                    _eid=u"34",
+                    _type="held_position",
+                    label=u"Directeur",
+                    phone=u"065/1",
+                    fax=u"",
+                    email=u"jean@dupont.be",
+                ),
                 dict(org, country=u"France"),
                 dict(base, _eid=u"36", _type="person", phone=u"065/1", fax=u"", email=u"jean@dupont.be"),
                 {u"_bpk": u"e_contact", u"_eid": u"38"},
@@ -1986,8 +2408,14 @@ class TestL1RecipientGroupsSet(DmsTestCase):
 
     def test___init__(self):
         # Plone 4 behaviour (bug?): log_error is called with an empty dict, raising a KeyError on '_eid'
-        self.assertRaises(KeyError, self.section, L1RecipientGroupsSet, "l__1_recipient_groups_set", self.options,
-                          storage=self.make_storage("l"))
+        self.assertRaises(
+            KeyError,
+            self.section,
+            L1RecipientGroupsSet,
+            "l__1_recipient_groups_set",
+            self.options,
+            storage=self.make_storage("l"),
+        )
         grs = self.add_generic_service()
         bp = self.section(
             L1RecipientGroupsSet, "l__1_recipient_groups_set", self.options, storage=self.make_storage("a")
@@ -2000,8 +2428,14 @@ class TestL1RecipientGroupsSet(DmsTestCase):
         bp = self.section(L1RecipientGroupsSet, "p__1_recipient_groups_set", options, storage=self.make_storage("p"))
         self.assertListEqual(bp.gr_tg_exc, [u"333", u"336"])
         options = dict(self.options, global_recipient_tg_exceptions="333 Personnel 336")
-        self.assertRaises(ValueError, self.section, L1RecipientGroupsSet, "l__1_recipient_groups_set", options,
-                          storage=self.make_storage("l"))
+        self.assertRaises(
+            ValueError,
+            self.section,
+            L1RecipientGroupsSet,
+            "l__1_recipient_groups_set",
+            options,
+            storage=self.make_storage("l"),
+        )
 
     def test___iter__(self):
         grs_uid = self.add_generic_service().UID()
@@ -2050,36 +2484,66 @@ class TestL1SenderAsTextSet(DmsTestCase):
         items = [
             {u"_bpk": u"e_mail_i", u"_eid": u"1", u"_sender_id": u"8", u"_sender": u"Lettre de M. Dupont"},
             {u"_bpk": u"e_mail_i", u"_eid": u"2", u"_sender_id": u"7", u"_sender": None, u"description": u"Desc"},
-            {u"_bpk": u"e_mail_i", u"_eid": u"3", u"_sender_id": None, u"_sender": u"Anonyme\nRue X",
-             u"data_transfer": u"DT"},
+            {
+                u"_bpk": u"e_mail_i",
+                u"_eid": u"3",
+                u"_sender_id": None,
+                u"_sender": u"Anonyme\nRue X",
+                u"data_transfer": u"DT",
+            },
             {u"_bpk": u"e_mail_o", u"_eid": u"4", u"_sender_id": u"8", u"_sender": None},
         ]
         bp = self.section(L1SenderAsTextSet, "l__1_sender_as_text_set", self.options, items, storage)
         self.assertListEqual(
             list(bp),
             [
-                {u"_bpk": u"e_mail_i", u"_eid": u"1", u"_sender_id": u"8", u"_sender": u"Lettre de M. Dupont",
-                 u"description": u"EXPÉDITEUR: Dupont Jean, jean@dupont.be.\r\nEXPÉDITEUR LIBRE: Lettre de M. Dupont",
-                 u"data_transfer": u"EXPÉDITEUR: Dupont Jean, jean@dupont.be.\r\n"
-                                   u"ADRESSE EXPÉDITEUR: Rue Haute 7340 Colfontaine.\r\nTÉL EXPÉDITEUR: 065/123456."},
+                {
+                    u"_bpk": u"e_mail_i",
+                    u"_eid": u"1",
+                    u"_sender_id": u"8",
+                    u"_sender": u"Lettre de M. Dupont",
+                    u"description": u"EXPÉDITEUR: Dupont Jean, jean@dupont.be.\r\nEXPÉDITEUR LIBRE: Lettre de M. Dupont",
+                    u"data_transfer": u"EXPÉDITEUR: Dupont Jean, jean@dupont.be.\r\n"
+                    u"ADRESSE EXPÉDITEUR: Rue Haute 7340 Colfontaine.\r\nTÉL EXPÉDITEUR: 065/123456.",
+                },
                 # contact created as object: no text
                 {u"_bpk": u"e_mail_i", u"_eid": u"2", u"_sender_id": u"7", u"_sender": None, u"description": u"Desc"},
-                {u"_bpk": u"e_mail_i", u"_eid": u"3", u"_sender_id": None, u"_sender": u"Anonyme\nRue X",
-                 u"description": u"EXPÉDITEUR LIBRE: Anonyme",
-                 u"data_transfer": u"DT\r\nEXPÉDITEUR LIBRE: Anonyme, Rue X"},
+                {
+                    u"_bpk": u"e_mail_i",
+                    u"_eid": u"3",
+                    u"_sender_id": None,
+                    u"_sender": u"Anonyme\nRue X",
+                    u"description": u"EXPÉDITEUR LIBRE: Anonyme",
+                    u"data_transfer": u"DT\r\nEXPÉDITEUR LIBRE: Anonyme, Rue X",
+                },
                 {u"_bpk": u"e_mail_o", u"_eid": u"4", u"_sender_id": u"8", u"_sender": None},
             ],
         )
         self.assertDictEqual(dict(storage["course"]), {"l__1_sender_as_text_set": 3})
         # no data_transfer field: everything in description
         storage["desc_only"] = True
-        items = [{u"_bpk": u"e_mail_i", u"_eid": u"3", u"_sender_id": None, u"_sender": u"Anonyme\nRue X",
-                  u"data_transfer": u"DT"}]
+        items = [
+            {
+                u"_bpk": u"e_mail_i",
+                u"_eid": u"3",
+                u"_sender_id": None,
+                u"_sender": u"Anonyme\nRue X",
+                u"data_transfer": u"DT",
+            }
+        ]
         bp = self.section(L1SenderAsTextSet, "l__1_sender_as_text_set", self.options, items, storage)
         self.assertListEqual(
             list(bp),
-            [{u"_bpk": u"e_mail_i", u"_eid": u"3", u"_sender_id": None, u"_sender": u"Anonyme\nRue X",
-              u"data_transfer": u"DT", u"description": u"EXPÉDITEUR LIBRE: Anonyme, Rue X"}],
+            [
+                {
+                    u"_bpk": u"e_mail_i",
+                    u"_eid": u"3",
+                    u"_sender_id": None,
+                    u"_sender": u"Anonyme\nRue X",
+                    u"data_transfer": u"DT",
+                    u"description": u"EXPÉDITEUR LIBRE: Anonyme, Rue X",
+                }
+            ],
         )
 
 
@@ -2141,20 +2605,35 @@ class TestM1AssignedUserHandling(DmsTestCase):
         im2, im1, im3, im4 = (self.mail(mid) for mid in ("courrier2", "courrier1", "courrier3", "courrier4"))
         im2.assigned_user = u"encodeur"
         im4.data_transfer = u"DESTINATAIRE: Agent Fred"
-        paths = {u"200": {u"path": self.path(im2)}, u"300": {u"path": self.path(im1)},
-                 u"201": {u"path": self.path(im3)}, u"202": {u"path": u"/incoming-mail/unknown"},
-                 u"203": {u"path": self.path(im4)}}
+        paths = {
+            u"200": {u"path": self.path(im2)},
+            u"300": {u"path": self.path(im1)},
+            u"201": {u"path": self.path(im3)},
+            u"202": {u"path": u"/incoming-mail/unknown"},
+            u"203": {u"path": self.path(im4)},
+        }
         storage = self.m_storage(e_mail_i=paths)
 
         def recip(eid, mail_id, contact_id, principal=False, **kw):
-            dic = {u"_bpk": u"e_mail_recip_i", u"_eid": eid, u"_mail_id": mail_id, u"_contact_id": contact_id,
-                   u"_principal": principal}
+            dic = {
+                u"_bpk": u"e_mail_recip_i",
+                u"_eid": eid,
+                u"_mail_id": mail_id,
+                u"_contact_id": contact_id,
+                u"_principal": principal,
+            }
             dic.update(kw)
             return dic
 
         def upd(eid, mail, **kw):
-            dic = {"_eid": eid, "_path": self.path(mail), "_type": "dmsincomingmail", "_bpk": "i_assigned_user",
-                   "_act": "U", "modification_date": mail.creation_date}
+            dic = {
+                "_eid": eid,
+                "_path": self.path(mail),
+                "_type": "dmsincomingmail",
+                "_bpk": "i_assigned_user",
+                "_act": "U",
+                "modification_date": mail.creation_date,
+            }
             dic.update(kw)
             return dic
 
@@ -2172,8 +2651,12 @@ class TestM1AssignedUserHandling(DmsTestCase):
         self.assertListEqual(
             list(bp),
             [
-                upd(u"1", im2, data_transfer=u"DESTINATAIRE PRINCIPAL: Agent Fred, Pour suite, message=Urgent",
-                    assigned_user=u"agent"),
+                upd(
+                    u"1",
+                    im2,
+                    data_transfer=u"DESTINATAIRE PRINCIPAL: Agent Fred, Pour suite, message=Urgent",
+                    assigned_user=u"agent",
+                ),
                 upd(u"2", im1, data_transfer=u"DESTINATAIRE: Agent Fred"),
                 upd(u"5", im3, data_transfer=u"DESTINATAIRE: Inconnu"),
                 upd(u"6", im2, data_transfer=u"DESTINATAIRE: Agent Fred"),
@@ -2201,8 +2684,13 @@ class TestM1AssignedUserHandling(DmsTestCase):
         self.assertListEqual(
             list(bp),
             [
-                {u"_bpk": u"e_mail_o", u"_eid": u"1", u"_sender_id": u"u5", u"treating_groups": df_uid,
-                 u"assigned_user": u"chef"},
+                {
+                    u"_bpk": u"e_mail_o",
+                    u"_eid": u"1",
+                    u"_sender_id": u"u5",
+                    u"treating_groups": df_uid,
+                    u"assigned_user": u"chef",
+                },
                 {u"_bpk": u"e_mail_o", u"_eid": u"2", u"_sender_id": u"u5", u"treating_groups": info_uid},
             ],
         )
@@ -2227,8 +2715,9 @@ class TestPOMSenderSet(DmsTestCase):
         self.assertIs(bp.eid_to_orgs, storage["data"]["p_eid_to_orgs"])
         self.assertIs(bp.e_c_s, storage["data"]["e_contact"])
         self.assertIs(bp.e_u_m, storage["data"]["e_user_match"])
-        bp = self.section(POMSenderSet, "p__1_sender_set", dict(self.options, contact_sender_key="e_user_match"),
-                          storage=storage)
+        bp = self.section(
+            POMSenderSet, "p__1_sender_set", dict(self.options, contact_sender_key="e_user_match"), storage=storage
+        )
         self.assertIs(bp.e_c_s, storage["data"]["e_user_match"])
         bp = self.section(POMSenderSet, "p__1_sender_set", self.options, storage=self.make_storage("p"))
         self.assertDictEqual(bp.e_c_s, {})
@@ -2242,12 +2731,22 @@ class TestPOMSenderSet(DmsTestCase):
             u"20": {u"_user_id": u"u1", u"lastname": u"Agent", u"firstname": u"Fred"},
             u"21": {u"_user_id": None, u"lastname": u"Dupont", u"firstname": u"Jean"},
         }
-        storage = self.make_storage("p", e_contact=e_contact, p_eid_to_orgs={u"S1": {"uid": secr_uid}},
-                                    p_euid_to_pers={u"u1": agent_uid, u"None": chef_uid})
+        storage = self.make_storage(
+            "p",
+            e_contact=e_contact,
+            p_eid_to_orgs={u"S1": {"uid": secr_uid}},
+            p_euid_to_pers={u"u1": agent_uid, u"None": chef_uid},
+        )
         items = [
             {u"_bpk": u"e_mail_o", u"_eid": u"1", u"_sender_id": u"20", u"_sender": None, u"_service_id": u"S1"},
-            {u"_bpk": u"e_mail_o", u"_eid": u"2", u"_sender_id": u"21", u"_sender": u"Libre", u"_service_id": u"S1",
-             u"description": u"Desc"},
+            {
+                u"_bpk": u"e_mail_o",
+                u"_eid": u"2",
+                u"_sender_id": u"21",
+                u"_sender": u"Libre",
+                u"_service_id": u"S1",
+                u"description": u"Desc",
+            },
             {u"_bpk": u"e_mail_o", u"_eid": u"3", u"_sender_id": None, u"_sender": None, u"_service_id": u"S1"},
             {u"_bpk": u"e_mail_i", u"_eid": u"4", u"_sender_id": u"20"},
         ]
@@ -2257,14 +2756,33 @@ class TestPOMSenderSet(DmsTestCase):
         self.assertListEqual(
             list(bp),
             [
-                {u"_bpk": u"e_mail_o", u"_eid": u"1", u"_sender_id": u"20", u"_sender": None, u"_service_id": u"S1",
-                 u"sender": agent_hp},
+                {
+                    u"_bpk": u"e_mail_o",
+                    u"_eid": u"1",
+                    u"_sender_id": u"20",
+                    u"_sender": None,
+                    u"_service_id": u"S1",
+                    u"sender": agent_hp,
+                },
                 # not a user: generic person and contact in text
-                {u"_bpk": u"e_mail_o", u"_eid": u"2", u"_sender_id": u"21", u"_sender": u"Libre", u"_service_id": u"S1",
-                 u"sender": chef_hp, u"description": u"Desc\r\nEXPÉDITEUR: Dupont Jean.\r\nEXPÉDITEUR LIBRE: Libre",
-                 u"data_transfer": u"EXPÉDITEUR: Dupont Jean."},
-                {u"_bpk": u"e_mail_o", u"_eid": u"3", u"_sender_id": None, u"_sender": None, u"_service_id": u"S1",
-                 u"sender": chef_hp},
+                {
+                    u"_bpk": u"e_mail_o",
+                    u"_eid": u"2",
+                    u"_sender_id": u"21",
+                    u"_sender": u"Libre",
+                    u"_service_id": u"S1",
+                    u"sender": chef_hp,
+                    u"description": u"Desc\r\nEXPÉDITEUR: Dupont Jean.\r\nEXPÉDITEUR LIBRE: Libre",
+                    u"data_transfer": u"EXPÉDITEUR: Dupont Jean.",
+                },
+                {
+                    u"_bpk": u"e_mail_o",
+                    u"_eid": u"3",
+                    u"_sender_id": None,
+                    u"_sender": None,
+                    u"_service_id": u"S1",
+                    u"sender": chef_hp,
+                },
                 {u"_bpk": u"e_mail_i", u"_eid": u"4", u"_sender_id": u"20"},
             ],
         )
@@ -2273,13 +2791,20 @@ class TestPOMSenderSet(DmsTestCase):
         bp = self.section(POMSenderSet, "p__1_sender_set", self.options, items[:1], self.make_storage("a"))
         self.assertListEqual(
             list(bp),
-            [{u"_bpk": u"e_mail_o", u"_eid": u"1", u"_sender_id": u"20", u"_sender": None, u"_service_id": u"S1",
-              u"sender": agent_hp}],
+            [
+                {
+                    u"_bpk": u"e_mail_o",
+                    u"_eid": u"1",
+                    u"_sender_id": u"20",
+                    u"_sender": None,
+                    u"_service_id": u"S1",
+                    u"sender": agent_hp,
+                }
+            ],
         )
 
 
 class TestParentPathInsert(DmsTestCase):
-
     def test___init__(self):
         bp = self.section(ParentPathInsert, "l__1_parent_insert", {}, storage=self.make_storage("a"))
         self.assertEqual(bp.parts, "l")
@@ -2323,12 +2848,23 @@ class TestParentPathInsert(DmsTestCase):
                 {u"_type": "dmsoutgoingmail", u"creation_date": cdate, u"_parenth": u"/outgoing-mail/200938"},
                 {u"_type": "ClassificationFolder", u"_parenth": u"/folders"},
                 {u"_type": "ClassificationSubfolder", u"_parent_id": u"F1", u"_parenth": u"/folders/f1"},
-                {u"_bpk": u"e_folder", u"_eid": u"2", u"_type": "ClassificationSubfolder", u"_parent_id": u"F9",
-                 u"_error": True},
+                {
+                    u"_bpk": u"e_folder",
+                    u"_eid": u"2",
+                    u"_type": "ClassificationSubfolder",
+                    u"_parent_id": u"F9",
+                    u"_error": True,
+                },
                 {u"_type": "person", u"_parenth": u"/contacts"},
                 {u"_type": "organization", u"_parent_id": u"O1", u"_parenth": u"/contacts/o1"},
-                {u"_bpk": u"e_contact", u"_eid": u"3", u"_type": "organization", u"_parent_id": u"O9",
-                 u"_parenth": u"/contacts", u"_error": True},
+                {
+                    u"_bpk": u"e_contact",
+                    u"_eid": u"3",
+                    u"_type": "organization",
+                    u"_parent_id": u"O9",
+                    u"_parenth": u"/contacts",
+                    u"_error": True,
+                },
                 {u"_type": "organization", u"_parent_id": None, u"_parenth": u"/contacts"},
                 {u"_type": "held_position"},
                 {u"_type": "dmsincomingmail", u"_path": u"/incoming-mail/x"},
@@ -2355,7 +2891,6 @@ class TestParentPathInsert(DmsTestCase):
 
 
 class TestPostActions(DTestCase):
-
     def test___init__(self):
         storage = self.make_storage("a")
         bp = self.section(PostActions, "post_actions", {}, storage=storage)
@@ -2366,24 +2901,45 @@ class TestPostActions(DTestCase):
         storage = self.d_storage()
         agent = self.obj("/contacts/personnel-folder/agent")
         agent_hps = dict(storage["data"]["p_hps"][agent.UID()])
-        dupont = api.content.create(container=self.obj("/contacts/personnel-folder"), type="person", id="dupont",
-                                    lastname=u"Dupont")
+        dupont = api.content.create(
+            container=self.obj("/contacts/personnel-folder"), type="person", id="dupont", lastname=u"Dupont"
+        )
         post = {u"store_internal_person_info": ""}
         items = [
-            {u"_bpk": u"person_sender", u"_eid": u"1", u"_path": "/contacts/personnel-folder/dupont",
-             u"internal_number": u"u7", u"_post_actions": post},
-            {u"_bpk": u"personnel", u"_eid": u"2", u"_path": "/contacts/personnel-folder/agent",
-             u"internal_number": u"u1", u"_post_actions": post},
+            {
+                u"_bpk": u"person_sender",
+                u"_eid": u"1",
+                u"_path": "/contacts/personnel-folder/dupont",
+                u"internal_number": u"u7",
+                u"_post_actions": post,
+            },
+            {
+                u"_bpk": u"personnel",
+                u"_eid": u"2",
+                u"_path": "/contacts/personnel-folder/agent",
+                u"internal_number": u"u1",
+                u"_post_actions": post,
+            },
             {u"_bpk": u"e_mail_i", u"_eid": u"3"},
         ]
         bp = self.section(PostActions, "post_actions", {}, items, storage)
         self.assertListEqual(
             list(bp),
             [
-                {u"_bpk": u"person_sender", u"_eid": u"1", u"_path": "/contacts/personnel-folder/dupont",
-                 u"internal_number": u"u7", u"_post_actions": {u"store_internal_person_info": ""}},
-                {u"_bpk": u"personnel", u"_eid": u"2", u"_path": "/contacts/personnel-folder/agent",
-                 u"internal_number": u"u1", u"_post_actions": {u"store_internal_person_info": ""}},
+                {
+                    u"_bpk": u"person_sender",
+                    u"_eid": u"1",
+                    u"_path": "/contacts/personnel-folder/dupont",
+                    u"internal_number": u"u7",
+                    u"_post_actions": {u"store_internal_person_info": ""},
+                },
+                {
+                    u"_bpk": u"personnel",
+                    u"_eid": u"2",
+                    u"_path": "/contacts/personnel-folder/agent",
+                    u"internal_number": u"u1",
+                    u"_post_actions": {u"store_internal_person_info": ""},
+                },
                 {u"_bpk": u"e_mail_i", u"_eid": u"3"},
             ],
         )
@@ -2436,8 +2992,9 @@ class TestQ1RecipientsAsTextUpdate(DmsTestCase):
     options = {"condition": "python: item.get('_bpk') == u'e_mail_recip_o'", "store_key": "e_mail_o"}
 
     def test___init__(self):
-        bp = self.section(Q1RecipientsAsTextUpdate, "q__1_recipients_as_text", self.options,
-                          storage=self.make_storage("a"))
+        bp = self.section(
+            Q1RecipientsAsTextUpdate, "q__1_recipients_as_text", self.options, storage=self.make_storage("a")
+        )
         self.assertFalse(hasattr(bp, "om_paths"))
         storage = self.make_storage("q", e_mail_o={}, e_contact={})
         bp = self.section(Q1RecipientsAsTextUpdate, "q__1_recipients_as_text", self.options, storage=storage)
@@ -2447,18 +3004,28 @@ class TestQ1RecipientsAsTextUpdate(DmsTestCase):
         # contact type matching file exists: contacts are imported, contact id not used
         io.open(os.path.join(self.tmp, "1_contact_type_match.csv"), "w").close()
         sections = {"h__contact_type_match_read": {"filename": "1_contact_type_match.csv"}}
-        bp = self.section(Q1RecipientsAsTextUpdate, "q__1_recipients_as_text", self.options, storage=storage,
-                          sections=sections)
+        bp = self.section(
+            Q1RecipientsAsTextUpdate, "q__1_recipients_as_text", self.options, storage=storage, sections=sections
+        )
         self.assertEqual(bp.contact_id_key, "")
 
     def test___iter__(self):
         om = self.mail("reponse1")
         om_path = self.path(om)
-        storage = self.make_storage("q", e_mail_o={u"100": {u"path": om_path}, u"101": {u"path": u"/outgoing-mail/no"}},
-                                    e_contact=TestContactAsTextUpdate.e_contact)
+        storage = self.make_storage(
+            "q",
+            e_mail_o={u"100": {u"path": om_path}, u"101": {u"path": u"/outgoing-mail/no"}},
+            e_contact=TestContactAsTextUpdate.e_contact,
+        )
         items = [
-            {u"_bpk": u"e_mail_recip_o", u"_eid": u"1", u"_mail_id": u"100", u"_contact_id": u"8",
-             u"_comment": u"Copie", u"_action": u"Pour info"},
+            {
+                u"_bpk": u"e_mail_recip_o",
+                u"_eid": u"1",
+                u"_mail_id": u"100",
+                u"_contact_id": u"8",
+                u"_comment": u"Copie",
+                u"_action": u"Pour info",
+            },
             {u"_bpk": u"e_mail_recip_o", u"_eid": u"2", u"_mail_id": u"100", u"_contact_id": None, u"_comment": None},
             {u"_bpk": u"e_mail_recip_o", u"_eid": u"3", u"_mail_id": u"101", u"_contact_id": u"8", u"_comment": None},
             {u"_bpk": u"e_mail_o", u"_eid": u"4"},
@@ -2489,14 +3056,23 @@ class TestQ1RecipientsAsTextUpdate(DmsTestCase):
         bp = self.section(Q1RecipientsAsTextUpdate, "q__1_recipients_as_text", self.options, items[:1], storage)
         self.assertListEqual(
             list(bp),
-            [{"_eid": u"1", "_path": om_path, "_type": "dmsoutgoingmail", "_bpk": "o_recipients", "_act": "U",
-              "description": u"DESTINATAIRE: Dupont Jean, jean@dupont.be.\r\n"
-                             u"ADRESSE DESTINATAIRE: Rue Haute 7340 Colfontaine.\r\nTÉL DESTINATAIRE: 065/123456.\r\n"
-                             u"DESTINATAIRE LIBRE: Copie"}],
+            [
+                {
+                    "_eid": u"1",
+                    "_path": om_path,
+                    "_type": "dmsoutgoingmail",
+                    "_bpk": "o_recipients",
+                    "_act": "U",
+                    "description": u"DESTINATAIRE: Dupont Jean, jean@dupont.be.\r\n"
+                    u"ADRESSE DESTINATAIRE: Rue Haute 7340 Colfontaine.\r\nTÉL DESTINATAIRE: 065/123456.\r\n"
+                    u"DESTINATAIRE LIBRE: Copie",
+                }
+            ],
         )
         # part not run
-        bp = self.section(Q1RecipientsAsTextUpdate, "q__1_recipients_as_text", self.options, items[3:],
-                          self.make_storage("a"))
+        bp = self.section(
+            Q1RecipientsAsTextUpdate, "q__1_recipients_as_text", self.options, items[3:], self.make_storage("a")
+        )
         self.assertListEqual(list(bp), [{u"_bpk": u"e_mail_o", u"_eid": u"4"}])
 
 
@@ -2510,14 +3086,16 @@ class TestR1RecipientGroupsUpdate(DmsTestCase):
     }
 
     def test___init__(self):
-        bp = self.section(R1RecipientGroupsUpdate, "r__1_recipient_groups_update", self.options,
-                          storage=self.make_storage("a"))
+        bp = self.section(
+            R1RecipientGroupsUpdate, "r__1_recipient_groups_update", self.options, storage=self.make_storage("a")
+        )
         self.assertFalse(hasattr(bp, "paths"))
         storage = self.make_storage("r", e_mail={})
         bp = self.section(R1RecipientGroupsUpdate, "r__1_recipient_groups_update", self.options, storage=storage)
         self.assertIs(bp.paths, storage["data"]["e_mail"])
-        bp = self.section(R1RecipientGroupsUpdate, "r__1_recipient_groups_update", self.options,
-                          storage=self.make_storage("r"))
+        bp = self.section(
+            R1RecipientGroupsUpdate, "r__1_recipient_groups_update", self.options, storage=self.make_storage("r")
+        )
         self.assertIsNone(bp.paths)
 
     def test___iter__(self):
@@ -2526,8 +3104,12 @@ class TestR1RecipientGroupsUpdate(DmsTestCase):
         grh_uid = self.uid(PLONEGROUP + "/direction-generale/grh")
         comm_uid = self.uid(PLONEGROUP + "/direction-generale/communication")
         im3.recipient_groups = [secr_uid]
-        paths = {u"200": {u"path": self.path(im2)}, u"201": {u"path": self.path(im3)},
-                 u"202": {u"path": u"/incoming-mail/no"}, u"203": {u"path": self.path(om1)}}
+        paths = {
+            u"200": {u"path": self.path(im2)},
+            u"201": {u"path": self.path(im3)},
+            u"202": {u"path": u"/incoming-mail/no"},
+            u"203": {u"path": self.path(om1)},
+        }
         e_s_m = {u"S1": {u"uid": secr_uid}, u"S2": {u"uid": grh_uid}, u"S4": {u"uid": comm_uid}}
         storage = self.make_storage("r", e_mail=paths, e_service_match=e_s_m, recipient_groups={})
 
@@ -2535,9 +3117,16 @@ class TestR1RecipientGroupsUpdate(DmsTestCase):
             return {u"_bpk": u"e_mail_rec_groups", u"_eid": eid, u"_mail_id": mail_id, u"_service_id": service_id}
 
         def upd(eid, mail_id, service_id, mail, **kw):
-            dic = {"_eid": eid, "_mail_id": mail_id, "_service_id": service_id, "_bpk": u"recipient_groups",
-                   "_path": self.path(mail), "_type": mail.portal_type, "_act": "U",
-                   "modification_date": mail.creation_date}
+            dic = {
+                "_eid": eid,
+                "_mail_id": mail_id,
+                "_service_id": service_id,
+                "_bpk": u"recipient_groups",
+                "_path": self.path(mail),
+                "_type": mail.portal_type,
+                "_act": "U",
+                "modification_date": mail.creation_date,
+            }
             dic.update(kw)
             return dic
 
@@ -2570,8 +3159,9 @@ class TestR1RecipientGroupsUpdate(DmsTestCase):
         bp = self.section(R1RecipientGroupsUpdate, "r__1_recipient_groups_update", self.options, items[4:5], storage)
         self.assertListEqual(list(bp), [])
         # part not run
-        bp = self.section(R1RecipientGroupsUpdate, "r__1_recipient_groups_update", self.options, items[:1],
-                          self.make_storage("a"))
+        bp = self.section(
+            R1RecipientGroupsUpdate, "r__1_recipient_groups_update", self.options, items[:1], self.make_storage("a")
+        )
         self.assertListEqual(list(bp), [rec(u"1", u"200", u"S1")])
 
 
@@ -2584,11 +3174,19 @@ class TestReadLabelForRecipientGroup(DmsTestCase):
     }
 
     def test___init__(self):
-        bp = self.section(ReadLabelForRecipientGroup, "r__read_label_for_recipient_group", self.options,
-                          storage=self.make_storage("a"))
+        bp = self.section(
+            ReadLabelForRecipientGroup,
+            "r__read_label_for_recipient_group",
+            self.options,
+            storage=self.make_storage("a"),
+        )
         self.assertFalse(hasattr(bp, "condition"))
-        bp = self.section(ReadLabelForRecipientGroup, "r__read_label_for_recipient_group", self.options,
-                          storage=self.make_storage("r"))
+        bp = self.section(
+            ReadLabelForRecipientGroup,
+            "r__read_label_for_recipient_group",
+            self.options,
+            storage=self.make_storage("r"),
+        )
         self.assertTrue(bp.condition({u"_bpk": u"recipient_groups", u"_suid": u"x", u"_type": "dmsincomingmail"}))
 
     def test___iter__(self):
@@ -2596,12 +3194,27 @@ class TestReadLabelForRecipientGroup(DmsTestCase):
         grh_uid = self.uid(PLONEGROUP + "/direction-generale/grh")
         ILabeling(im2).storage["lu"] = PersistentList(["agent", "chef"])
         items = [
-            {u"_bpk": u"recipient_groups", u"_eid": u"1", u"_path": self.path(im2), u"_type": "dmsincomingmail",
-             u"_suid": grh_uid},
-            {u"_bpk": u"recipient_groups", u"_eid": u"2", u"_path": u"/incoming-mail/no", u"_type": "dmsincomingmail",
-             u"_suid": grh_uid},
-            {u"_bpk": u"recipient_groups", u"_eid": u"3", u"_path": self.path(im2), u"_type": "dmsoutgoingmail",
-             u"_suid": grh_uid},
+            {
+                u"_bpk": u"recipient_groups",
+                u"_eid": u"1",
+                u"_path": self.path(im2),
+                u"_type": "dmsincomingmail",
+                u"_suid": grh_uid,
+            },
+            {
+                u"_bpk": u"recipient_groups",
+                u"_eid": u"2",
+                u"_path": u"/incoming-mail/no",
+                u"_type": "dmsincomingmail",
+                u"_suid": grh_uid,
+            },
+            {
+                u"_bpk": u"recipient_groups",
+                u"_eid": u"3",
+                u"_path": self.path(im2),
+                u"_type": "dmsoutgoingmail",
+                u"_suid": grh_uid,
+            },
         ]
         storage = self.make_storage("r")
         bp = self.section(ReadLabelForRecipientGroup, "r__read_label_for_recipient_group", self.options, items, storage)
@@ -2609,12 +3222,19 @@ class TestReadLabelForRecipientGroup(DmsTestCase):
         # readers of the recipient group are added as having read the mail
         self.assertListEqual(list(ILabeling(im2).storage["lu"]), ["agent", "chef", "lecteur"])
         self.assertTrue(items[1][u"_error"])
-        self.assertIn(("dti", "ERROR", u"recipient_groups: _eid 2, Cannot find mail with path '/incoming-mail/no'"),
-                      self.logs.records)
+        self.assertIn(
+            ("dti", "ERROR", u"recipient_groups: _eid 2, Cannot find mail with path '/incoming-mail/no'"),
+            self.logs.records,
+        )
         self.assertDictEqual(dict(storage["course"]), {"r__read_label_for_recipient_group": 2})
         # part not run
-        bp = self.section(ReadLabelForRecipientGroup, "r__read_label_for_recipient_group", self.options, items[1:2],
-                          self.make_storage("a"))
+        bp = self.section(
+            ReadLabelForRecipientGroup,
+            "r__read_label_for_recipient_group",
+            self.options,
+            items[1:2],
+            self.make_storage("a"),
+        )
         self.assertEqual(len(list(bp)), 1)
 
 
@@ -2634,8 +3254,9 @@ class TestRsyncFileWrite(DmsTestCase):
         self.assertIsNone(bp.fh)
         self.assertFalse(hasattr(bp, "filename"))
         # files pickle not found
-        bp = self.section(RsyncFileWrite, "1__rsync_file_write", self.options, storage=self.make_storage("1"),
-                          sections=self.sections)
+        bp = self.section(
+            RsyncFileWrite, "1__rsync_file_write", self.options, storage=self.make_storage("1"), sections=self.sections
+        )
         self.assertEqual(bp.filename, os.path.join(self.tmp, u"2_rsync_files.txt"))
         self.assertFalse(bp.doit)
         self.assertFalse(hasattr(bp, "bp_key"))
@@ -2676,8 +3297,9 @@ class TestRsyncFileWrite(DmsTestCase):
             self.assertEqual(fh.read(), u"DOC/1002.doc\nPDF/1002.pdf\n")
         self.assertSetEqual(bp.used, {u"1000", u"1003", u"1005", u"1001", u"1004"})
         self.assertIsNone(bp.fh)
-        self.assertIn(("dto", "INFO", u"Writing '{}'".format(os.path.join(self.tmp, u"2_rsync_files.txt"))),
-                      self.logs.records)
+        self.assertIn(
+            ("dto", "INFO", u"Writing '{}'".format(os.path.join(self.tmp, u"2_rsync_files.txt"))), self.logs.records
+        )
         self.assertDictEqual(dict(storage["course"]), {"1__rsync_file_write": 4})
         # file cannot be created
         options = dict(self.options, filename=os.path.join(self.tmp, "unknown", "rsync.txt"))
@@ -2700,16 +3322,25 @@ class TestS1ClassificationFoldersUpdate(DmsTestCase):
     }
 
     def test___init__(self):
-        bp = self.section(S1ClassificationFoldersUpdate, "s__1_classification_folders_update", self.options,
-                          storage=self.make_storage("a"))
+        bp = self.section(
+            S1ClassificationFoldersUpdate,
+            "s__1_classification_folders_update",
+            self.options,
+            storage=self.make_storage("a"),
+        )
         self.assertFalse(hasattr(bp, "paths"))
         storage = self.make_storage("s", e_mail={})
-        bp = self.section(S1ClassificationFoldersUpdate, "s__1_classification_folders_update", self.options,
-                          storage=storage)
+        bp = self.section(
+            S1ClassificationFoldersUpdate, "s__1_classification_folders_update", self.options, storage=storage
+        )
         self.assertTrue(bp.f_e_m_c)
         self.assertIs(bp.paths, storage["data"]["e_mail"])
-        bp = self.section(S1ClassificationFoldersUpdate, "s__1_classification_folders_update",
-                          dict(self.options, fill_empty_mail_category="0"), storage=storage)
+        bp = self.section(
+            S1ClassificationFoldersUpdate,
+            "s__1_classification_folders_update",
+            dict(self.options, fill_empty_mail_category="0"),
+            storage=storage,
+        )
         self.assertFalse(bp.f_e_m_c)
 
     def test___iter__(self):
@@ -2721,13 +3352,19 @@ class TestS1ClassificationFoldersUpdate(DmsTestCase):
         om1.classification_folders = [folder.UID()]
         om1.classification_categories = [cat_uid]
         im4.classification_folders = [other.UID()]
-        paths = {u"200": {u"path": self.path(im2)}, u"201": {u"path": self.path(im3)},
-                 u"202": {u"path": self.path(om1)}, u"203": {u"path": self.path(im4)}}
+        paths = {
+            u"200": {u"path": self.path(im2)},
+            u"201": {u"path": self.path(im3)},
+            u"202": {u"path": self.path(om1)},
+            u"203": {u"path": self.path(im4)},
+        }
         storage = self.make_storage(
             "s",
             e_mail=paths,
-            e_folder={u"F0001": {u"_category_id": u"C1", u"_title": u"Ordre public"},
-                      u"F0002": {u"_category_id": u"C9", u"_title": u"Dossier non importé"}},
+            e_folder={
+                u"F0001": {u"_category_id": u"C1", u"_title": u"Ordre public"},
+                u"F0002": {u"_category_id": u"C9", u"_title": u"Dossier non importé"},
+            },
             e_category_full_match={u"C1": {u"_puid": cat_uid}},
             p_irn_to_folder={u"F0001": {"uid": folder.UID()}},
         )
@@ -2736,9 +3373,15 @@ class TestS1ClassificationFoldersUpdate(DmsTestCase):
             return {u"_bpk": u"e_mail_folder", u"_eid": mail_id, u"_folder_id": folder_id}
 
         def upd(mail_id, folder_id, mail, **kw):
-            dic = {"_eid": mail_id, "_folder_id": folder_id, "_bpk": u"classification_folders",
-                   "_path": self.path(mail), "_type": mail.portal_type, "_act": "U",
-                   "modification_date": mail.creation_date}
+            dic = {
+                "_eid": mail_id,
+                "_folder_id": folder_id,
+                "_bpk": u"classification_folders",
+                "_path": self.path(mail),
+                "_type": mail.portal_type,
+                "_act": "U",
+                "modification_date": mail.creation_date,
+            }
             dic.update(kw)
             return dic
 
@@ -2750,17 +3393,27 @@ class TestS1ClassificationFoldersUpdate(DmsTestCase):
             link(u"203", u"F0001"),
             {u"_bpk": u"e_mail", u"_eid": u"204"},
         ]
-        bp = self.section(S1ClassificationFoldersUpdate, "s__1_classification_folders_update", self.options, items,
-                          storage)
+        bp = self.section(
+            S1ClassificationFoldersUpdate, "s__1_classification_folders_update", self.options, items, storage
+        )
         result = list(bp)
         self.assertListEqual(
             result,
             [
                 upd(u"200", u"F0001", im2, classification_categories=[cat_uid], classification_folders=[folder.UID()]),
-                upd(u"201", u"F0002", im3,
-                    description=u"Ceci est la description du courrier 3\r\nDOSSIER: Dossier non importé"),
-                upd(u"203", u"F0001", im4, classification_categories=[cat_uid],
-                    classification_folders=[other.UID(), folder.UID()]),
+                upd(
+                    u"201",
+                    u"F0002",
+                    im3,
+                    description=u"Ceci est la description du courrier 3\r\nDOSSIER: Dossier non importé",
+                ),
+                upd(
+                    u"203",
+                    u"F0001",
+                    im4,
+                    classification_categories=[cat_uid],
+                    classification_folders=[other.UID(), folder.UID()],
+                ),
                 {u"_bpk": u"e_mail", u"_eid": u"204"},
             ],
         )
@@ -2769,8 +3422,11 @@ class TestS1ClassificationFoldersUpdate(DmsTestCase):
         self.assertListEqual(
             [rec for rec in self.logs.records if rec[0] == "dti"],
             [
-                ("dti", "ERROR", u"e_mail_folder: _eid 201, Cannot find folder_id in plone 'F0002' => put in in "
-                                 u"description"),
+                (
+                    "dti",
+                    "ERROR",
+                    u"e_mail_folder: _eid 201, Cannot find folder_id in plone 'F0002' => put in in " u"description",
+                ),
                 ("dti", "ERROR", u"e_mail_folder: _eid 202, Cannot find folder_id 'F9' in existing folders"),
             ],
         )
@@ -2778,17 +3434,28 @@ class TestS1ClassificationFoldersUpdate(DmsTestCase):
         # Plone 4 behaviour (bug?): a mail without classification_categories attribute (example mail of the
         # imio.dms.mail fixture, not created by the pipeline) raises an AttributeError
         storage["data"]["e_mail"][u"205"] = {u"path": self.path(self.mail("courrier5"))}
-        bp = self.section(S1ClassificationFoldersUpdate, "s__1_classification_folders_update", self.options,
-                          [link(u"205", u"F0001")], storage)
+        bp = self.section(
+            S1ClassificationFoldersUpdate,
+            "s__1_classification_folders_update",
+            self.options,
+            [link(u"205", u"F0001")],
+            storage,
+        )
         self.assertRaises(AttributeError, list, bp)
         # empty mail category not filled
         options = dict(self.options, fill_empty_mail_category="0")
-        bp = self.section(S1ClassificationFoldersUpdate, "s__1_classification_folders_update", options, items[:1],
-                          storage)
+        bp = self.section(
+            S1ClassificationFoldersUpdate, "s__1_classification_folders_update", options, items[:1], storage
+        )
         self.assertListEqual(list(bp), [upd(u"200", u"F0001", im2, classification_folders=[folder.UID()])])
         # part not run
-        bp = self.section(S1ClassificationFoldersUpdate, "s__1_classification_folders_update", self.options, items[:1],
-                          self.make_storage("a"))
+        bp = self.section(
+            S1ClassificationFoldersUpdate,
+            "s__1_classification_folders_update",
+            self.options,
+            items[:1],
+            self.make_storage("a"),
+        )
         self.assertListEqual(list(bp), [link(u"200", u"F0001")])
 
 
@@ -2804,20 +3471,29 @@ class TestS3ClassificationFoldersUpdate(DmsTestCase):
     }
 
     def test___init__(self):
-        bp = self.section(S3ClassificationFoldersUpdate, "s__3_classification_folders_update", self.options,
-                          storage=self.make_storage("a"))
+        bp = self.section(
+            S3ClassificationFoldersUpdate,
+            "s__3_classification_folders_update",
+            self.options,
+            storage=self.make_storage("a"),
+        )
         self.assertFalse(hasattr(bp, "paths"))
         storage = self.make_storage("s", e_mail={}, p_irn_to_folder={})
         storage["plone"]["def_category"] = u"abcd"
-        bp = self.section(S3ClassificationFoldersUpdate, "s__3_classification_folders_update", self.options,
-                          storage=storage)
+        bp = self.section(
+            S3ClassificationFoldersUpdate, "s__3_classification_folders_update", self.options, storage=storage
+        )
         self.assertEqual(bp.mail_id_key, u"_mail_id")
         self.assertTrue(bp.rdc)
         self.assertIs(bp.paths, storage["data"]["e_mail"])
         self.assertEqual(bp.def_cat, u"abcd")
         self.assertIs(bp.irn_to_f, storage["data"]["p_irn_to_folder"])
-        bp = self.section(S3ClassificationFoldersUpdate, "s__3_classification_folders_update", {"store_key": "e_mail"},
-                          storage=self.make_storage("s", e_mail={}))
+        bp = self.section(
+            S3ClassificationFoldersUpdate,
+            "s__3_classification_folders_update",
+            {"store_key": "e_mail"},
+            storage=self.make_storage("s", e_mail={}),
+        )
         self.assertEqual(bp.mail_id_key, u"_eid")
         self.assertFalse(bp.rdc)
         self.assertIsNone(bp.def_cat)
@@ -2830,15 +3506,30 @@ class TestS3ClassificationFoldersUpdate(DmsTestCase):
         def_cat = cats[u"-1"]["uid"]
         self.imported(im2, im3, om1, im4)
         im3.classification_categories = [def_cat]
-        paths = {u"200": {u"path": self.path(im2)}, u"201": {u"path": self.path(im3)},
-                 u"202": {u"path": self.path(om1)}, u"203": {u"path": self.path(im4)}}
-        storage = self.make_storage("s", e_mail=paths, e_folder={u"F0002": {u"_title": u"Dossier non importé"}},
-                                    p_irn_to_folder={u"F0001": {"uid": folder.UID()}})
+        paths = {
+            u"200": {u"path": self.path(im2)},
+            u"201": {u"path": self.path(im3)},
+            u"202": {u"path": self.path(om1)},
+            u"203": {u"path": self.path(im4)},
+        }
+        storage = self.make_storage(
+            "s",
+            e_mail=paths,
+            e_folder={u"F0002": {u"_title": u"Dossier non importé"}},
+            p_irn_to_folder={u"F0001": {"uid": folder.UID()}},
+        )
         storage["plone"]["def_category"] = def_cat
 
         def upd(eid, folder_id, mail, **kw):
-            dic = {"_eid": eid, "_folder_id": folder_id, "_bpk": u"classification_folders", "_path": self.path(mail),
-                   "_type": mail.portal_type, "_act": "U", "modification_date": mail.creation_date}
+            dic = {
+                "_eid": eid,
+                "_folder_id": folder_id,
+                "_bpk": u"classification_folders",
+                "_path": self.path(mail),
+                "_type": mail.portal_type,
+                "_act": "U",
+                "modification_date": mail.creation_date,
+            }
             dic.update(kw)
             return dic
 
@@ -2850,8 +3541,9 @@ class TestS3ClassificationFoldersUpdate(DmsTestCase):
             {u"_bpk": u"e_mail_folder", u"_eid": u"5", u"_mail_id": u"203", u"_folder_id": u"F9"},
             {u"_bpk": u"e_mail", u"_eid": u"6"},
         ]
-        bp = self.section(S3ClassificationFoldersUpdate, "s__3_classification_folders_update", self.options, items,
-                          storage)
+        bp = self.section(
+            S3ClassificationFoldersUpdate, "s__3_classification_folders_update", self.options, items, storage
+        )
         folder_cats = list(folder.classification_categories)
         self.assertListEqual(
             list(bp),
@@ -2860,10 +3552,19 @@ class TestS3ClassificationFoldersUpdate(DmsTestCase):
                 # default category replaced
                 upd(u"2", u"F0001", im3, classification_categories=folder_cats, classification_folders=[folder.UID()]),
                 # Plone 4 behaviour (bug?): without _eid, the mail_id_key name is used as _eid
-                upd(u"_mail_id", u"F0001", om1, classification_categories=folder_cats,
-                    classification_folders=[folder.UID()]),
-                upd(u"4", u"F0002", im4, description=u"Ceci est la description du courrier 4\r\nDOSSIER: Dossier non "
-                                                     u"importé"),
+                upd(
+                    u"_mail_id",
+                    u"F0001",
+                    om1,
+                    classification_categories=folder_cats,
+                    classification_folders=[folder.UID()],
+                ),
+                upd(
+                    u"4",
+                    u"F0002",
+                    im4,
+                    description=u"Ceci est la description du courrier 4\r\nDOSSIER: Dossier non " u"importé",
+                ),
                 {u"_bpk": u"e_mail", u"_eid": u"6"},
             ],
         )
@@ -2878,12 +3579,18 @@ class TestS3ClassificationFoldersUpdate(DmsTestCase):
         self.assertDictEqual(dict(storage["course"]), {"s__3_classification_folders_update": 5})
         # Plone 4 behaviour (bug?): without _eid, log_error raises a KeyError
         items = [{u"_bpk": u"e_mail_folder", u"_mail_id": u"202", u"_folder_id": u"F9"}]
-        bp = self.section(S3ClassificationFoldersUpdate, "s__3_classification_folders_update", self.options, items,
-                          storage)
+        bp = self.section(
+            S3ClassificationFoldersUpdate, "s__3_classification_folders_update", self.options, items, storage
+        )
         self.assertRaises(KeyError, list, bp)
         # part not run
-        bp = self.section(S3ClassificationFoldersUpdate, "s__3_classification_folders_update", self.options, items[:1],
-                          self.make_storage("a"))
+        bp = self.section(
+            S3ClassificationFoldersUpdate,
+            "s__3_classification_folders_update",
+            self.options,
+            items[:1],
+            self.make_storage("a"),
+        )
         self.assertEqual(len(list(bp)), 1)
 
 
@@ -2917,14 +3624,19 @@ class TestT1DmsfileCreation(DmsTestCase):
                 ),
             },
         )
-        bp = self.section(T1DmsfileCreation, "t__1_dmsfile_creation", dict(self.options, title_key="_title"),
-                          storage=storage)
+        bp = self.section(
+            T1DmsfileCreation, "t__1_dmsfile_creation", dict(self.options, title_key="_title"), storage=storage
+        )
         self.assertEqual(bp.title_key, u"_title")
 
     def test___iter__(self):
         im2, im3 = self.mail("courrier2"), self.mail("courrier3")
-        for path, content in (("PDF/1000.pdf", b"%PDF-1000"), ("DOC/1001.doc", b"DOC-1001"),
-                              ("PDF/1001.pdf", b"%PDF-1001"), ("scans/x.doc", b"DOC-x")):
+        for path, content in (
+            ("PDF/1000.pdf", b"%PDF-1000"),
+            ("DOC/1001.doc", b"DOC-1001"),
+            ("PDF/1001.pdf", b"%PDF-1001"),
+            ("scans/x.doc", b"DOC-x"),
+        ):
             fullpath = os.path.join(self.tmp, path)
             if not os.path.exists(os.path.dirname(fullpath)):
                 os.makedirs(os.path.dirname(fullpath))
@@ -2932,13 +3644,25 @@ class TestT1DmsfileCreation(DmsTestCase):
                 fh.write(content)
         cdate = datetime(2009, 9, 22, 12, 0)
         e_files = {u"1000": {"f": [(u".pdf", u"PDF")]}, u"1001": {"f": [(u".doc", u"DOC"), (u".pdf", u"PDF")]}}
-        paths = {u"200": {u"path": self.path(im2)}, u"201": {u"path": self.path(im3)},
-                 u"202": {u"path": self.path(im3)}}
+        paths = {
+            u"200": {u"path": self.path(im2)},
+            u"201": {u"path": self.path(im3)},
+            u"202": {u"path": self.path(im3)},
+        }
         storage = self.make_storage("t", e_mail_i=paths, e_files=e_files, e_dmsfile_unfound={})
 
         def efile(eid, mail_id, **kw):
-            dic = {u"_bpk": u"e_file", u"_eid": eid, u"_mail_id": mail_id, u"_desc": u"Fichier scanné",
-                   u"_order": None, u"_fs_path": None, u"_filename": None, u"_ext": None, u"creation_date": cdate}
+            dic = {
+                u"_bpk": u"e_file",
+                u"_eid": eid,
+                u"_mail_id": mail_id,
+                u"_desc": u"Fichier scanné",
+                u"_order": None,
+                u"_fs_path": None,
+                u"_filename": None,
+                u"_ext": None,
+                u"creation_date": cdate,
+            }
             dic.update(kw)
             return dic
 
@@ -2955,9 +3679,18 @@ class TestT1DmsfileCreation(DmsTestCase):
         main_cat, app_cat = bp.categories[u"dmsmainfile"], bp.categories[u"dmsappendixfile"]
 
         def dmsfile(eid, mail, typ, cat, title, data):
-            return {"_eid": eid, "_parenth": self.path(mail), "_type": typ, "_bpk": u"e_dmsfile_i", "_id": eid,
-                    "title": title, "content_category": cat, "creation_date": cdate, "modification_date": cdate,
-                    "file": {"data": data, "filename": title}}
+            return {
+                "_eid": eid,
+                "_parenth": self.path(mail),
+                "_type": typ,
+                "_bpk": u"e_dmsfile_i",
+                "_id": eid,
+                "title": title,
+                "content_category": cat,
+                "creation_date": cdate,
+                "modification_date": cdate,
+                "file": {"data": data, "filename": title},
+            }
 
         self.assertListEqual(
             result,
@@ -2983,19 +3716,37 @@ class TestT1DmsfileCreation(DmsTestCase):
                 ("dti", "ERROR", u"e_file: _eid 1005, Cannot open filename 'missing/1005.pdf'"),
             ],
         )
-        self.assertDictEqual(bp.files, {u"200": {"lo": 2, "ids": [u"1000", u"1001"]},
-                                        u"201": {"lo": None, "ids": [u"1003"]},
-                                        u"202": {"lo": None, "ids": [u"1004", u"1005"]}})
+        self.assertDictEqual(
+            bp.files,
+            {
+                u"200": {"lo": 2, "ids": [u"1000", u"1001"]},
+                u"201": {"lo": None, "ids": [u"1003"]},
+                u"202": {"lo": None, "ids": [u"1004", u"1005"]},
+            },
+        )
         self.assertDictEqual(dict(storage["course"]), {"t__1_dmsfile_creation": 5})
         # outgoing mails main file, other files
-        options = dict(self.options, bp_key="e_dmsfile_o",
-                       categories="dmsommainfile annexes_types/outgoing_dms_files/outgoing-scanned-dms-file")
-        bp = self.section(T1DmsfileCreation, "u__1_dmsfile_creation", options, items[:1], self.make_storage(
-            "u", e_mail_i=paths, e_files=e_files))
+        options = dict(
+            self.options,
+            bp_key="e_dmsfile_o",
+            categories="dmsommainfile annexes_types/outgoing_dms_files/outgoing-scanned-dms-file",
+        )
+        bp = self.section(
+            T1DmsfileCreation,
+            "u__1_dmsfile_creation",
+            options,
+            items[:1],
+            self.make_storage("u", e_mail_i=paths, e_files=e_files),
+        )
         self.assertEqual(next(iter(bp))["_type"], "dmsommainfile")
         options = dict(self.options, bp_key="e_dmsfile_x")
-        bp = self.section(T1DmsfileCreation, "t__1_dmsfile_creation", options, items[:1], self.make_storage(
-            "t", e_mail_i=paths, e_files=e_files))
+        bp = self.section(
+            T1DmsfileCreation,
+            "t__1_dmsfile_creation",
+            options,
+            items[:1],
+            self.make_storage("t", e_mail_i=paths, e_files=e_files),
+        )
         self.assertEqual(next(iter(bp))["_type"], "dmsappendixfile")
         # part not run
         bp = self.section(T1DmsfileCreation, "t__1_dmsfile_creation", self.options, items[5:], self.make_storage("a"))
@@ -3035,8 +3786,12 @@ class TestX1ReplyToUpdate(DmsTestCase):
         om3.reply_to = [RelationValue(iid(im2))]
         for obj in (im1, om2, om3):
             notify(ObjectModifiedEvent(obj))
-        paths = {u"300": {u"path": self.path(om1)}, u"302": {u"path": self.path(om3)},
-                 u"200": {u"path": self.path(im1)}, u"201": {u"path": self.path(im2)}}
+        paths = {
+            u"300": {u"path": self.path(om1)},
+            u"302": {u"path": self.path(om3)},
+            u"200": {u"path": self.path(im1)},
+            u"201": {u"path": self.path(im2)},
+        }
         storage = self.make_storage("x", e_mail=paths)
         items = [
             {u"_bpk": u"e_mail_link", u"_eid": u"300", u"_target_id": u"200"},
@@ -3049,8 +3804,14 @@ class TestX1ReplyToUpdate(DmsTestCase):
         self.assertListEqual(
             [dict((k, v) for k, v in item.items() if k != "reply_to") for item in result],
             [
-                {"_eid": u"300", "_target_id": u"200", "_bpk": "reply_to", "_path": self.path(om1),
-                 "_type": "dmsoutgoingmail", "_act": "U"},
+                {
+                    "_eid": u"300",
+                    "_target_id": u"200",
+                    "_bpk": "reply_to",
+                    "_path": self.path(om1),
+                    "_type": "dmsoutgoingmail",
+                    "_act": "U",
+                },
                 {u"_bpk": u"e_mail", u"_eid": u"303"},
             ],
         )
@@ -3160,11 +3921,14 @@ class TestXmlContactStore(DmsTestCase):
         self.assertDictEqual(
             bp.xml_ct_cols,
             {
-                u"Organization:OrgId:_parent_id": [(u"Name", u"_organization"), (u"Level1", u"_division"),
-                                                   (u"Address", u"_street"), (u"ZipCode", u"_pc"),
-                                                   (u"City", u"_city")],
-                u"Contact:PersId:": [(u"FirstName", u"firstname"), (u"LastName", u"lastname"),
-                                     (u"Email", u"_email1")],
+                u"Organization:OrgId:_parent_id": [
+                    (u"Name", u"_organization"),
+                    (u"Level1", u"_division"),
+                    (u"Address", u"_street"),
+                    (u"ZipCode", u"_pc"),
+                    (u"City", u"_city"),
+                ],
+                u"Contact:PersId:": [(u"FirstName", u"firstname"), (u"LastName", u"lastname"), (u"Email", u"_email1")],
             },
         )
         self.assertFalse(bp.empty_store)
@@ -3173,8 +3937,12 @@ class TestXmlContactStore(DmsTestCase):
         self.assertFalse(bp.yield_original)
         self.assertDictEqual(storage["data"]["e_contact"], {})
         storage["data"]["e_contact"] = {u"1": {}}
-        bp = self.section(XmlContactStore, "m__2_archives_xml_contact_store", self.options2, storage=self.make_storage(
-            "m", e_contact={u"1": {}}))
+        bp = self.section(
+            XmlContactStore,
+            "m__2_archives_xml_contact_store",
+            self.options2,
+            storage=self.make_storage("m", e_contact={u"1": {}}),
+        )
         self.assertDictEqual(bp.storage["data"]["e_contact"], {u"1": {}})  # not emptied at init
         self.assertTrue(bp.empty_store)
         self.assertTrue(bp.cku)
@@ -3182,11 +3950,23 @@ class TestXmlContactStore(DmsTestCase):
         self.assertEqual(bp.contact_id_key, u"_sender_id")
         # Plone 4 behaviour (bug?): a string is raised instead of an exception
         options = dict(self.options2, xml_contact_cols="K2ID Organisme _organization")
-        self.assertRaises(TypeError, self.section, XmlContactStore, "m__2_archives_xml_contact_store", options,
-                          storage=self.make_storage("m"))
+        self.assertRaises(
+            TypeError,
+            self.section,
+            XmlContactStore,
+            "m__2_archives_xml_contact_store",
+            options,
+            storage=self.make_storage("m"),
+        )
         options = dict(self.options2, xml_contact_cols=":K2ID: Organisme")
-        self.assertRaises(ValueError, self.section, XmlContactStore, "m__2_archives_xml_contact_store", options,
-                          storage=self.make_storage("m"))
+        self.assertRaises(
+            ValueError,
+            self.section,
+            XmlContactStore,
+            "m__2_archives_xml_contact_store",
+            options,
+            storage=self.make_storage("m"),
+        )
 
     def test___iter__(self):
         storage = self.make_storage("i")
@@ -3197,8 +3977,13 @@ class TestXmlContactStore(DmsTestCase):
         self.assertListEqual(sorted(e_contact), [u"12", u"34", u"35"])  # org 13 without value is not stored
         self.assertDictEqual(
             e_contact[u"12"],
-            {u"_organization": u"Commune de Colfontaine", u"_division": u"Travaux", u"_street": u"Rue Haute 1",
-             u"_pc": u"7340", u"_city": u"Colfontaine"},
+            {
+                u"_organization": u"Commune de Colfontaine",
+                u"_division": u"Travaux",
+                u"_street": u"Rue Haute 1",
+                u"_pc": u"7340",
+                u"_city": u"Colfontaine",
+            },
         )
         self.assertIsInstance(e_contact[u"12"][u"_organization"], six.text_type)
         # the organization id is linked on the contact only if the organization is handled before (dict order)
@@ -3210,11 +3995,15 @@ class TestXmlContactStore(DmsTestCase):
         self.assertDictEqual(e_contact[u"35"], {u"firstname": u"", u"lastname": u"Martin", u"_email1": u""})
         self.assertDictEqual(dict(storage["course"]), {"i__2_xml_contact_store": 1})
         # m__2_archives_xml_contact_store: contact id on item, store emptied, item yielded for each contact
-        xml = (u"<Archive><Expediteur><K2ID>5</K2ID><Organisme>SWDE</Organisme><Nom>Robinet</Nom></Expediteur>"
-               u"<Expediteur><K2ID>6</K2ID><Nom>Courant</Nom></Expediteur></Archive>")
+        xml = (
+            u"<Archive><Expediteur><K2ID>5</K2ID><Organisme>SWDE</Organisme><Nom>Robinet</Nom></Expediteur>"
+            u"<Expediteur><K2ID>6</K2ID><Nom>Courant</Nom></Expediteur></Archive>"
+        )
         storage = self.make_storage("m", e_contact={u"1": {}})
-        items = [{u"_bpk": u"e_mail_recip_i", u"_eid": u"1", u"_xml_a": xml},
-                 {u"_bpk": u"e_mail_recip_i", u"_eid": u"2", u"_xml_a": u"<Archive></Archive>"}]
+        items = [
+            {u"_bpk": u"e_mail_recip_i", u"_eid": u"1", u"_xml_a": xml},
+            {u"_bpk": u"e_mail_recip_i", u"_eid": u"2", u"_xml_a": u"<Archive></Archive>"},
+        ]
         bp = self.section(XmlContactStore, "m__2_archives_xml_contact_store", self.options2, items, storage)
         result = [(item[u"_eid"], item[u"_sender_id"], dict(storage["data"]["e_contact"])) for item in bp]
         self.assertListEqual(
@@ -3226,10 +4015,12 @@ class TestXmlContactStore(DmsTestCase):
             ],
         )
         # key uniqueness check
-        xml = (u"<Archive><Expediteur><K2ID>5</K2ID><Nom>Robinet</Nom></Expediteur>"
-               u"<Expediteur><K2ID>5</K2ID><Nom>Robinet bis</Nom></Expediteur>"
-               u"<Expediteur><K2ID>0</K2ID><Nom>Zéro</Nom></Expediteur>"
-               u"<Expediteur><K2ID>0</K2ID><Nom>Zéro bis</Nom></Expediteur></Archive>")
+        xml = (
+            u"<Archive><Expediteur><K2ID>5</K2ID><Nom>Robinet</Nom></Expediteur>"
+            u"<Expediteur><K2ID>5</K2ID><Nom>Robinet bis</Nom></Expediteur>"
+            u"<Expediteur><K2ID>0</K2ID><Nom>Zéro</Nom></Expediteur>"
+            u"<Expediteur><K2ID>0</K2ID><Nom>Zéro bis</Nom></Expediteur></Archive>"
+        )
         storage = self.make_storage("m")
         options = dict(self.options2, empty_store="0", yield_original="0")
         items = [{u"_bpk": u"e_mail_recip_i", u"_eid": u"3", u"_xml_a": xml}]
@@ -3237,13 +4028,16 @@ class TestXmlContactStore(DmsTestCase):
         self.assertListEqual(list(bp), [])
         self.assertDictEqual(
             storage["data"]["e_contact"],
-            {u"5": {u"_organization": u"", u"lastname": u"Robinet bis"},
-             u"0": {u"_organization": u"", u"lastname": u"Zéro"},
-             u"1": {u"_organization": u"", u"lastname": u"Zéro bis"}},
+            {
+                u"5": {u"_organization": u"", u"lastname": u"Robinet bis"},
+                u"0": {u"_organization": u"", u"lastname": u"Zéro"},
+                u"1": {u"_organization": u"", u"lastname": u"Zéro bis"},
+            },
         )
         self.assertEqual(items[0][u"_sender_id"], u"1")
-        self.assertIn(("dti", "ERROR", u"e_mail_recip_i: _eid 3, Key '5' already in 'e_contact' data dict"),
-                      self.logs.records)
+        self.assertIn(
+            ("dti", "ERROR", u"e_mail_recip_i: _eid 3, Key '5' already in 'e_contact' data dict"), self.logs.records
+        )
         # part not run
         items = [{u"_bpk": u"e_contact", u"_eid": u"1", u"_xml": self.xml}]
         bp = self.section(XmlContactStore, "i__2_xml_contact_store", self.options, items, self.make_storage("a"))
@@ -3276,8 +4070,12 @@ class TestMavalHandling(DmsTestCase):
          TVX REMARQUE data_transfer \"\"""",
     }
     e_palib = {
-        u"PROFILINF0": {u"NOM": {u"_val": u"Nom"}, u"ADRESSE": {u"_val": u"Adresse"},
-                        u"LOCALITE": {u"_val": u"Localité"}, u"USERTRAIT": {u"_val": u"Agent traitant"}},
+        u"PROFILINF0": {
+            u"NOM": {u"_val": u"Nom"},
+            u"ADRESSE": {u"_val": u"Adresse"},
+            u"LOCALITE": {u"_val": u"Localité"},
+            u"USERTRAIT": {u"_val": u"Agent traitant"},
+        },
         u"PARAMUTIL": {u"FDPAP": {u"_val": u"Papier"}},
     }
 
@@ -3288,8 +4086,9 @@ class TestMavalHandling(DmsTestCase):
         return self.section(MavalHandling, "m__4_maval_i", self.options, storage=storage, config=self.config)
 
     def test___init__(self):
-        bp = self.section(MavalHandling, "m__4_maval_i", self.options, storage=self.make_storage("a"),
-                          config=self.config)
+        bp = self.section(
+            MavalHandling, "m__4_maval_i", self.options, storage=self.make_storage("a"), config=self.config
+        )
         self.assertEqual(bp.bp_key, u"e_maval_i")
         self.assertFalse(hasattr(bp, "fields"))
         bp = self.maval()
@@ -3326,8 +4125,13 @@ class TestMavalHandling(DmsTestCase):
         self.assertEqual((bp.e_type, bp.default_mt), ("E", "courrier"))
         self.assertIn(self.uid(PLONEGROUP + "/direction-generale/secretariat"), bp.p_u_s_editor["agent"])
         self.assertListEqual(bp.p_u_s_editor["chef"], [])
-        bp = self.section(MavalHandling, "m__4_maval_i", dict(self.options, functions="OM"),
-                          storage=self.make_storage("m", e_mail_i={}), config=self.config)
+        bp = self.section(
+            MavalHandling,
+            "m__4_maval_i",
+            dict(self.options, functions="OM"),
+            storage=self.make_storage("m", e_mail_i={}),
+            config=self.config,
+        )
         self.assertEqual((bp.e_type, bp.default_mt), ("S", "lettre"))
         self.assertIn(self.uid(PLONEGROUP + "/direction-financiere"), bp.p_u_s_editor["chef"])
 
@@ -3335,20 +4139,31 @@ class TestMavalHandling(DmsTestCase):
         im2, im3, im4, im6 = (self.mail(mid) for mid in ("courrier2", "courrier3", "courrier4", "courrier6"))
         secr_uid = self.uid(PLONEGROUP + "/direction-generale/secretariat")
         grh_uid = self.uid(PLONEGROUP + "/direction-generale/grh")
-        paths = {u"200": {u"path": self.path(im2)}, u"201": {u"path": self.path(im3)},
-                 u"202": {u"path": u"/incoming-mail/unknown"}, u"203": {u"path": self.path(im4)},
-                 u"204": {u"path": self.path(im6)}}
+        paths = {
+            u"200": {u"path": self.path(im2)},
+            u"201": {u"path": self.path(im3)},
+            u"202": {u"path": u"/incoming-mail/unknown"},
+            u"203": {u"path": self.path(im4)},
+            u"204": {u"path": self.path(im6)},
+        }
         storage = self.make_storage(
             "m",
             e_mail_i=paths,
-            e_mails_prd={u"200": {u"_prd": u"ENTRANT"}, u"201": {u"_prd": u"TVX"}, u"202": {u"_prd": u"ENTRANT"},
-                         u"203": {u"_prd": u"ENTRANT"}, u"204": {u"_prd": u"ENTRANT"}},
+            e_mails_prd={
+                u"200": {u"_prd": u"ENTRANT"},
+                u"201": {u"_prd": u"TVX"},
+                u"202": {u"_prd": u"ENTRANT"},
+                u"203": {u"_prd": u"ENTRANT"},
+                u"204": {u"_prd": u"ENTRANT"},
+            },
             e_palib=self.e_palib,
             e_service_match={u"S1": {u"uid": secr_uid}, u"S2": {u"uid": grh_uid}},
             e_mailtype_match={u"T1": {u"E": {u"_key": u"facture"}}},
-            e_user_match={u"U1": {u"_p_userid": u"agent", u"_nom": u"Agent"},
-                          u"U4": {u"_p_userid": u"chef", u"_nom": u"Chef"},
-                          u"U9": {u"_p_userid": None, u"_nom": u"DELETED"}},
+            e_user_match={
+                u"U1": {u"_p_userid": u"agent", u"_nom": u"Agent"},
+                u"U4": {u"_p_userid": u"chef", u"_nom": u"Chef"},
+                u"U9": {u"_p_userid": None, u"_nom": u"DELETED"},
+            },
         )
 
         def mv(eid, fld, val, **kw):
@@ -3357,8 +4172,14 @@ class TestMavalHandling(DmsTestCase):
             return dic
 
         def upd(eid, fld, mail, **kw):
-            dic = {"_eid": eid, "_path": self.path(mail), "_type": "dmsincomingmail", "_bpk": "i_maval_{}".format(fld),
-                   "_act": "U", "modification_date": mail.creation_date}
+            dic = {
+                "_eid": eid,
+                "_path": self.path(mail),
+                "_type": "dmsincomingmail",
+                "_bpk": "i_maval_{}".format(fld),
+                "_act": "U",
+                "modification_date": mail.creation_date,
+            }
             dic.update(kw)
             return dic
 
@@ -3381,8 +4202,13 @@ class TestMavalHandling(DmsTestCase):
         self.assertListEqual(
             list(bp),
             [
-                upd(u"200", u"NOM", im2, description=u"Nom: Dupont\r\nCeci est la description du courrier 2",
-                    data_transfer=u"Nom: Dupont"),
+                upd(
+                    u"200",
+                    u"NOM",
+                    im2,
+                    description=u"Nom: Dupont\r\nCeci est la description du courrier 2",
+                    data_transfer=u"Nom: Dupont",
+                ),
                 upd(u"200", u"TYPEDOC", im2, mail_type=u"facture"),
                 upd(u"200", u"TYPEDOC", im2, mail_type="courrier"),
                 upd(u"200", u"CODEABARRE", im2, internal_reference_no=u"CB123"),
@@ -3398,14 +4224,26 @@ class TestMavalHandling(DmsTestCase):
         errors = [rec[2] for rec in self.logs.records if rec[0] == "dti"]
         self.assertEqual(errors[0], u"e_mail_maval_i: _eid 200, 'ENTRANT', 'UNKNOWN' not found in fields config")
         self.assertTrue(errors[1].startswith(u"e_mail_maval_i: _eid 200, not a valid date '2023' in key 'k': "))
-        self.assertEqual(errors[2], u"e_mail_maval_i: _eid 200, None value for field 'DATEDOC', p_fld "
-                                    u"'original_mail_date', transform 'date:%Y%m%d'")
+        self.assertEqual(
+            errors[2],
+            u"e_mail_maval_i: _eid 200, None value for field 'DATEDOC', p_fld "
+            u"'original_mail_date', transform 'date:%Y%m%d'",
+        )
         self.assertEqual(len(errors), 3)
         self.assertIn(("dto", "WARNING", "mail 202: path '/incoming-mail/unknown' not found"), self.logs.records)
         self.assertListEqual(
             sorted(storage["data"]["e_maval_i"]),
-            [u"200|CODEABARRE", u"200|COPIES", u"200|DATEDOC", u"200|NOM", u"200|REGCE", u"200|TYPEDOC",
-             u"200|UNKNOWN", u"201|REMARQUE", u"202|NOM"],
+            [
+                u"200|CODEABARRE",
+                u"200|COPIES",
+                u"200|DATEDOC",
+                u"200|NOM",
+                u"200|REGCE",
+                u"200|TYPEDOC",
+                u"200|UNKNOWN",
+                u"201|REMARQUE",
+                u"202|NOM",
+            ],
         )
         self.assertDictEqual(dict(storage["course"]), {"m__4_maval_i": 12})
 
@@ -3425,8 +4263,9 @@ class TestMavalHandling(DmsTestCase):
         item2 = next(gen)
         self.assertDictEqual(item2, upd(u"200", u"USERTRAIT", im2, data_transfer=u"Agent traitant: U1"))
         im2.data_transfer = item2["data_transfer"]
-        self.assertDictEqual(next(gen), upd(u"200", u"SERVDEST", im2, treating_groups=grh_uid, data_transfer=u"",
-                                            assigned_user=u"agent"))
+        self.assertDictEqual(
+            next(gen), upd(u"200", u"SERVDEST", im2, treating_groups=grh_uid, data_transfer=u"", assigned_user=u"agent")
+        )
         item2 = next(gen)
         self.assertDictEqual(item2, upd(u"203", u"SERVDEST", im4, treating_groups=secr_uid))
         im4.treating_groups = item2["treating_groups"]
@@ -3437,12 +4276,21 @@ class TestMavalHandling(DmsTestCase):
         im6.data_transfer = item2["data_transfer"]
         # Plone 4 behaviour (bug?): the temporary line is removed, giving an empty text, then the name is added
         # to the mail text (empty text_fld) where the temporary line is still present
-        self.assertDictEqual(next(gen), upd(u"204", u"SERVDEST", im6, treating_groups=secr_uid,
-                                            data_transfer=u"Agent traitant: U4\r\nAgent traitant: Chef"))
+        self.assertDictEqual(
+            next(gen),
+            upd(
+                u"204",
+                u"SERVDEST",
+                im6,
+                treating_groups=secr_uid,
+                data_transfer=u"Agent traitant: U4\r\nAgent traitant: Chef",
+            ),
+        )
         self.assertListEqual(list(gen), [])
         # part not run
-        bp = self.section(MavalHandling, "m__4_maval_i", self.options, items[:1], self.make_storage("a"),
-                          config=self.config)
+        bp = self.section(
+            MavalHandling, "m__4_maval_i", self.options, items[:1], self.make_storage("a"), config=self.config
+        )
         self.assertListEqual(list(bp), [mv(u"200", u"USERTRAIT", u"U1")])
 
     def test_text_field(self):
@@ -3457,27 +4305,46 @@ class TestMavalHandling(DmsTestCase):
         self.assertIsInstance(item2["data_transfer"], six.text_type)
         # add after the first found previous field, from a given text
         text = u"Nom: Dupont\r\nRemarque: x"
-        bp.text_field({u"_fld": u"LOCALITE", u"_val": u"Mons"}, item2, im2, "data_transfer", u"after:ADRESSE,NOM",
-                      text_fld=text)
+        bp.text_field(
+            {u"_fld": u"LOCALITE", u"_val": u"Mons"}, item2, im2, "data_transfer", u"after:ADRESSE,NOM", text_fld=text
+        )
         self.assertEqual(item2["data_transfer"], u"Nom: Dupont\r\nLocalité: Mons\r\nRemarque: x")
-        bp.text_field({u"_fld": u"LOCALITE", u"_val": u"Mons"}, item2, im2, "data_transfer", u"after:ADRESSE",
-                      text_fld=text)
+        bp.text_field(
+            {u"_fld": u"LOCALITE", u"_val": u"Mons"}, item2, im2, "data_transfer", u"after:ADRESSE", text_fld=text
+        )
         self.assertEqual(item2["data_transfer"], u"Nom: Dupont\r\nRemarque: x\r\nLocalité: Mons")  # not found: end
         # add at the end, label not defined, given value, given label key
         bp.text_field({u"_fld": u"REMARQUE", u"_val": u"y"}, item2, im2, "data_transfer", u"", text_fld=text)
         self.assertEqual(item2["data_transfer"], u"Nom: Dupont\r\nRemarque: x\r\nREMARQUE: y")
-        bp.text_field({u"_fld": u"SERVDEST", u"_val": u"S1"}, item2, im2, "data_transfer", u"", lib_key=u"USERTRAIT",
-                      value=u"Chef", text_fld=text)
+        bp.text_field(
+            {u"_fld": u"SERVDEST", u"_val": u"S1"},
+            item2,
+            im2,
+            "data_transfer",
+            u"",
+            lib_key=u"USERTRAIT",
+            value=u"Chef",
+            text_fld=text,
+        )
         self.assertEqual(item2["data_transfer"], u"Nom: Dupont\r\nRemarque: x\r\nAgent traitant: Chef")
         # remove
         text = u"Nom: Dupont\r\nAgent traitant: U1"
         item2 = {}
-        ret = bp.text_field({u"_fld": u"SERVDEST", u"_val": u"S1"}, item2, im2, "data_transfer", u"",
-                            action="remove", lib_key=u"USERTRAIT", text_fld=text)
+        ret = bp.text_field(
+            {u"_fld": u"SERVDEST", u"_val": u"S1"},
+            item2,
+            im2,
+            "data_transfer",
+            u"",
+            action="remove",
+            lib_key=u"USERTRAIT",
+            text_fld=text,
+        )
         self.assertEqual(ret, u"U1")
         self.assertDictEqual(item2, {"data_transfer": u"Nom: Dupont"})
-        ret = bp.text_field({u"_fld": u"ADRESSE", u"_val": u""}, item2, im2, "data_transfer", u"", action="remove",
-                            text_fld=text)
+        ret = bp.text_field(
+            {u"_fld": u"ADRESSE", u"_val": u""}, item2, im2, "data_transfer", u"", action="remove", text_fld=text
+        )
         self.assertIsNone(ret)
         self.assertDictEqual(item2, {"data_transfer": text})
 
@@ -3494,8 +4361,12 @@ class TestMavalHandling(DmsTestCase):
         self.assertDictEqual(item2, {"assigned_user": "agent"})
 
     def test_transform_value(self):
-        bp = self.maval(e_papri={u"FORMAT_DOC": {u"_prienc": u"CBO", u"_prizon": u"FD"},
-                                 u"OTHER": {u"_prienc": u"TXT", u"_prizon": u"OT"}})
+        bp = self.maval(
+            e_papri={
+                u"FORMAT_DOC": {u"_prienc": u"CBO", u"_prizon": u"FD"},
+                u"OTHER": {u"_prienc": u"TXT", u"_prizon": u"OT"},
+            }
+        )
 
         def mv(val):
             return {u"_bpk": u"e_mail_maval_i", u"_eid": u"200", u"_fld": u"DATEDOC", u"_val": val}

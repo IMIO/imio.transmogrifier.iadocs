@@ -214,9 +214,7 @@ class TestBluePrintVarious(unittest.TestCase):
         # group_key and condition
         options = {"group_key": "_bpk", "condition": "python:'skip' not in item"}
         self.assertEqual(list(Count(tr, "count_g", options, iter([dict(it) for it in items]))), items)
-        self.assertEqual(
-            tr.storage["count"], {"count_g": {u"a": {"c": 2}, u"b": {"c": 1}, u"_bpk_missing": {"c": 1}}}
-        )
+        self.assertEqual(tr.storage["count"], {"count_g": {u"a": {"c": 2}, u"b": {"c": 1}, u"_bpk_missing": {"c": 1}}})
         self.assertEqual(dict(tr.storage["course"]), {"count_g": 4})
         self.assertEqual(
             sorted(self.messages()),

@@ -193,8 +193,9 @@ class BMailtypeUpdate(object):
                 keys = sorted(self.to_add[typ].keys(), key=lambda d: self.to_add[typ][d]["dtitle"].lower())
                 for key in keys:
                     values.append(self.to_add[typ][key])
-                    o_logger.info("Part b: updating '{}' mail types with new value: {}".format(typ,
-                                                                                               self.to_add[typ][key]))
+                    o_logger.info(
+                        "Part b: updating '{}' mail types with new value: {}".format(typ, self.to_add[typ][key])
+                    )
                 api.portal.set_registry_record(MAILTYPES[typ], values)
             self.storage["data"]["p_mailtype"] = get_mailtypes(self.portal)
 
@@ -1272,7 +1273,8 @@ class I1ContactUpdate(object):
                             item["number"] = a_dic["_number"]
                         if a_dic["_box"]:
                             item["number"] = (
-                                item.get("number") and u"{} bte {}".format(item["number"], a_dic["_box"])
+                                item.get("number")
+                                and u"{} bte {}".format(item["number"], a_dic["_box"])
                                 or a_dic["_box"]
                             )
                         if a_dic["_street"]:
@@ -1986,7 +1988,8 @@ class MavalHandling(object):
                         log_error(
                             item,
                             "None value for field '{}', p_fld '{}', transform '{}'".format(
-                                item["_fld"], p_fld, transform),
+                                item["_fld"], p_fld, transform
+                            ),
                         )
                         continue
             yield item2
@@ -2012,9 +2015,7 @@ class MavalHandling(object):
                     if yet:
                         position = yet[0] + 1
                         break
-            c_lines.insert(
-                position, u"{}: {}".format(lib, value and value or self.transform_value(item, transform))
-            )
+            c_lines.insert(position, u"{}: {}".format(lib, value and value or self.transform_value(item, transform)))
         elif action == "remove":
             lib = self.e_palib[u"PROFILINF0"].get(lib_key, {}).get(u"_val", "__unfound__")
             to_remove = [line for line in c_lines if line.startswith(u"{}: ".format(lib))]
@@ -2449,8 +2450,11 @@ class RsyncFileWrite(object):
         if is_in_part(self, self.parts) and self.doit and self.unused_filename and self.files:
             o_logger.info(u"Writing '{}'".format(self.unused_filename))
             with io.open(self.unused_filename, mode="w", encoding="utf8") as fh:
-                lines = [u"{}/{}{}\n".format(path, basename, ext) for basename in set(self.files) - self.used
-                         for ext, path in self.files[basename]["f"]]
+                lines = [
+                    u"{}/{}{}\n".format(path, basename, ext)
+                    for basename in set(self.files) - self.used
+                    for ext, path in self.files[basename]["f"]
+                ]
                 for line in sorted(lines):
                     fh.write(line)
 

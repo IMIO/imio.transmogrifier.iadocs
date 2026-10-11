@@ -267,14 +267,16 @@ class TestUtilsDms(unittest.TestCase):
         folder = parent["cas-particuliers-demandes-en-autorisation-2013-2021"]
         uids, irn_to_folder, titles = get_folders(section)
         self.assertEqual(len(uids), 22)
-        full_title = u"Usage de la voie publique : Stationnement et amarrage \u23e9 Cas particuliers : Demandes en " \
-                     u"autorisation \u2013 2021"
+        full_title = (
+            u"Usage de la voie publique : Stationnement et amarrage \u23e9 Cas particuliers : Demandes en "
+            u"autorisation \u2013 2021"
+        )
         self.assertEqual(
             uids[folder.UID()],
             {
                 "title": u"Cas particuliers : Demandes en autorisation \u2013 2021",
                 "path": "/plone/folders/usage-de-la-voie-publique-stationnement-et-amarrage/"
-                        "cas-particuliers-demandes-en-autorisation-2013-2021",
+                "cas-particuliers-demandes-en-autorisation-2013-2021",
                 "full_title": full_title,
                 "parent": parent.UID(),
                 "irn": u"F0007-02",

@@ -318,11 +318,13 @@ class Initialization(object):
         # customer type 4
         if "9" in self.storage["parts"]:
             fields_dic = {}
-            for prof_str, letter in ((transmogrifier["config"]["profils_donnee_E"], "E"),
-                                     (transmogrifier["config"]["profils_donnee_S"], "S"),
-                                     (transmogrifier["config"]["profils_dossier"], "F")):
+            for prof_str, letter in (
+                (transmogrifier["config"]["profils_donnee_E"], "E"),
+                (transmogrifier["config"]["profils_donnee_S"], "S"),
+                (transmogrifier["config"]["profils_dossier"], "F"),
+            ):
                 profiles = prof_str.strip(" ").split(" ")
-                fields_dic.update({k: {'typ': letter} for k in profiles if k})
+                fields_dic.update({k: {"typ": letter} for k in profiles if k})
             flds_opt = transmogrifier["config"]["fields"].replace("\n", " ")
             flds_opt = next(csv.reader([flds_opt.strip()], delimiter=" ", quotechar='"', skipinitialspace=True))
             flds_opt = [safe_unicode(cell) for cell in flds_opt]

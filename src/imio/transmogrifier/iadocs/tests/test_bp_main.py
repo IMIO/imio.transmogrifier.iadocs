@@ -780,8 +780,9 @@ class TestBluePrintMainDms(unittest.TestCase):
         self.assertTrue(self.portal.portal_css.getResource("imiodmsmail_archives.css").getEnabled())
         self.assertListEqual(queryUtility(ICronConfiguration, "cron4plone_config").cronjobs, [])
         self.assertEqual(IAnnotations(self.portal)["transmo.pr_vct"], orig_vct)
-        self.assertListEqual(self.messages(), [("dto", "INFO", u"STARTING 't9' parts at {}".format(
-            self.messages()[0][2][-13:]))])
+        self.assertListEqual(
+            self.messages(), [("dto", "INFO", u"STARTING 't9' parts at {}".format(self.messages()[0][2][-13:]))]
+        )
 
     def test_insert_path(self):
         tr = self.get_transmogrifier(parts="i", csv={u"e_contact": {"fd": [u"_lastname", u"_eid", u"title"]}})

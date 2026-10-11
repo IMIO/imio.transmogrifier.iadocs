@@ -10,7 +10,6 @@ from imio.helpers.content import uuidToObject
 from imio.helpers.transmogrifier import key_val as dim
 from imio.helpers.transmogrifier import relative_path
 from imio.helpers.vocabularies import get_users_voc
-# from imio.pyutils.system import dump_var
 from imio.pyutils.system import full_path
 from imio.pyutils.system import load_var
 from imio.transmogrifier.iadocs import e_logger
@@ -104,9 +103,9 @@ def get_file_content(section, item):
     paths = []
     if item.get("_fs_path"):
         paths.append(item["_fs_path"])
-    if item['_eid'] in df:
-        for ext, path in df[item['_eid']]['f']:  # {'f': [(u'.pdf', u'PDF_0-999')]}
-            path = u"{}/{}{}".format(path, item['_eid'], ext)
+    if item["_eid"] in df:
+        for ext, path in df[item["_eid"]]["f"]:  # {'f': [(u'.pdf', u'PDF_0-999')]}
+            path = u"{}/{}{}".format(path, item["_eid"], ext)
             if path not in paths:
                 paths.append(path)
     if not paths:
@@ -124,10 +123,10 @@ def get_file_content(section, item):
     if not fullpaths:
         return paths[0], None, None
     # take pdf first
-    if '.pdf' in fullpaths:
-        fullpath, path = fullpaths['.pdf']
+    if ".pdf" in fullpaths:
+        fullpath, path = fullpaths[".pdf"]
         item["_fs_path"] = path
-        ext = '.pdf'
+        ext = ".pdf"
     else:
         ext = min(fullpaths.keys())
         fullpath, path = fullpaths[ext]

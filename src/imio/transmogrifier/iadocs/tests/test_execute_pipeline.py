@@ -129,8 +129,10 @@ class TestExecutePipeline(unittest.TestCase):
         self.write_pipeline(PIPELINE.replace(u"permitted_sections = abcelmz", u""))
         self.assertEqual(auto_parts(Namespace(parts="x"), "l"), ("abclx", []))
         # Plone 4 behaviour (bug?): a need_other section without parts prefix fails
-        self.write_pipeline(PIPELINE.replace(u"    init\n", u"    init\n    need\n") + u"\n[need]\nblueprint = "
-                            u"imio.transmogrifier.iadocs.need_other\nparts = a\n")
+        self.write_pipeline(
+            PIPELINE.replace(u"    init\n", u"    init\n    need\n") + u"\n[need]\nblueprint = "
+            u"imio.transmogrifier.iadocs.need_other\nparts = a\n"
+        )
         self.assertRaises(TypeError, auto_parts, Namespace(parts=""), "l")
 
     def test_main(self):
