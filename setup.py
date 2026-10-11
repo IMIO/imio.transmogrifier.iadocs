@@ -41,6 +41,8 @@ setup(
     zip_safe=False,
     install_requires=[
         # -*- Extra requirements: -*-
+        # installed by the Initialization section (internal_number_behavior_types)
+        "collective.behavior.internalnumber",
         "imio.dms.mail",
         "imio.pyutils",
         "plone.api>=1.8.4",
@@ -51,6 +53,9 @@ setup(
     extras_require={
         "test": [
             "plone.app.testing",
+            # imio.dms.mail fixture (testing.zcml loads collective.MockMailHost)
+            "imio.dms.mail[test]",
+            "collective.MockMailHost",
             # Plone KGS does not use this version, because it would break
             # Remove if your package shall be part of coredev.
             # plone_coredev tests as of 2016-04-01.

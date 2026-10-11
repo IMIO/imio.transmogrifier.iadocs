@@ -36,3 +36,4 @@ var/
 .python-version
 CACHEDIR.TAG
 *.egg-info
+pipeline.cfg
