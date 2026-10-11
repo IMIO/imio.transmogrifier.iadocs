@@ -9,6 +9,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-22.04
@@ -18,13 +22,23 @@ jobs:
         include:
           - python: 2.7.18
             plone: "4.3"
+    services:
+      libreoffice:
+        image: harbor.imio.be/library/libreoffice:25.8
+        ports:
+          - 2002:2002
+        volumes:
+          - /tmp:/tmp
+          - /var/tmp:/var/tmp
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install system packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libjpeg-dev libbz2-dev
+          mkdir -p -m 777 /tmp/appy/
+          sudo add-apt-repository ppa:libreoffice/ppa -y
+          sudo apt-get update -qq -y
+          sudo apt-get install -qq -y libreoffice libreoffice-script-provider-python g++ gcc make cmake build-essential libreadline6-dev zlib1g-dev libbz2-dev libjpeg62-dev libpng-dev git libpq-dev libxml2-dev libxslt1-dev libssl-dev pkg-config graphviz graphviz-dev odt2txt graphicsmagick wv poppler-utils
       - name: Set up pyenv and Python
         uses: "gabrielfalcao/pyenv-action@v18"
         with:
@@ -56,13 +70,23 @@ jobs:
         include:
           - python: 2.7.18
             plone: "4.3"
+    services:
+      libreoffice:
+        image: harbor.imio.be/library/libreoffice:25.8
+        ports:
+          - 2002:2002
+        volumes:
+          - /tmp:/tmp
+          - /var/tmp:/var/tmp
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install system packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libjpeg-dev libbz2-dev
+          mkdir -p -m 777 /tmp/appy/
+          sudo add-apt-repository ppa:libreoffice/ppa -y
+          sudo apt-get update -qq -y
+          sudo apt-get install -qq -y libreoffice libreoffice-script-provider-python g++ gcc make cmake build-essential libreadline6-dev zlib1g-dev libbz2-dev libjpeg62-dev libpng-dev git libpq-dev libxml2-dev libxslt1-dev libssl-dev pkg-config graphviz graphviz-dev odt2txt graphicsmagick wv poppler-utils
       - name: Set up pyenv and Python
         uses: "gabrielfalcao/pyenv-action@v18"
         with:
@@ -89,17 +113,13 @@ jobs:
       - name: test coverage
         run: |
           coverage run bin/test -t !robot
-      # coveralls needs Python 3: publish with a separate interpreter (phase 7 moves this job to 6.2)
-      - name: Set up Python 3.8
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
-      - name: Install Coveralls
-        run: |
-          pip3 install -U pip setuptools --no-cache-dir
-          pip3 install -U "coveralls<4.0.0" coverage==5.3.1 --no-cache-dir
+          python-version: "3.12"
       - name: Publish to Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          pip3 install -U "coveralls>=3.0.0,<4" "coverage>=5.3.1,<6" --no-cache-dir
           coveralls --service=github
