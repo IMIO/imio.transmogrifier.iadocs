@@ -631,6 +631,8 @@ pipeline =
     p__state_set
     r__read_label_for_recipient_group
     reindexobject
+# again: since Plone 5.1, reindexobject (catalog reindexObject) sets the modification date to now
+    datesupdater
 #     workflowupdater
 #     workflow_history_update
     commit_count
@@ -2356,7 +2358,7 @@ condition = python: modules['imio.transmogrifier.iadocs.utils'].is_in_part(trans
 ;value = python:u'Fichier: {}{}'.format(item['_path_id'], item['_filename'])
 ;separator = python:u'\r\n'
 key = string:task_description
-value = python:u'<p><a href="http://webs.verviers.be/maestro/?fichier={}" target="_blank">{}</a></p>'.format(modules["urllib"].quote(item['_filename'].encode('utf8')), item['_filename'])
+value = python:u'<p><a href="http://webs.verviers.be/maestro/?fichier={}" target="_blank">{}</a></p>'.format(modules["urllib.parse"].quote(item['_filename']), item['_filename'])
 
 [l__4_handling_dateNO]
 blueprint = imio.transmogrifier.iadocs.inserter

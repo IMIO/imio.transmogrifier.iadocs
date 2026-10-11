@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from imio.helpers.transmogrifier import Condition
@@ -8,13 +7,12 @@ from imio.pyutils.system import full_path
 from imio.transmogrifier.iadocs import ANNOTATION_KEY
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.utils import course_store
-from imio.transmogrifier.iadocs.utils import encode_list
 from imio.transmogrifier.iadocs.utils import get_related_parts
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from imio.transmogrifier.iadocs.utils import open_csv
 from imio.transmogrifier.iadocs.utils import print_item  # noqa
-from Products.CMFPlone.utils import safe_unicode
+from plone.base.utils import safe_text
 from zope.annotation import IAnnotations
 from zope.interface import implementer
 from zope.interface import provider
@@ -22,12 +20,11 @@ from zope.interface import provider
 import csv
 import os
 import re
-import six
 
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class CSVReader(object):
+class CSVReader:
     """Reads a csv file.
 
     Parameters:
@@ -53,22 +50,21 @@ class CSVReader(object):
         if not is_in_part(self, self.parts):
             return
         self.csv_headers = Condition(options.get("csv_headers") or "python:True", transmogrifier, name, options)
-        self.dialect = safe_unicode(options.get("dialect") or "excel")
-        self.csv_encoding = safe_unicode(options.get("csv_encoding") or "utf8")
-        self.none_value = safe_unicode(options.get("none_value") or transmogrifier["config"].get("none_value"))
+        self.dialect = safe_text(options.get("dialect") or "excel")
+        self.csv_encoding = safe_text(options.get("csv_encoding") or "utf8")
+        self.none_value = safe_text(options.get("none_value") or transmogrifier["config"].get("none_value"))
         if transmogrifier["config"].get("csv_delimiter") and not options.get("fmtparam-delimiter"):
             options["fmtparam-delimiter"] = "python:'%s'" % transmogrifier["config"]["csv_delimiter"]
         self.roe = bool(int(options.get("raise_on_error") or "1"))
-        self.fmtparam = dict(
-            (
-                key[len("fmtparam-") :],
-                Expression(value, transmogrifier, name, options)(options, key=key[len("fmtparam-") :]),
+        self.fmtparam = {
+            key[len("fmtparam-") :]: Expression(value, transmogrifier, name, options)(
+                options, key=key[len("fmtparam-") :]
             )
-            for key, value in six.iteritems(options)
+            for key, value in options.items()
             if key.startswith("fmtparam-")
-        )
-        fieldnames = safe_unicode(options["fieldnames"]).split()
-        self.filename = safe_unicode(options["filename"])
+        }
+        fieldnames = safe_text(options["fieldnames"]).split()
+        self.filename = safe_text(options["filename"])
         if not self.filename:
             return
         self.filename = full_path(self.storage["csvp"], self.filename)
@@ -78,9 +74,9 @@ class CSVReader(object):
             return
         file_ = os.path.isfile(self.filename) and open_csv(self.filename, self.csv_encoding) or None
         if file_ is None:
-            raise Exception("Cannot open file '{}'".format(self.filename))
-        self.bp_key = safe_unicode(options["bp_key"])
-        self.csv_key = safe_unicode(options.get("csv_key", self.bp_key))
+            raise Exception(f"Cannot open file '{self.filename}'")
+        self.bp_key = safe_text(options["bp_key"])
+        self.csv_key = safe_text(options.get("csv_key", self.bp_key))
         self.storage["csv"][self.csv_key] = {
             "fp": self.filename,
             "fh": file_,
@@ -95,42 +91,42 @@ class CSVReader(object):
             return
         csv_d = self.storage["csv"][self.csv_key]
         fieldnames = csv_d["fd"]
-        o_logger.info(u"Reading '{}'".format(csv_d["fp"]))
+        o_logger.info("Reading '{}'".format(csv_d["fp"]))
         reader = csv.DictReader(
             csv_d["fh"],
             dialect=self.dialect,
             fieldnames=fieldnames,
             restkey="_rest",
             restval="__NO_CO_LU_MN__",
-            **self.fmtparam
+            **self.fmtparam,
         )
         for item in reader:
             item["_bpk"] = self.bp_key
             item["_ln"] = reader.line_num
             # check fieldnames length on first line
             if reader.line_num == 1:
-                reader.restval = u""
+                reader.restval = ""
                 if "_rest" in item:
                     log_error(
                         item,
-                        u"STOPPING: some columns are not defined in fieldnames: {}".format(item["_rest"]),
+                        "STOPPING: some columns are not defined in fieldnames: {}".format(item["_rest"]),
                         level="critical",
                     )
                     if self.roe:
                         raise Exception(
-                            u"Some columns for {} are not defined in fieldnames: {}".format(csv_d["fn"], item["_rest"])
+                            "Some columns for {} are not defined in fieldnames: {}".format(csv_d["fn"], item["_rest"])
                         )
                     break
                 extra_cols = [key for (key, val) in item.items() if val == "__NO_CO_LU_MN__"]
                 if extra_cols:
                     log_error(
                         item,
-                        u"STOPPING: to much columns defined in fieldnames: {}".format(extra_cols),
+                        f"STOPPING: to much columns defined in fieldnames: {extra_cols}",
                         level="critical",
                     )
                     if self.roe:
                         raise Exception(
-                            u"To much columns for {} defined in fieldnames: {}".format(csv_d["fn"], extra_cols)
+                            "To much columns for {} defined in fieldnames: {}".format(csv_d["fn"], extra_cols)
                         )
                     break
                 # pass headers if any
@@ -143,7 +139,7 @@ class CSVReader(object):
                 if re.match(r"_[A-Z]{1,2}$", key):
                     del item[key]
                 else:
-                    item[key] = safe_unicode(item[key].strip(" "), encoding=self.csv_encoding)
+                    item[key] = safe_text(item[key].strip(" "), encoding=self.csv_encoding)
                     if self.none_value and item[key] == self.none_value:
                         item[key] = None
                     good_fieldnames.append(key)
@@ -166,18 +162,18 @@ def writerow(csv_d, item):
                 if os.path.exists(csv_d["fp"]):
                     header = False
             csv_d["fh"] = open_csv(csv_d["fp"], csv_d["we"], mode=mode)
-        except IOError as m:
+        except OSError as m:
             raise Exception("Cannot create file '{}': {}".format(csv_d["fp"], m))
-        o_logger.info(u"Writing '{}'".format(csv_d["fp"]))
+        o_logger.info("Writing '{}'".format(csv_d["fp"]))
         csv_d["wh"] = csv.writer(csv_d["fh"], **csv_d["wp"])
         if csv_d["hd"] and header:
-            csv_d["wh"].writerow(encode_list(csv_d["hd"], csv_d["we"]))
-    csv_d["wh"].writerow(encode_list([item.get(fd, u"") for fd in csv_d["fd"]], csv_d["we"]))
+            csv_d["wh"].writerow(csv_d["hd"])
+    csv_d["wh"].writerow([item.get(fd, "") for fd in csv_d["fd"]])
 
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class CSVWriter(object):
+class CSVWriter:
     """Writes a csv file.
 
     Parameters:
@@ -203,35 +199,34 @@ class CSVWriter(object):
         self.name = name
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.bp_key = safe_unicode(options["bp_key"])
-        self.csv_key = safe_unicode(options.get("csv_key", self.bp_key))
+        self.bp_key = safe_text(options["bp_key"])
+        self.csv_key = safe_text(options.get("csv_key", self.bp_key))
         self.parts = get_related_parts(name)
         if not is_in_part(self, self.parts):
             return
         doit = Condition(options.get("b_condition") or "python:True", transmogrifier, name, options)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.filename = safe_unicode(options["filename"])
+        self.filename = safe_text(options["filename"])
         if not os.path.isabs(self.filename):
             self.filename = os.path.join(self.storage["csvp"], self.filename)
         self.doit = doit(None, filename=self.filename, storage=self.storage)
         if not self.doit:
             return
-        fieldnames = safe_unicode(options["fieldnames"]).split()
-        headers = safe_unicode(options.get("headers") or "").split()
-        csv_encoding = safe_unicode(options.get("csv_encoding") or "utf8")
-        fmtparam = dict(
-            (
-                key[len("fmtparam-") :],
-                Expression(value, transmogrifier, name, options)(options, key=key[len("fmtparam-") :]),
+        fieldnames = safe_text(options["fieldnames"]).split()
+        headers = safe_text(options.get("headers") or "").split()
+        csv_encoding = safe_text(options.get("csv_encoding") or "utf8")
+        fmtparam = {
+            key[len("fmtparam-") :]: Expression(value, transmogrifier, name, options)(
+                options, key=key[len("fmtparam-") :]
             )
-            for key, value in six.iteritems(options)
+            for key, value in options.items()
             if key.startswith("fmtparam-")
-        )
-        fmtparam["dialect"] = safe_unicode(options.get("dialect") or "excel")
+        }
+        fmtparam["dialect"] = safe_text(options.get("dialect") or "excel")
         self.yld = bool(int(options.get("yield") or "1"))
-        self.store_key = safe_unicode(options.get("store_key"))
-        self.store_subkey = safe_unicode(options.get("store_subkey"))
-        self.sort_key = safe_unicode(options.get("store_key_sort") or "__on_store_key__")
+        self.store_key = safe_text(options.get("store_key"))
+        self.store_subkey = safe_text(options.get("store_subkey"))
+        self.sort_key = safe_text(options.get("store_key_sort") or "__on_store_key__")
         self.storage["csv"][self.csv_key] = {
             "fp": self.filename,
             "fh": None,
@@ -253,12 +248,12 @@ class CSVWriter(object):
         items = self.storage["data"][self.bp_key].items()
         if self.sort_key != "__no_sort__":
             items = sorted(items, key=lambda tup: tup[1].get(self.sort_key, tup[0]))
-        for (key, dv) in items:
+        for key, dv in items:
             if self.store_subkey:
                 s_items = dv.items()
                 if self.sort_key != "__no_sort__":
                     s_items = sorted(s_items, key=lambda tup: tup[1].get(self.sort_key, tup[0]))
-                for (subkey, sdv) in s_items:
+                for subkey, sdv in s_items:
                     self._row(sdv, {self.store_key: key, self.store_subkey: subkey})
             else:
                 self._row(dv, {self.store_key: key})

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Setup tests for this package."""
+
 from collections import OrderedDict
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.testing import get_storage
@@ -8,7 +8,6 @@ from imio.transmogrifier.iadocs.testing import IMIO_TRANSMOGRIFIER_IADOCS_INTEGR
 from imio.transmogrifier.iadocs.utils import add_key_if_value
 from imio.transmogrifier.iadocs.utils import course_print
 from imio.transmogrifier.iadocs.utils import course_store
-from imio.transmogrifier.iadocs.utils import encode_list
 from imio.transmogrifier.iadocs.utils import full_name
 from imio.transmogrifier.iadocs.utils import get_categories
 from imio.transmogrifier.iadocs.utils import get_file_content
@@ -30,20 +29,19 @@ from imio.transmogrifier.iadocs.utils import time_display
 from plone import api
 from plone.app.testing import setRoles
 from plone.app.testing import TEST_USER_ID
-from Products.CMFPlone.utils import safe_unicode
+from plone.base.utils import safe_text
 from zope.testing.loggingsupport import InstalledHandler
 
 import io
 import os
 import re
 import shutil
-import six
 import sys
 import tempfile
 import unittest
 
 
-class Section(object):
+class Section:
     """A blueprint section stand-in: the utils only use some of its attributes."""
 
     def __init__(self, **kwargs):
@@ -78,17 +76,17 @@ class TestUtils(unittest.TestCase):
     def test_add_key_if_value(self):
         dic = {}
         add_key_if_value(dic, "none", None)
-        add_key_if_value(dic, "empty", u"")
+        add_key_if_value(dic, "empty", "")
         add_key_if_value(dic, "zero", 0)
         add_key_if_value(dic, "s_none", None, strict=True)
-        add_key_if_value(dic, "s_empty", u"", strict=True)
-        add_key_if_value(dic, "s_value", u"x", strict=True)
-        self.assertEqual(dic, {"empty": u"", "zero": 0, "s_value": u"x"})
+        add_key_if_value(dic, "s_empty", "", strict=True)
+        add_key_if_value(dic, "s_value", "x", strict=True)
+        self.assertEqual(dic, {"empty": "", "zero": 0, "s_value": "x"})
 
     def test_course_store(self):
         section = Section(name="a__sec", storage={"course": OrderedDict([("init", 1)])})
         course_store(section, None)
-        course_store(section, {u"_eid": u"1"})
+        course_store(section, {"_eid": "1"})
         self.assertEqual(list(section.storage["course"].items()), [("init", 1), ("a__sec", 2)])
 
     def test_course_print(self):
@@ -97,120 +95,113 @@ class TestUtils(unittest.TestCase):
             self.messages(), [("dto", "INFO", "COURSE:"), ("dto", "INFO", "> init: 1"), ("dto", "INFO", "> a__sec: 2")]
         )
 
-    def test_encode_list(self):
-        res = encode_list([u"Été", b"x", 1, None], "utf8")
-        self.assertEqual(res, [b"\xc3\x89t\xc3\xa9", b"x", 1, None])
-        self.assertIsInstance(res[0], bytes)
-        self.assertEqual(encode_list([u"Été"], "latin1"), [b"\xc9t\xe9"])
-        self.assertEqual(encode_list([], "utf8"), [])
-
     def test_get_file_content(self):
-        filesp = safe_unicode(tempfile.mkdtemp())
+        filesp = safe_text(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, filesp)
         for path, content in (
-            (u"PDF/12.pdf", b"%PDF 12"),
-            (u"DOC/12.odt", b"odt 12"),
-            (u"DOC/12.doc", b"doc 12"),
-            (u"DOC/13.PDF", b"%PDF 13"),
-            (u"x/14.txt", b"txt 14"),
+            ("PDF/12.pdf", b"%PDF 12"),
+            ("DOC/12.odt", b"odt 12"),
+            ("DOC/12.doc", b"doc 12"),
+            ("DOC/13.PDF", b"%PDF 13"),
+            ("x/14.txt", b"txt 14"),
         ):
             os.path.isdir(os.path.join(filesp, os.path.dirname(path))) or os.makedirs(
                 os.path.join(filesp, os.path.dirname(path))
             )
-            with io.open(os.path.join(filesp, path), "wb") as fh:
+            with open(os.path.join(filesp, path), "wb") as fh:
                 fh.write(content)
         disk_files = {
-            u"12": {"f": [(u".odt", u"DOC"), (u".pdf", u"PDF"), (u".doc", u"DOC")]},
-            u"13": {"f": [(u".PDF", u"DOC")]},
-            u"15": {"f": [(u".pdf", u"PDF")]},
+            "12": {"f": [(".odt", "DOC"), (".pdf", "PDF"), (".doc", "DOC")]},
+            "13": {"f": [(".PDF", "DOC")]},
+            "15": {"f": [(".pdf", "PDF")]},
         }
         section = Section(disk_files=disk_files, storage={"filesp": filesp})
         # nothing on item or on disk
-        self.assertEqual(get_file_content(section, {u"_eid": u"99"}), (None, None, None))
+        self.assertEqual(get_file_content(section, {"_eid": "99"}), (None, None, None))
         # pdf taken first, _fs_path set
-        item = {u"_eid": u"12"}
-        self.assertEqual(get_file_content(section, item), (u".pdf", u"12.pdf", b"%PDF 12"))
-        self.assertEqual(item[u"_fs_path"], u"PDF/12.pdf")
+        item = {"_eid": "12"}
+        self.assertEqual(get_file_content(section, item), (".pdf", "12.pdf", b"%PDF 12"))
+        self.assertEqual(item["_fs_path"], "PDF/12.pdf")
         # _fs_path on item is also considered (here the same path)
-        self.assertEqual(get_file_content(section, item), (u".pdf", u"12.pdf", b"%PDF 12"))
+        self.assertEqual(get_file_content(section, item), (".pdf", "12.pdf", b"%PDF 12"))
         # no pdf: lowest extension, _filename extension adapted or added
-        section.disk_files[u"12"]["f"] = [(u".odt", u"DOC"), (u".doc", u"DOC")]
-        item = {u"_eid": u"12", u"_filename": u"Lettre.txt"}
-        self.assertEqual(get_file_content(section, item), (u".doc", u"Lettre.doc", b"doc 12"))
-        self.assertEqual(item[u"_fs_path"], u"DOC/12.doc")
-        item = {u"_eid": u"12", u"_filename": u"Lettre"}
-        self.assertEqual(get_file_content(section, item), (u".doc", u"Lettre.doc", b"doc 12"))
+        section.disk_files["12"]["f"] = [(".odt", "DOC"), (".doc", "DOC")]
+        item = {"_eid": "12", "_filename": "Lettre.txt"}
+        self.assertEqual(get_file_content(section, item), (".doc", "Lettre.doc", b"doc 12"))
+        self.assertEqual(item["_fs_path"], "DOC/12.doc")
+        item = {"_eid": "12", "_filename": "Lettre"}
+        self.assertEqual(get_file_content(section, item), (".doc", "Lettre.doc", b"doc 12"))
         # extension is lowered for the result but not for the path
-        item = {u"_eid": u"13"}
-        self.assertEqual(get_file_content(section, item), (u".pdf", u"13.pdf", b"%PDF 13"))
-        self.assertEqual(item[u"_fs_path"], u"DOC/13.PDF")
+        item = {"_eid": "13"}
+        self.assertEqual(get_file_content(section, item), (".pdf", "13.pdf", b"%PDF 13"))
+        self.assertEqual(item["_fs_path"], "DOC/13.PDF")
         # _fs_path without extension completed with _ext
-        item = {u"_eid": u"14", u"_fs_path": u"x/14", u"_ext": u"txt"}
+        item = {"_eid": "14", "_fs_path": "x/14", "_ext": "txt"}
         ext, filename, content = get_file_content(section, item)
-        self.assertEqual((ext, filename, content), (u".txt", u"14.txt", b"txt 14"))
-        self.assertIsInstance(filename, six.text_type)
+        self.assertEqual((ext, filename, content), (".txt", "14.txt", b"txt 14"))
+        self.assertIsInstance(filename, str)
         self.assertIsInstance(content, bytes)
         # Plone 4 behaviour (bug?): when no path exists on disk, the first path is returned instead of the extension
-        self.assertEqual(get_file_content(section, {u"_eid": u"15"}), (u"PDF/15.pdf", None, None))
+        self.assertEqual(get_file_content(section, {"_eid": "15"}), ("PDF/15.pdf", None, None))
 
     def test_get_org_ancestors(self):
-        relation = {u"2": {"_parent_id": u"1"}, u"3": {"_parent_id": u"2"}, u"4": {"_parent_id": u"9"}}
-        self.assertEqual(get_org_ancestors(relation, u"1"), [u"1"])
-        self.assertEqual(get_org_ancestors(relation, u"3"), [u"1", u"2", u"3"])
-        self.assertEqual(get_org_ancestors(relation, u"4"), [u"9", u"4"])
+        relation = {"2": {"_parent_id": "1"}, "3": {"_parent_id": "2"}, "4": {"_parent_id": "9"}}
+        self.assertEqual(get_org_ancestors(relation, "1"), ["1"])
+        self.assertEqual(get_org_ancestors(relation, "3"), ["1", "2", "3"])
+        self.assertEqual(get_org_ancestors(relation, "4"), ["9", "4"])
 
     def test_get_org_level(self):
-        relation = {u"2": {"_parent_id": u"1"}, u"3": {"_parent_id": u"2"}}
-        self.assertEqual([get_org_level(relation, oid) for oid in (u"1", u"2", u"3", u"9")], [1, 2, 3, 1])
+        relation = {"2": {"_parent_id": "1"}, "3": {"_parent_id": "2"}}
+        self.assertEqual([get_org_level(relation, oid) for oid in ("1", "2", "3", "9")], [1, 2, 3, 1])
 
     def test_get_values_string(self):
-        item = {u"a": u"1", u"b": u"Été"}
-        self.assertEqual(get_values_string(item, [u"a", u"c", u"b"]), u"1::Été")
-        self.assertEqual(get_values_string(item, [u"b", u"a"], sep=u"-"), u"Été-1")
-        self.assertEqual(get_values_string(item, []), u"")
+        item = {"a": "1", "b": "Été"}
+        self.assertEqual(get_values_string(item, ["a", "c", "b"]), "1::Été")
+        self.assertEqual(get_values_string(item, ["b", "a"], sep="-"), "Été-1")
+        self.assertEqual(get_values_string(item, []), "")
 
     def test_full_name(self):
-        self.assertEqual(full_name(u"Jean", u"Dupont"), u"Jean Dupont")
-        self.assertEqual(full_name(u"Jean", u"Dupont", fn_first=False), u"Dupont Jean")
-        self.assertEqual(full_name(u"", u"Dupont"), u"Dupont")
-        self.assertEqual(full_name(None, u"Dupont", fn_first=False), u"Dupont")
+        self.assertEqual(full_name("Jean", "Dupont"), "Jean Dupont")
+        self.assertEqual(full_name("Jean", "Dupont", fn_first=False), "Dupont Jean")
+        self.assertEqual(full_name("", "Dupont"), "Dupont")
+        self.assertEqual(full_name(None, "Dupont", fn_first=False), "Dupont")
 
     def test_log_error(self):
-        item = {u"_bpk": u"e_mail", u"_eid": u"1", u"_id": u"élément"}
-        log_error(item, u"bad value")
-        self.assertTrue(item[u"_error"])
-        log_error(item, u"no id", level="critical", fld=u"_id")
-        log_error({u"_eid": 2}, u"no bpk")
+        item = {"_bpk": "e_mail", "_eid": "1", "_id": "élément"}
+        log_error(item, "bad value")
+        self.assertTrue(item["_error"])
+        log_error(item, "no id", level="critical", fld="_id")
+        log_error({"_eid": 2}, "no bpk")
         self.assertEqual(
             self.messages(),
             [
-                ("dti", "ERROR", u"e_mail: _eid 1, bad value"),
-                ("dti", "CRITICAL", u"e_mail: _id élément, no id"),
-                ("dti", "ERROR", u": _eid 2, no bpk"),
+                ("dti", "ERROR", "e_mail: _eid 1, bad value"),
+                ("dti", "CRITICAL", "e_mail: _id élément, no id"),
+                ("dti", "ERROR", ": _eid 2, no bpk"),
             ],
         )
-        self.assertRaises(KeyError, log_error, {}, u"no eid")
+        self.assertRaises(KeyError, log_error, {}, "no eid")
 
     def test_print_item(self):
         orig_stdout = sys.stdout
-        sys.stdout = out = six.StringIO()
+        sys.stdout = out = io.StringIO()
         self.addCleanup(setattr, sys, "stdout", orig_stdout)
-        print_item({u"b": u"Été", u"a": 1, u"file": u"content"})
-        self.assertEqual(out.getvalue(), u"a: 1\nb: Été\n")
+        print_item({"b": "Été", "a": 1, "file": "content"})
+        self.assertEqual(out.getvalue(), "a: 1\nb: Été\n")
         out.truncate(0)
         out.seek(0)
-        print_item({u"b": u"Été", u"a": 1, u"file": u"content"}, remove=[u"a"], with_separator=u"=")
-        self.assertEqual(out.getvalue(), u"b: Été\nfile: content\n{}\n".format(u"=" * 30))
+        print_item({"b": "Été", "a": 1, "file": "content"}, remove=["a"], with_separator="=")
+        self.assertEqual(out.getvalue(), "b: Été\nfile: content\n{}\n".format("=" * 30))
 
     def test_short_log(self):
-        item = {u"_bpk": u"e_mail", u"_eid": u"1", u"_type": u"dmsoutgoingmail", u"_act": u"U", u"_path": u"/om/1"}
-        self.assertEqual(short_log(item), u"e_mail:1,OM,U,/om/1")
-        self.assertEqual(short_log(item, count=5), u"5:e_mail:1,OM,U,/om/1")
-        self.assertEqual(short_log({u"_bpk": u"e", u"title": u"Été"}, count=0), u"e:,,?,Été")
+        item = {"_bpk": "e_mail", "_eid": "1", "_type": "dmsoutgoingmail", "_act": "U", "_path": "/om/1"}
+        self.assertEqual(short_log(item), "e_mail:1,OM,U,/om/1")
+        self.assertEqual(short_log(item, count=5), "5:e_mail:1,OM,U,/om/1")
+        self.assertEqual(short_log({"_bpk": "e", "title": "Été"}, count=0), "e:,,?,Été")
         self.assertRaises(KeyError, short_log, {})
 
     def test_time_display(self):
-        time_display(Section(name="a__sec", storage={"o_logger": o_logger}), {u"_eid": u"7"})
+        time_display(Section(name="a__sec", storage={"o_logger": o_logger}), {"_eid": "7"})
         time_display(Section(name="a__sec", storage={"o_logger": o_logger}), {})
         self.assertEqual(len(self.messages()), 2)
         self.assertTrue(re.match(r"^\d\d:\d\d:\d\d\.\d{6} : a__sec, 7$", self.messages()[0][2]), self.messages())
@@ -237,111 +228,111 @@ class TestUtilsDms(unittest.TestCase):
         self.assertEqual(
             sorted(cats),
             [
-                u"-1",
-                u"-1.7",
-                u"-1.75",
-                u"-1.753",
-                u"-1.754",
-                u"-1.754.2",
-                u"-1.754.21",
-                u"-1.758",
-                u"-1.758.1",
-                u"-1.758.2",
-                u"-1.758.3",
-                u"-1.758.5",
+                "-1",
+                "-1.7",
+                "-1.75",
+                "-1.753",
+                "-1.754",
+                "-1.754.2",
+                "-1.754.21",
+                "-1.758",
+                "-1.758.1",
+                "-1.758.2",
+                "-1.758.3",
+                "-1.758.5",
             ],
         )
-        cat = cats[u"-1.754.2"]
+        cat = cats["-1.754.2"]
         self.assertEqual(sorted(cat), ["enabled", "obj", "title", "uid"])
-        self.assertEqual(cat["title"], u"Usage de la voie publique. (*)")
+        self.assertEqual(cat["title"], "Usage de la voie publique. (*)")
         self.assertTrue(cat["enabled"])
-        self.assertEqual(cat["obj"].identifier, u"-1.754.2")
+        self.assertEqual(cat["obj"].identifier, "-1.754.2")
         self.assertEqual(cat["uid"], cat["obj"].UID())
         self.assertEqual(self.messages(), [])
 
     def test_get_folders(self):
-        csvp = safe_unicode(tempfile.mkdtemp())
+        csvp = safe_text(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, csvp)
         section = Section(portal=self.portal, storage={"csvp": csvp})
         parent = self.portal.folders["usage-de-la-voie-publique-stationnement-et-amarrage"]
-        folder = parent["cas-particuliers-demandes-en-autorisation-2013-2021"]
+        # the id comes from the title: "...-2013-2021" on Plone 4 (U+2013 normalized as its code), "...-2021" on 6
+        folder = [obj for obj in parent.objectValues() if obj.title.endswith("\u2013 2021")][0]
         uids, irn_to_folder, titles = get_folders(section)
         self.assertEqual(len(uids), 22)
         full_title = (
-            u"Usage de la voie publique : Stationnement et amarrage \u23e9 Cas particuliers : Demandes en "
-            u"autorisation \u2013 2021"
+            "Usage de la voie publique : Stationnement et amarrage \u23e9 Cas particuliers : Demandes en "
+            "autorisation \u2013 2021"
         )
         self.assertEqual(
             uids[folder.UID()],
             {
-                "title": u"Cas particuliers : Demandes en autorisation \u2013 2021",
-                "path": "/plone/folders/usage-de-la-voie-publique-stationnement-et-amarrage/"
-                "cas-particuliers-demandes-en-autorisation-2013-2021",
+                "title": "Cas particuliers : Demandes en autorisation \u2013 2021",
+                "path": "/".join(folder.getPhysicalPath()),
                 "full_title": full_title,
                 "parent": parent.UID(),
-                "irn": u"F0007-02",
-                "peid": u"F0007-02",
-                "tgft": u"Direction générale - Secrétariat",
+                "irn": "F0007-02",
+                "peid": "F0007-02",
+                "tgft": "Direction générale - Secrétariat",
             },
         )
         self.assertIsNone(uids[parent.UID()]["parent"])
-        self.assertEqual(uids[parent.UID()]["full_title"], u"Usage de la voie publique : Stationnement et amarrage")
+        self.assertEqual(uids[parent.UID()]["full_title"], "Usage de la voie publique : Stationnement et amarrage")
         self.assertEqual(
             sorted(irn_to_folder),
             sorted(
-                [u"F00{:02d}".format(i) for i in (1, 3, 5, 7, 9, 11)]
-                + [u"F00{:02d}-0{}".format(i, j) for i in (1, 3, 5, 11) for j in (1, 2, 3)]
-                + [u"F00{:02d}-0{}".format(i, j) for i in (7, 9) for j in (1, 2)]
+                [f"F00{i:02d}" for i in (1, 3, 5, 7, 9, 11)]
+                + [f"F00{i:02d}-0{j}" for i in (1, 3, 5, 11) for j in (1, 2, 3)]
+                + [f"F00{i:02d}-0{j}" for i in (7, 9) for j in (1, 2)]
             ),
         )
-        self.assertEqual(irn_to_folder[u"F0007-02"], {"uid": folder.UID()})
-        self.assertEqual(irn_to_folder[u"F0007"], {"uid": parent.UID()})
+        self.assertEqual(irn_to_folder["F0007-02"], {"uid": folder.UID()})
+        self.assertEqual(irn_to_folder["F0007"], {"uid": parent.UID()})
         self.assertEqual(len(titles), 22)
         self.assertEqual(titles[full_title], {"uids": [folder.UID()]})
         self.assertEqual(self.messages(), [])
         # irn with a slash: its first part is the parent eid, already found irn is logged
-        folder.internal_reference_no = u"F0001/9"
+        folder.internal_reference_no = "F0001/9"
         uids, irn_to_folder, titles = get_folders(section)
-        self.assertEqual(uids[folder.UID()]["irn"], u"F0001/9")
-        self.assertEqual(uids[folder.UID()]["peid"], u"F0001")
-        self.assertNotIn(u"F0007-02", irn_to_folder)
-        self.assertNotEqual(irn_to_folder[u"F0001"], {"uid": folder.UID()})
+        self.assertEqual(uids[folder.UID()]["irn"], "F0001/9")
+        self.assertEqual(uids[folder.UID()]["peid"], "F0001")
+        self.assertNotIn("F0007-02", irn_to_folder)
+        self.assertNotEqual(irn_to_folder["F0001"], {"uid": folder.UID()})
         self.assertEqual(len(self.messages()), 1)
         self.assertEqual(self.messages()[0][:2], ("dto", "ERROR"))
         self.assertTrue(
-            self.messages()[0][2].startswith(u"Already found folder irn 'F0001' (/plone/folders/usage-de-la-voie"),
+            self.messages()[0][2].startswith("Already found folder irn 'F0001' (/plone/folders/usage-de-la-voie"),
             self.messages(),
         )
         # dumped dicts are loaded when the 3 files exist
         for i, filename in enumerate(
-            (u"2_folder_folders_uids.dic", u"2_folder_irn_to_folder.dic", u"2_folder_folders_titles.dic")
+            ("2_folder_folders_uids.dic", "2_folder_irn_to_folder.dic", "2_folder_folders_titles.dic")
         ):
             if i < 2:
-                with io.open(os.path.join(csvp, filename), "w", encoding="utf8") as fh:
-                    fh.write(u"{'k%d': %d}" % (i, i))
+                with open(os.path.join(csvp, filename), "w", encoding="utf8") as fh:
+                    fh.write("{'k%d': %d}" % (i, i))
                 self.assertEqual(len(get_folders(section)[0]), 22)
-        with io.open(os.path.join(csvp, u"2_folder_folders_titles.dic"), "w", encoding="utf8") as fh:
-            fh.write(u"{'k2': 2}")
+        with open(os.path.join(csvp, "2_folder_folders_titles.dic"), "w", encoding="utf8") as fh:
+            fh.write("{'k2': 2}")
         self.assertEqual(get_folders(section), ({"k0": 0}, {"k1": 1}, {"k2": 2}))
 
     def test_get_mailtypes(self):
-        email = {"active": True, "dtitle": u"Email"}
-        post = {"active": True, "dtitle": u"Courrier postal"}
-        reg = {"active": True, "dtitle": u"Courrier recommandé"}
-        reg_ar = {"active": True, "dtitle": u"Courrier recommandé avec AR"}
+        email = {"active": True, "dtitle": "Email"}
+        post = {"active": True, "dtitle": "Courrier postal"}
+        reg = {"active": True, "dtitle": "Courrier recommandé"}
+        reg_ar = {"active": True, "dtitle": "Courrier recommandé avec AR"}
         self.assertEqual(
             get_mailtypes(self.portal),
             {
                 "te": {
-                    u"certificat": {"active": True, "dtitle": u"Certificat médical"},
-                    u"courrier": {"active": True, "dtitle": u"Courrier"},
-                    u"facture": {"active": True, "dtitle": u"Facture"},
-                    u"retour-ar": {"active": True, "dtitle": u"Retour AR"},
-                    u"retour-recommande": {"active": True, "dtitle": u"Retour recommandé"},
+                    "certificat": {"active": True, "dtitle": "Certificat médical"},
+                    "courrier": {"active": True, "dtitle": "Courrier"},
+                    "facture": {"active": True, "dtitle": "Facture"},
+                    "retour-ar": {"active": True, "dtitle": "Retour AR"},
+                    "retour-recommande": {"active": True, "dtitle": "Retour recommandé"},
                 },
-                "ts": {u"courrier": {"active": True, "dtitle": u"Courrier"}},
-                "fee": {u"email": email, u"post": post, u"post_registered": reg, u"post_registered_dr": reg_ar},
-                "fes": {u"email": email, u"post": post, u"post_registered": reg, u"post_registered_dr": reg_ar},
+                "ts": {"courrier": {"active": True, "dtitle": "Courrier"}},
+                "fee": {"email": email, "post": post, "post_registered": reg, "post_registered_dr": reg_ar},
+                "fes": {"email": email, "post": post, "post_registered": reg, "post_registered_dr": reg_ar},
             },
         )
 
@@ -349,7 +340,7 @@ class TestUtilsDms(unittest.TestCase):
         pf = self.portal.contacts["personnel-folder"]
         userids = ("agent", "agent1", "bourgmestre", "chef", "dirg", "encodeur", "lecteur")
         p_userid, e_userid, hps = get_personnel(self.portal)
-        self.assertEqual(p_userid, dict((uid, pf[uid].UID()) for uid in userids))
+        self.assertEqual(p_userid, {uid: pf[uid].UID() for uid in userids})
         self.assertEqual(e_userid, {})
         self.assertEqual(sorted(hps), sorted(pf[uid].UID() for uid in userids))
         agent1 = pf["agent1"]
@@ -381,9 +372,9 @@ class TestUtilsDms(unittest.TestCase):
             },
         )
         # external user ids, other eid field
-        agent1.internal_number = u"E1,E2"
-        self.assertEqual(get_personnel(self.portal)[1], {u"E1": agent1.UID(), u"E2": agent1.UID()})
-        self.assertEqual(get_personnel(self.portal, eid_fld="firstname")[1][u"Stef"], agent1.UID())
+        agent1.internal_number = "E1,E2"
+        self.assertEqual(get_personnel(self.portal)[1], {"E1": agent1.UID(), "E2": agent1.UID()})
+        self.assertEqual(get_personnel(self.portal, eid_fld="firstname")[1]["Stef"], agent1.UID())
 
     def test_get_plonegroup_orgs(self):
         # Plone 4 behaviour: organizations need the internal number behavior (added by the init section)
@@ -393,10 +384,10 @@ class TestUtilsDms(unittest.TestCase):
             "behaviors", tuple(fti.behaviors) + ("collective.behavior.internalnumber.behavior.IInternalNumberBehavior",)
         )
         secretariat = self.pgo["direction-generale"]["secretariat"]
-        secretariat.internal_number = u"S1,S2"
+        secretariat.internal_number = "S1,S2"
         api.content.transition(obj=self.pgo["conseil-communal"], transition="deactivate")
         generic = api.content.create(
-            container=self.pgo, type="organization", id="reprise-de-donnees", title=u"Reprise de données"
+            container=self.pgo, type="organization", id="reprise-de-donnees", title="Reprise de données"
         )
         all_orgs, eid_to_orgs = get_plonegroup_orgs(self.portal)
         self.assertEqual(len(all_orgs), 23)
@@ -405,9 +396,9 @@ class TestUtilsDms(unittest.TestCase):
             all_orgs[secretariat.UID()],
             {
                 "p": "/contacts/plonegroup-organization/direction-generale/secretariat",
-                "t": u"Secrétariat",
-                "ft": u"Direction générale - Secrétariat",
-                "eids": [u"S1", u"S2"],
+                "t": "Secrétariat",
+                "ft": "Direction générale - Secrétariat",
+                "eids": ["S1", "S2"],
                 "st": "active",
                 "sl": True,
             },
@@ -416,8 +407,8 @@ class TestUtilsDms(unittest.TestCase):
             all_orgs[generic.UID()],
             {
                 "p": "/contacts/plonegroup-organization/reprise-de-donnees",
-                "t": u"Reprise de données",
-                "ft": u"Reprise de données",
+                "t": "Reprise de données",
+                "ft": "Reprise de données",
                 "eids": [],
                 "st": "active",
                 "sl": False,
@@ -425,23 +416,23 @@ class TestUtilsDms(unittest.TestCase):
         )
         self.assertEqual(
             eid_to_orgs,
-            {u"S1": {"uid": secretariat.UID()}, u"S2": {"uid": secretariat.UID()}, None: {"uid": generic.UID()}},
+            {"S1": {"uid": secretariat.UID()}, "S2": {"uid": secretariat.UID()}, None: {"uid": generic.UID()}},
         )
 
     def test_get_users(self):
         self.assertEqual(
             get_users(self.portal),
             {
-                "agent": {"fullname": u"Fred Agent"},
-                "agent1": {"fullname": u"Stef Agent"},
-                "bourgmestre": {"fullname": u"Paul BM"},
-                "chef": {"fullname": u"Michel Chef"},
-                "dirg": {"fullname": u"Maxime DG"},
-                "encodeur": {"fullname": u"Jean Encodeur"},
-                "lecteur": {"fullname": u"Jef Lecteur"},
-                "scanner": {"fullname": u"Scanner"},
-                "siteadmin": {"fullname": u"siteadmin"},
-                "test_user_1_": {"fullname": u"test_user_1_"},
+                "agent": {"fullname": "Fred Agent"},
+                "agent1": {"fullname": "Stef Agent"},
+                "bourgmestre": {"fullname": "Paul BM"},
+                "chef": {"fullname": "Michel Chef"},
+                "dirg": {"fullname": "Maxime DG"},
+                "encodeur": {"fullname": "Jean Encodeur"},
+                "lecteur": {"fullname": "Jef Lecteur"},
+                "scanner": {"fullname": "Scanner"},
+                "siteadmin": {"fullname": "siteadmin"},
+                "test_user_1_": {"fullname": "test_user_1_"},
             },
         )
 

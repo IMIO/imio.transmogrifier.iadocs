@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collections import OrderedDict
 from collective.transmogrifier.transmogrifier import configuration_registry
 from collective.transmogrifier.transmogrifier import Transmogrifier
@@ -59,7 +58,7 @@ def get_storage(portal):
     return annot.setdefault(ANNOTATION_KEY, {"course": OrderedDict()})
 
 
-def get_transmogrifier(portal, config=None, pipeline=u"", storage=None):
+def get_transmogrifier(portal, config=None, pipeline="", storage=None):
     """A Transmogrifier whose sections are given as dicts, as built by a pipeline file.
 
     :param config: options of the [config] section

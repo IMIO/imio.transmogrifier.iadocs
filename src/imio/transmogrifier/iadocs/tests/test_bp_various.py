@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Blueprints tests for this package."""
+
 from imio.transmogrifier.iadocs import o_logger
 from imio.transmogrifier.iadocs.blueprints.various import Breakpoint
 from imio.transmogrifier.iadocs.blueprints.various import Count
@@ -19,9 +19,9 @@ from imio.transmogrifier.iadocs.testing import get_transmogrifier
 from imio.transmogrifier.iadocs.testing import IMIO_TRANSMOGRIFIER_IADOCS_INTEGRATION_TESTING  # noqa
 from zope.testing.loggingsupport import InstalledHandler
 
+import io
 import pdb
 import re
-import six
 import sys
 import unittest
 
@@ -71,14 +71,14 @@ class TestBluePrintVarious(unittest.TestCase):
         self.assertEqual(dict(tr.storage["course"]), {"a__cond": 2})
         # condition2 error: item not yielded, error logged with default or given message
         options = {"condition1": "python:True", "condition2": "python:item['xx']"}
-        self.assertEqual(list(EnhancedCondition(tr, "a__cond", options, iter([{"_eid": u"5"}]))), [])
+        self.assertEqual(list(EnhancedCondition(tr, "a__cond", options, iter([{"_eid": "5"}]))), [])
         options["error"] = "python:u'bad ' + item['_eid']"
-        self.assertEqual(list(EnhancedCondition(tr, "a__cond", options, iter([{"_eid": u"6"}]))), [])
+        self.assertEqual(list(EnhancedCondition(tr, "a__cond", options, iter([{"_eid": "6"}]))), [])
         self.assertEqual(
             self.messages(),
             [
-                ("dti", "ERROR", u"a__cond: condition 2 error for eid 5 ('xx')"),
-                ("dti", "ERROR", u"a__cond: bad 6 ('xx')"),
+                ("dti", "ERROR", "a__cond: condition 2 error for eid 5 ('xx')"),
+                ("dti", "ERROR", "a__cond: bad 6 ('xx')"),
             ],
         )
 
@@ -86,7 +86,7 @@ class TestBluePrintVarious(unittest.TestCase):
         # minimal options
         bp = EnhancedInserter(self.portal, "", {"key": "string:aa", "value": "python:u'bb'"}, None)
         bp.previous = [{}]
-        self.assertDictEqual(next(iter(bp)), {"aa": u"bb"})
+        self.assertDictEqual(next(iter(bp)), {"aa": "bb"})
         # with False condition
         bp = EnhancedInserter(
             self.portal, "", {"key": "string:aa", "value": "python:u'bb'", "condition": "python:key in item"}, None
@@ -98,7 +98,7 @@ class TestBluePrintVarious(unittest.TestCase):
             self.portal, "", {"key": "string:aa", "value": "python:u'bb'", "condition": "python:key not in item"}, None
         )
         bp.previous = [{}]
-        self.assertDictEqual(next(iter(bp)), {"aa": u"bb"})
+        self.assertDictEqual(next(iter(bp)), {"aa": "bb"})
         # without error_value
         bp = EnhancedInserter(self.portal, "", {"key": "string:aa", "value": "python: unknown"}, None)
         bp.previous = [{}]
@@ -111,7 +111,7 @@ class TestBluePrintVarious(unittest.TestCase):
             None,
         )
         bp.previous = [{}]
-        self.assertDictEqual(next(iter(bp)), {"aa": u"fallback"})
+        self.assertDictEqual(next(iter(bp)), {"aa": "fallback"})
         # with bad error_value
         bp = EnhancedInserter(
             self.portal, "", {"key": "string:aa", "value": "python: unknown", "error_value": "python: nok"}, None
@@ -123,19 +123,19 @@ class TestBluePrintVarious(unittest.TestCase):
             self.portal, "", {"key": "string:aa", "value": "python:u'bb'", "separator": "python:u'\\r\\n'"}, None
         )
         bp.previous = [{}]
-        self.assertDictEqual(next(iter(bp)), {"aa": u"bb"})
+        self.assertDictEqual(next(iter(bp)), {"aa": "bb"})
         # with separator, with initial value, without value
         bp = EnhancedInserter(
             self.portal, "", {"key": "string:aa", "value": "python:u''", "separator": "python:u'\\r\\n'"}, None
         )
-        bp.previous = [{"aa": u"one"}]
-        self.assertDictEqual(next(iter(bp)), {"aa": u"one"})
+        bp.previous = [{"aa": "one"}]
+        self.assertDictEqual(next(iter(bp)), {"aa": "one"})
         # with separator, with initial value, with value
         bp = EnhancedInserter(
             self.portal, "", {"key": "string:aa", "value": "python:u'bb'", "separator": "python:u'\\r\\n'"}, None
         )
-        bp.previous = [{"aa": u"one"}]
-        self.assertDictEqual(next(iter(bp)), {"aa": u"one\r\nbb"})
+        bp.previous = [{"aa": "one"}]
+        self.assertDictEqual(next(iter(bp)), {"aa": "one\r\nbb"})
         # with False second condition and get_obj
         bp = EnhancedInserter(
             self.portal,
@@ -158,7 +158,7 @@ class TestBluePrintVarious(unittest.TestCase):
             None,
         )
         bp.previous = [{"_path": "portal_workflow"}]
-        self.assertDictEqual(next(iter(bp)), {"_path": "portal_workflow", "aa": u"bb"})
+        self.assertDictEqual(next(iter(bp)), {"_path": "portal_workflow", "aa": "bb"})
         self.logs.clear()
         # key, condition and value expressions get item, key, storage and obj; course
         tr = self.get_transmogrifier()
@@ -168,28 +168,28 @@ class TestBluePrintVarious(unittest.TestCase):
             "condition": "python:key == u'dest' and 'course' in storage",
             "get_obj": "1",
         }
-        items = [{"_k": u"dest", "_path": "/portal_workflow"}, {"_k": u"other", "_path": "/portal_workflow"}]
+        items = [{"_k": "dest", "_path": "/portal_workflow"}, {"_k": "other", "_path": "/portal_workflow"}]
         self.assertEqual(
             list(EnhancedInserter(tr, "a__ins", options, iter(items))),
             [
-                {"_k": u"dest", "_path": "/portal_workflow", u"dest": u"portal_workflow dest"},
-                {"_k": u"other", "_path": "/portal_workflow"},
+                {"_k": "dest", "_path": "/portal_workflow", "dest": "portal_workflow dest"},
+                {"_k": "other", "_path": "/portal_workflow"},
             ],
         )
         self.assertEqual(dict(tr.storage["course"]), {"a__ins": 1})
         # get_obj without object: error logged with default or given message, item yielded unchanged
         options = {"key": "string:aa", "value": "python:u'bb'", "get_obj": "1"}
-        self.assertEqual(list(EnhancedInserter(tr, "a__ins", options, iter([{"_eid": u"7"}]))), [{"_eid": u"7"}])
+        self.assertEqual(list(EnhancedInserter(tr, "a__ins", options, iter([{"_eid": "7"}]))), [{"_eid": "7"}])
         options["error"] = "python:u'no obj ' + item['_eid']"
-        items = [{"_eid": u"8", "_path": "/unknown"}]
+        items = [{"_eid": "8", "_path": "/unknown"}]
         self.assertEqual(
-            list(EnhancedInserter(tr, "a__ins", options, iter(items))), [{"_eid": u"8", "_path": "/unknown"}]
+            list(EnhancedInserter(tr, "a__ins", options, iter(items))), [{"_eid": "8", "_path": "/unknown"}]
         )
         self.assertEqual(
             self.messages(),
             [
-                ("dti", "ERROR", u"a__ins: error getting value for eid 7 (object not found for item)"),
-                ("dti", "ERROR", u"a__ins: no obj 8 (object not found for item)"),
+                ("dti", "ERROR", "a__ins: error getting value for eid 7 (object not found for item)"),
+                ("dti", "ERROR", "a__ins: no obj 8 (object not found for item)"),
             ],
         )
 
@@ -200,21 +200,21 @@ class TestBluePrintVarious(unittest.TestCase):
         self.addCleanup(setattr, pdb, "set_trace", orig_set_trace)
         tr = self.get_transmogrifier()
         # default condition: False
-        self.assertEqual(list(Breakpoint(tr, "bp", {}, iter([{"_eid": u"1"}]))), [{"_eid": u"1"}])
+        self.assertEqual(list(Breakpoint(tr, "bp", {}, iter([{"_eid": "1"}]))), [{"_eid": "1"}])
         self.assertEqual(calls, [])
         # matched condition (with storage)
         options = {"condition": "python:item['_eid'] == u'2' and storage['parts'] == 'a'"}
-        items = [{"_eid": u"1"}, {"_eid": u"2"}]
-        self.assertEqual(list(Breakpoint(tr, "bp", options, iter(items))), [{"_eid": u"1"}, {"_eid": u"2"}])
+        items = [{"_eid": "1"}, {"_eid": "2"}]
+        self.assertEqual(list(Breakpoint(tr, "bp", options, iter(items))), [{"_eid": "1"}, {"_eid": "2"}])
         self.assertEqual(calls, [1])
 
     def test_count(self):
         tr = self.get_transmogrifier()
-        items = [{"_bpk": u"a"}, {"_bpk": u"b"}, {"_bpk": u"a"}, {}, {"_bpk": u"c", "skip": 1}]
+        items = [{"_bpk": "a"}, {"_bpk": "b"}, {"_bpk": "a"}, {}, {"_bpk": "c", "skip": 1}]
         # group_key and condition
         options = {"group_key": "_bpk", "condition": "python:'skip' not in item"}
         self.assertEqual(list(Count(tr, "count_g", options, iter([dict(it) for it in items]))), items)
-        self.assertEqual(tr.storage["count"], {"count_g": {u"a": {"c": 2}, u"b": {"c": 1}, u"_bpk_missing": {"c": 1}}})
+        self.assertEqual(tr.storage["count"], {"count_g": {"a": {"c": 2}, "b": {"c": 1}, "_bpk_missing": {"c": 1}}})
         self.assertEqual(dict(tr.storage["course"]), {"count_g": 4})
         self.assertEqual(
             sorted(self.messages()),
@@ -242,30 +242,30 @@ class TestBluePrintVarious(unittest.TestCase):
             "delete": "e_old\ntitle",
             "condition": "python:'course' in storage",
         }
-        items = [{u"e_lst": lst, u"e_old": u"o", u"title": u"T", u"other": u"x"}]
+        items = [{"e_lst": lst, "e_old": "o", "title": "T", "other": "x"}]
         result = list(EnhancedManipulator(tr, "a__manip", options, iter(items)))
-        self.assertEqual(result, [{u"e_lst": [1], u"p_lst": [1], u"p_old": u"o", u"p_title": u"T", u"other": u"x"}])
-        self.assertIsNot(result[0][u"p_lst"], lst)  # deep copy
+        self.assertEqual(result, [{"e_lst": [1], "p_lst": [1], "p_old": "o", "p_title": "T", "other": "x"}])
+        self.assertIsNot(result[0]["p_lst"], lst)  # deep copy
         self.assertEqual(dict(tr.storage["course"]), {"a__manip": 1})
         # delete only
-        result = list(EnhancedManipulator(tr, "a__manip", {"delete": "re:^_"}, iter([{u"_a": 1, u"_b": 2, u"c": 3}])))
-        self.assertEqual(result, [{u"c": 3}])
+        result = list(EnhancedManipulator(tr, "a__manip", {"delete": "re:^_"}, iter([{"_a": 1, "_b": 2, "c": 3}])))
+        self.assertEqual(result, [{"c": 3}])
         # condition not matched
         options = {"delete": "c", "condition": "python:False"}
-        self.assertEqual(list(EnhancedManipulator(tr, "a__manip", options, iter([{u"c": 3}]))), [{u"c": 3}])
+        self.assertEqual(list(EnhancedManipulator(tr, "a__manip", options, iter([{"c": 3}]))), [{"c": 3}])
 
     def test_filter_item(self):
         tr = self.get_transmogrifier()
-        items = [{u"_eid": u"1", u"a": 1, u"b": 2, u"c": 3}, {u"_eid": u"2", u"a": 1, u"skip": 1}]
+        items = [{"_eid": "1", "a": 1, "b": 2, "c": 3}, {"_eid": "2", "a": 1, "skip": 1}]
         options = {"kept_keys": "a c", "condition": "python:'skip' not in item"}
         self.assertEqual(
             list(FilterItem(tr, "a__filter", options, iter([dict(it) for it in items]))),
-            [{u"_eid": u"1", u"a": 1, u"c": 3}, {u"_eid": u"2", u"a": 1, u"skip": 1}],
+            [{"_eid": "1", "a": 1, "c": 3}, {"_eid": "2", "a": 1, "skip": 1}],
         )
         self.assertEqual(dict(tr.storage["course"]), {"a__filter": 1})
         # missing kept key is set to None
         result = list(FilterItem(tr, "a__filter", {"kept_keys": "a z"}, iter([dict(items[0])])))
-        self.assertEqual(result, [{u"_eid": u"1", u"a": 1, u"z": None}])
+        self.assertEqual(result, [{"_eid": "1", "a": 1, "z": None}])
         # no kept_keys or not in part: unchanged
         self.assertEqual(list(FilterItem(tr, "a__filter", {}, iter([dict(items[0])]))), [items[0]])
         options = {"kept_keys": "a"}
@@ -274,18 +274,18 @@ class TestBluePrintVarious(unittest.TestCase):
     def test_item_field_split(self):
         tr = self.get_transmogrifier()
         options = {"bp_key": "e_split", "field": "dest", "separator": "|", "index_key": "_idx"}
-        items = [{u"_bpk": u"e_mail", u"dest": u"a|b|"}, {u"_bpk": u"e_mail", u"dest": u"c"}]
+        items = [{"_bpk": "e_mail", "dest": "a|b|"}, {"_bpk": "e_mail", "dest": "c"}]
         result = list(ItemFieldSplit(tr, "a__split", options, iter([dict(it) for it in items])))
         self.assertEqual(
             result,
             [
-                {u"_bpk": u"e_split", u"dest": u"a", u"_idx": 0},
-                {u"_bpk": u"e_split", u"dest": u"b", u"_idx": 1},
-                {u"_bpk": u"e_split", u"dest": u"", u"_idx": 2},
-                {u"_bpk": u"e_split", u"dest": u"c"},  # no index key when not split
+                {"_bpk": "e_split", "dest": "a", "_idx": 0},
+                {"_bpk": "e_split", "dest": "b", "_idx": 1},
+                {"_bpk": "e_split", "dest": "", "_idx": 2},
+                {"_bpk": "e_split", "dest": "c"},  # no index key when not split
             ],
         )
-        self.assertIsInstance(ItemFieldSplit(tr, "a__split", options, iter([])).sep, six.text_type)
+        self.assertIsInstance(ItemFieldSplit(tr, "a__split", options, iter([])).sep, str)
         self.assertEqual(dict(tr.storage["course"]), {"a__split": 2})
         # quoted separator, original yielded, condition
         options = {
@@ -295,28 +295,27 @@ class TestBluePrintVarious(unittest.TestCase):
             "yield_original": "1",
             "condition": "python:'skip' not in item",
         }
-        items = [{u"dest": u"a, b"}, {u"dest": u"c, d", u"skip": 1}]
+        items = [{"dest": "a, b"}, {"dest": "c, d", "skip": 1}]
         self.assertEqual(
             list(ItemFieldSplit(tr, "a__split", options, iter([dict(it) for it in items]))),
-            [{u"dest": u"a, b"}, {u"_bpk": u"e_split", u"dest": u"a"}, {u"_bpk": u"e_split", u"dest": u"b"}, items[1]],
+            [{"dest": "a, b"}, {"_bpk": "e_split", "dest": "a"}, {"_bpk": "e_split", "dest": "b"}, items[1]],
         )
         # field missing: the item copy is yielded with the new bp_key
-        bp = ItemFieldSplit(tr, "a__split", options, iter([{u"x": 1}]))
-        self.assertEqual(list(bp), [{u"x": 1}, {u"_bpk": u"e_split", u"x": 1}])
+        bp = ItemFieldSplit(tr, "a__split", options, iter([{"x": 1}]))
+        self.assertEqual(list(bp), [{"x": 1}, {"_bpk": "e_split", "x": 1}])
         # Plone 4 behaviour (bug?): a None field value raises a TypeError
-        self.assertRaises(TypeError, list, ItemFieldSplit(tr, "a__split", options, iter([{u"dest": None}])))
+        self.assertRaises(TypeError, list, ItemFieldSplit(tr, "a__split", options, iter([{"dest": None}])))
         # not in part
         self.assertEqual(list(ItemFieldSplit(tr, "b__split", options, iter([dict(items[0])]))), [items[0]])
 
     def test_need_other(self):
         tr = self.get_transmogrifier(parts="la")
         # needed parts are there
-        self.assertEqual(list(NeedOther(tr, "l__need", {"parts": "a"}, iter([{u"a": 1}]))), [{u"a": 1}])
+        self.assertEqual(list(NeedOther(tr, "l__need", {"parts": "a"}, iter([{"a": 1}]))), [{"a": 1}])
         self.assertEqual(dict(tr.storage["course"]), {"l__need": 1})
         NeedOther(tr, "l__need", {}, iter([]))
         # a needed part is missing
-        six.assertRaisesRegex(
-            self,
+        self.assertRaisesRegex(
             Exception,
             r"^STOPPED because 'l' part needs 'abc': missing 'b'$",
             NeedOther,
@@ -326,34 +325,34 @@ class TestBluePrintVarious(unittest.TestCase):
             iter([]),
         )
         # not in part
-        self.assertEqual(list(NeedOther(tr, "m__need", {"parts": "z"}, iter([{u"a": 1}]))), [{u"a": 1}])
+        self.assertEqual(list(NeedOther(tr, "m__need", {"parts": "z"}, iter([{"a": 1}]))), [{"a": 1}])
         self.assertEqual(dict(tr.storage["course"]), {"l__need": 3})
 
     def test_print_item(self):
         orig_stdout = sys.stdout
-        sys.stdout = out = six.StringIO()
+        sys.stdout = out = io.StringIO()
         self.addCleanup(setattr, sys, "stdout", orig_stdout)
         tr = self.get_transmogrifier()
-        items = [{u"b": u"Été", u"a": 1, u"file": u"content"}, {u"skip": 1}]
+        items = [{"b": "Été", "a": 1, "file": "content"}, {"skip": 1}]
         # default: file key removed, keys sorted, no separator, printed whatever the part
         options = {"condition": "python:'skip' not in item"}
         self.assertEqual(list(PrintItem(tr, "z__print", options, iter(items))), items)
-        self.assertEqual(out.getvalue(), u"a: 1\nb: Été\n")
+        self.assertEqual(out.getvalue(), "a: 1\nb: Été\n")
         # removed_keys and separator
         out.truncate(0)
         out.seek(0)
         list(PrintItem(tr, "print", {"removed_keys": "a b", "separator": "-"}, iter(items[:1])))
-        self.assertEqual(out.getvalue(), u"file: content\n{}\n".format(u"-" * 30))
+        self.assertEqual(out.getvalue(), "file: content\n{}\n".format("-" * 30))
 
     def test_replace_variables(self):
-        data = {u"e_var": {u"name": {u"v": u"World"}, u"a": {u"v": u"%b%"}, u"b": {u"v": u"B"}}}
+        data = {"e_var": {"name": {"v": "World"}, "a": {"v": "%b%"}, "b": {"v": "B"}}}
         tr = self.get_transmogrifier(data=data)
         options = {"bp_key": "e_var", "dic_value_key": "v", "delimiter": "%", "modify_dict": "0", "yield": "1"}
         # item value modified, nested variables, unknown variable, lonely delimiter
-        items = [{u"_value": u"Hello %name% %a%, %unknown% 5%"}, {u"_value": u"nothing"}]
+        items = [{"_value": "Hello %name% %a%, %unknown% 5%"}, {"_value": "nothing"}]
         self.assertEqual(
             list(ReplaceVariables(tr, "a__rv", options, iter(items))),
-            [{u"_value": u"Hello World B, !unknown! 5%"}, {u"_value": u"nothing"}],
+            [{"_value": "Hello World B, !unknown! 5%"}, {"_value": "nothing"}],
         )
         self.assertEqual(dict(tr.storage["course"]), {"a__rv": 2})
         self.assertEqual(
@@ -362,7 +361,7 @@ class TestBluePrintVarious(unittest.TestCase):
                 (
                     "dti",
                     "ERROR",
-                    u'a__rv: variable "unknown" not found in dic from orig value "Hello %name% %a%, %unknown% 5%"',
+                    'a__rv: variable "unknown" not found in dic from orig value "Hello %name% %a%, %unknown% 5%"',
                 )
             ],
         )
@@ -376,25 +375,25 @@ class TestBluePrintVarious(unittest.TestCase):
                 "condition": "python:'skip' not in item",
             }
         )
-        items = [{u"key": u"a", u"val": u"%b%"}, {u"key": u"name", u"val": u"%b%", u"skip": 1}]
+        items = [{"key": "a", "val": "%b%"}, {"key": "name", "val": "%b%", "skip": 1}]
         self.assertEqual(list(ReplaceVariables(tr, "a__rv", options, iter(items))), [items[1]])
-        self.assertEqual(data[u"e_var"], {u"name": {u"v": u"World"}, u"a": {u"v": u"B"}, u"b": {u"v": u"B"}})
-        self.assertEqual(items[0], {u"key": u"a", u"val": u"%b%"})
+        self.assertEqual(data["e_var"], {"name": {"v": "World"}, "a": {"v": "B"}, "b": {"v": "B"}})
+        self.assertEqual(items[0], {"key": "a", "val": "%b%"})
         # b_condition false, no data or not in part: unchanged
         options = {"bp_key": "e_var", "dic_value_key": "v", "delimiter": "%", "modify_dict": "0", "yield": "1"}
         bp = ReplaceVariables(tr, "a__rv", dict(options, b_condition="python:'e_xx' in storage['data']"), None)
-        bp.previous = [{u"_value": u"%name%"}]
-        self.assertEqual(list(bp), [{u"_value": u"%name%"}])
-        bp = ReplaceVariables(tr, "a__rv", dict(options, bp_key="e_xx"), iter([{u"_value": u"%name%"}]))
-        self.assertEqual(list(bp), [{u"_value": u"%name%"}])
-        bp = ReplaceVariables(tr, "b__rv", options, iter([{u"_value": u"%name%"}]))
-        self.assertEqual(list(bp), [{u"_value": u"%name%"}])
+        bp.previous = [{"_value": "%name%"}]
+        self.assertEqual(list(bp), [{"_value": "%name%"}])
+        bp = ReplaceVariables(tr, "a__rv", dict(options, bp_key="e_xx"), iter([{"_value": "%name%"}]))
+        self.assertEqual(list(bp), [{"_value": "%name%"}])
+        bp = ReplaceVariables(tr, "b__rv", options, iter([{"_value": "%name%"}]))
+        self.assertEqual(list(bp), [{"_value": "%name%"}])
 
     def test_short_log(self):
         tr = self.get_transmogrifier()
         items = [
-            {u"_bpk": u"e_mail", u"_eid": u"1", u"_type": u"dmsincomingmail", u"_act": u"N", u"_path": u"/im/1"},
-            {u"_bpk": u"e_mail", u"_type": u"other", u"title": u"Été"},
+            {"_bpk": "e_mail", "_eid": "1", "_type": "dmsincomingmail", "_act": "N", "_path": "/im/1"},
+            {"_bpk": "e_mail", "_type": "other", "title": "Été"},
         ]
         self.assertEqual(list(ShortLog(tr, "log", {}, iter(items))), items)
         tr.storage["count"] = {"commit_count": {"": {"c": 3}}}
@@ -402,23 +401,23 @@ class TestBluePrintVarious(unittest.TestCase):
         self.assertEqual(
             self.messages(),
             [
-                ("dto", "INFO", u"e_mail:1,IM,N,/im/1"),
-                ("dto", "INFO", u"e_mail:,other,?,Été"),
-                ("dto", "INFO", u"3:e_mail:1,IM,N,/im/1"),
+                ("dto", "INFO", "e_mail:1,IM,N,/im/1"),
+                ("dto", "INFO", "e_mail:,other,?,Été"),
+                ("dto", "INFO", "3:e_mail:1,IM,N,/im/1"),
             ],
         )
 
     def test_stop(self):
         tr = self.get_transmogrifier()
         options = {"condition": "python:item['_eid'] == u'2'"}
-        bp = iter(Stop(tr, "stop", options, iter([{u"_eid": u"1"}, {u"_eid": u"2"}])))
-        self.assertEqual(next(bp), {u"_eid": u"1"})
-        six.assertRaisesRegex(self, Exception, "^STOP requested$", next, bp)
+        bp = iter(Stop(tr, "stop", options, iter([{"_eid": "1"}, {"_eid": "2"}])))
+        self.assertEqual(next(bp), {"_eid": "1"})
+        self.assertRaisesRegex(Exception, "^STOP requested$", next, bp)
 
     def test_time_display(self):
         tr = self.get_transmogrifier()
         tr.storage["o_logger"] = o_logger
-        items = [{u"_eid": u"1"}, {u"_eid": u"2"}]
+        items = [{"_eid": "1"}, {"_eid": "2"}]
         # default condition: False
         self.assertEqual(list(TimeDisplay(tr, "time", {}, iter(items))), items)
         self.assertEqual(self.messages(), [])

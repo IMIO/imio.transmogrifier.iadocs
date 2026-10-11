@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Script to run sqlcmd commands to export tables"""
+
 from collections import OrderedDict
 from datetime import datetime
 from imio.pyutils.system import runCommand
@@ -79,7 +79,7 @@ def main(docker, db_name, pwd, delim, input_filter, output_dir, only_new, simula
             continue
         if input_filter and not re.match(input_filter, table):
             continue
-        out_file = os.path.join(output_dir, "{}{}".format(table, sqlcmd_ext))
+        out_file = os.path.join(output_dir, f"{table}{sqlcmd_ext}")
         if only_new and os.path.exists(out_file):
             continue
         where = ""
@@ -95,18 +95,18 @@ def main(docker, db_name, pwd, delim, input_filter, output_dir, only_new, simula
             logger.info(cmd)
             continue
         else:
-            logger.info("ON sql table or view '{}'".format(table))
-        logger.debug("cmdsql='{}'".format(cmd))
+            logger.info(f"ON sql table or view '{table}'")
+        logger.debug(f"cmdsql='{cmd}'")
         (out, err, code) = runCommand(cmd)
         if code or err:
-            logger.error("Problem in command '{}': {}".format(cmd, err))
+            logger.error(f"Problem in command '{cmd}': {err}")
             continue
         tmp_file = os.path.join(output_dir, "sqlcmd.fwf")
         cmd = cp_cmd.format(**{"dock": docker, "of": tmp_file})
-        logger.debug("cp cmd='{}'".format(cmd))
+        logger.debug(f"cp cmd='{cmd}'")
         (out, err, code) = runCommand(cmd)
         if code or err:
-            logger.error("Problem in command '{}': {}".format(cmd, err))
+            logger.error(f"Problem in command '{cmd}': {err}")
             continue
         shutil.move(tmp_file, out_file)
     logger.info("Script duration: %s" % (datetime.now() - start))

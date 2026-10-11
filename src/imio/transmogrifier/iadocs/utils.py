@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collective.classification.folder.content.vocabularies import full_title_categories
 from collective.classification.tree.utils import iterate_over_tree
 from collective.contact.plonegroup.browser.settings import BaseOrganizationServicesVocabulary
@@ -19,17 +18,15 @@ from plone import api
 from zope.component import getUtility
 from zope.schema.interfaces import IVocabularyFactory
 
-import io
 import os
-import six
 
 
 itf = "imio.dms.mail.browser.settings.IImioDmsMailConfig"
 MAILTYPES = {
-    "te": "{}.mail_types".format(itf),
-    "ts": "{}.omail_types".format(itf),
-    "fee": "{}.imail_send_modes".format(itf),
-    "fes": "{}.omail_send_modes".format(itf),
+    "te": f"{itf}.mail_types",
+    "ts": f"{itf}.omail_types",
+    "fee": f"{itf}.imail_send_modes",
+    "fes": f"{itf}.omail_send_modes",
 }
 
 
@@ -66,23 +63,6 @@ def course_print(section):
         o_logger.info("> {}: {}".format(name, section.storage["course"][name]))
 
 
-def encode_list(lst, encoding):
-    """Encode a list following encoding (Python 2 csv module). Unchanged on Python 3 (text file).
-
-    :param lst: lst to transform
-    :param encoding: encoding
-    :return: new list
-    """
-    if not six.PY2:
-        return list(lst)
-    new_list = []
-    for content in lst:
-        if isinstance(content, six.text_type):
-            content = content.encode(encoding)
-        new_list.append(content)
-    return new_list
-
-
 def get_categories(portal):
     """Get already defined categories"""
     cats = {}
@@ -90,7 +70,7 @@ def get_categories(portal):
     for cat in iterate_over_tree(portal.tree):
         if cat.identifier in cats:
             o_logger.error(
-                u"code '{}' '{}' already loaded '{}'".format(cat.identifier, cat.title, cats[cat.identifier]["title"])
+                "code '{}' '{}' already loaded '{}'".format(cat.identifier, cat.title, cats[cat.identifier]["title"])
             )
         cats[cat.identifier] = {"title": cat.title, "uid": cat.UID(), "enabled": cat.enabled, "obj": cat}
     return cats
@@ -105,7 +85,7 @@ def get_file_content(section, item):
         paths.append(item["_fs_path"])
     if item["_eid"] in df:
         for ext, path in df[item["_eid"]]["f"]:  # {'f': [(u'.pdf', u'PDF_0-999')]}
-            path = u"{}/{}{}".format(path, item["_eid"], ext)
+            path = "{}/{}{}".format(path, item["_eid"], ext)
             if path not in paths:
                 paths.append(path)
     if not paths:
@@ -116,7 +96,7 @@ def get_file_content(section, item):
         (basename, ext) = os.path.splitext(path)
         if not ext and item.get("_ext"):
             ext = ".{}".format(item["_ext"])
-            path = u"{}{}".format(basename, ext)
+            path = f"{basename}{ext}"
         fullpath = os.path.join(section.storage["filesp"], path)
         if os.path.exists(fullpath):
             fullpaths[ext.lower()] = (fullpath, path)
@@ -135,9 +115,9 @@ def get_file_content(section, item):
     filename = item.get("_filename") or os.path.basename(fullpath)
     (f_basename, f_ext) = os.path.splitext(filename)
     if not f_ext:
-        filename = u"{}{}".format(filename, ext)
+        filename = f"{filename}{ext}"
     elif f_ext != ext:
-        filename = u"{}{}".format(f_basename, ext)
+        filename = f"{f_basename}{ext}"
     # return file content
     with open(fullpath, mode="rb") as fileh:
         return ext, filename, fileh.read()
@@ -158,7 +138,7 @@ def get_folders(section):
         load_var(ft_file, folders_titles)
         return folders_uids, irn_to_folder, folders_titles
 
-    factory = getUtility(IVocabularyFactory, u"collective.dms.basecontent.treating_groups")
+    factory = getUtility(IVocabularyFactory, "collective.dms.basecontent.treating_groups")
     tgs = factory(portal)
 
     crits = {
@@ -194,7 +174,7 @@ def get_folders(section):
         elif not brain.getPath().startswith("{}/".format(folders_uids[irn_to_folder[irn]["uid"]]["path"])):
             # subfolder has been created with parent irn but modified by user who has removed suffix
             o_logger.error(
-                u"Already found folder irn '{}' ({}) on {}".format(
+                "Already found folder irn '{}' ({}) on {}".format(
                     irn, brain.getPath(), folders_uids[irn_to_folder[irn]["uid"]]["path"]
                 )
             )
@@ -259,7 +239,7 @@ def get_personnel(portal, eid_fld="internal_number"):
         if person.userid and person.userid not in p_userid_to_person:
             p_userid_to_person[person.userid] = puid
         euids = getattr(person, eid_fld, [])
-        for euid in euids and euids.split(u",") or []:
+        for euid in euids and euids.split(",") or []:
             e_userid_to_person[euid] = puid
         if puid not in hps:
             hps[puid] = {
@@ -287,7 +267,7 @@ def get_plonegroup_orgs(portal, eid_fld="internal_number"):
     for term in voc:
         org = uuidToObject(term.value)
         value = getattr(org, eid_fld)
-        eids = value and value.split(u",") or []
+        eids = value and value.split(",") or []
         all_orgs[term.value] = {
             "p": relative_path(portal, "/".join(org.getPhysicalPath())),
             "t": org.title,
@@ -296,7 +276,7 @@ def get_plonegroup_orgs(portal, eid_fld="internal_number"):
             "st": api.content.get_state(org),
             "sl": term.value in selected_orgs,
         }
-        if term.title == u"Reprise de données":
+        if term.title == "Reprise de données":
             eid_to_orgs[None] = {"uid": term.value}
         for eid in eids:
             eid_to_orgs[eid] = {"uid": term.value}
@@ -329,7 +309,7 @@ def get_users_groups(portal, u_dic):
     return res
 
 
-def get_values_string(item, keys, sep=u":"):
+def get_values_string(item, keys, sep=":"):
     """Return a string value corresponding to multiple keys
 
     :param item: yielded item (dict)
@@ -337,16 +317,16 @@ def get_values_string(item, keys, sep=u":"):
     :param sep: separator
     :return: string
     """
-    ret = [item.get(key, u"") for key in keys]  # noqa
+    ret = [item.get(key, "") for key in keys]  # noqa
     return sep.join(ret)
 
 
 def full_name(firstname, lastname, fn_first=True):
     if firstname:
         if fn_first:
-            return u"{} {}".format(firstname, lastname)
+            return f"{firstname} {lastname}"
         else:
-            return u"{} {}".format(lastname, firstname)
+            return f"{lastname} {firstname}"
     else:
         return lastname
 
@@ -360,7 +340,7 @@ def is_in_part(section, parts):
 
 
 def log_error(item, msg, level="error", fld="_eid"):
-    getattr(e_logger, level)(u"{}: {} {}, {}".format(item.get("_bpk", ""), fld, item[fld], msg))
+    getattr(e_logger, level)("{}: {} {}, {}".format(item.get("_bpk", ""), fld, item[fld], msg))
     item["_error"] = True
 
 
@@ -369,14 +349,14 @@ def print_item(item, remove=["file"], with_separator=None):
     for k in sorted(item.keys()):
         if k in remove:
             continue
-        print(u"{}: {}".format(k, item[k]))
+        print(f"{k}: {item[k]}")
     if with_separator:
         print(with_separator * 30)
 
 
 def short_log(item, count=None):
     """log in o_logger"""
-    to_print = u"{}:{},{},{},{}".format(
+    to_print = "{}:{},{},{},{}".format(
         item["_bpk"],
         item.get("_eid", ""),
         dim(item.get("_type", ""), T_S),
@@ -384,7 +364,7 @@ def short_log(item, count=None):
         item.get("_path", "") or item.get("title", ""),
     )
     if count:
-        to_print = u"{}:{}".format(count, to_print)
+        to_print = f"{count}:{to_print}"
     return to_print
 
 
@@ -396,13 +376,11 @@ def time_display(section, item):
 
 
 def open_csv(filename, encoding, mode="r"):
-    """Open a csv file: bytes for the Python 2 csv module, text in the given encoding on Python 3.
+    """Open a csv file as text in the given encoding.
 
     :param filename: file path
-    :param encoding: file encoding (Python 3)
+    :param encoding: file encoding
     :param mode: r, w or a
     :return: file handler
     """
-    if six.PY2:
-        return open(filename, mode + "b")
-    return io.open(filename, mode, encoding=encoding, newline="")
+    return open(filename, mode, encoding=encoding, newline="")

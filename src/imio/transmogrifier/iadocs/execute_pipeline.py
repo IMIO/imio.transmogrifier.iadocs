@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from AccessControl.SecurityManagement import newSecurityManager
 from collective.transmogrifier.transmogrifier import _load_config
 from collective.transmogrifier.transmogrifier import configuration_registry
@@ -42,7 +41,7 @@ def main():
     parser.add_argument("-p", "--parts", dest="parts", default="", help="Parts to run (abc...)")
     ns = parser.parse_args()
     if not os.path.exists(ns.pipeline):
-        stop("Given pipeline file '{}' doesn't exist".format(ns.pipeline), logger=logger)
+        stop(f"Given pipeline file '{ns.pipeline}' doesn't exist", logger=logger)
     if ns.commit is None or ns.commit == "0":
         ns.commit = False
     else:
@@ -67,11 +66,11 @@ def main():
     try:
         configuration_registry.getConfiguration(PIPELINE_ID)
     except KeyError:
-        configuration_registry.registerConfiguration(PIPELINE_ID, u"", u"", ns.pipeline)
+        configuration_registry.registerConfiguration(PIPELINE_ID, "", "", ns.pipeline)
     #     try:
     options["parts"], unpermitted = auto_parts(ns, func_part)
     if unpermitted:
-        stop("The following parts are not permitted: {}".format(unpermitted))
+        stop(f"The following parts are not permitted: {unpermitted}")
 
     o_logger.info(options)
     portal.REQUEST.set("_transmo_options_", json.dumps(options))

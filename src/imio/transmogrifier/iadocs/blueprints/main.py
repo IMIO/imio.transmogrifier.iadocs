@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 from collections import OrderedDict
 from collective.classification.tree.utils import create_category
 from collective.contact.plonegroup.config import get_registry_organizations
 from collective.contact.plonegroup.config import set_registry_organizations
-from collective.documentviewer.settings import GlobalSettings
 from collective.iconifiedcategory.utils import get_category_object
 from collective.iconifiedcategory.utils import update_categorized_elements
 from collective.transmogrifier.interfaces import ISection
@@ -50,17 +48,14 @@ from imio.transmogrifier.iadocs.utils import get_users_groups
 from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import log_error
 from imio.transmogrifier.iadocs.utils import print_item  # noqa
-from OFS.ObjectManager import bad_id
 from plone import api
+from plone.base.utils import get_installer
+from plone.base.utils import safe_text
 from plone.dexterity.fti import DexterityFTIModificationDescription
 from plone.dexterity.fti import ftiModified
 from plone.i18n.normalizer import IIDNormalizer
-from Products.CMFPlone.utils import safe_unicode
-from Products.cron4plone.browser.configlets.cron_configuration import ICronConfiguration
-from six.moves import cPickle
 from zope.annotation import IAnnotations
 from zope.component import getUtility
-from zope.component import queryUtility
 from zope.interface import implementer
 from zope.interface import provider
 from zope.lifecycleevent import ObjectModifiedEvent
@@ -70,12 +65,17 @@ import csv
 import json
 import logging
 import os
-import six
+import pickle
+import re
+
+
+# OFS.ObjectManager.bad_id of Zope 2: since Zope 4, non ascii characters are accepted in ids
+bad_id = re.compile(r"[^a-zA-Z0-9-_~,.$\(\)# @]").search
 
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class Initialization(object):
+class Initialization:
     """Initializes global variables to be used in next sections.
 
     Parameters:
@@ -87,43 +87,39 @@ class Initialization(object):
         self.previous = previous
         self.name = name
         self.portal = transmogrifier.context
-        workingpath = get_main_path(
-            safe_unicode(options.get("basepath") or ""), safe_unicode(options.get("subpath") or "")
-        )
-        csvpath = safe_unicode(options.get("csvpath") or "")
+        workingpath = get_main_path(safe_text(options.get("basepath") or ""), safe_text(options.get("subpath") or ""))
+        csvpath = safe_text(options.get("csvpath") or "")
         if not csvpath:
             csvpath = workingpath
-        filespath = safe_unicode(options.get("filespath") or "")
+        filespath = safe_text(options.get("filespath") or "")
         if not filespath:
             filespath = workingpath
-        inb_types = safe_unicode(transmogrifier["config"].get("internal_number_behavior_types") or "").split()
-        dtb_types = safe_unicode(transmogrifier["config"].get("data_transfer_behavior_types") or "").split()
+        inb_types = safe_text(transmogrifier["config"].get("internal_number_behavior_types") or "").split()
+        dtb_types = safe_text(transmogrifier["config"].get("data_transfer_behavior_types") or "").split()
         creator = transmogrifier["config"].get("creator")
         if creator and not api.portal.get_tool("acl_users").getUserById(creator):
-            api.user.create(u"csv@imio.be", creator, generate_password())
+            api.user.create("csv@imio.be", creator, generate_password())
         if bool(int(transmogrifier["config"].get("debug") or "0")):
             setup_logger(o_logger, level=logging.DEBUG)
         # get site name
         site_name = self.portal.getPhysicalPath()[-1]
         # setting logs
-        efh = logging.FileHandler(os.path.join(workingpath, "{}_dt_input_errors.log".format(site_name)), mode="w")
+        efh = logging.FileHandler(os.path.join(workingpath, f"{site_name}_dt_input_errors.log"), mode="w")
         efh.setFormatter(logging.Formatter("(%(levelname).1s) %(message)s"))
         efh.setLevel(logging.INFO)
         e_logger.addHandler(efh)
-        ofh = logging.FileHandler(os.path.join(workingpath, "{}_dt.log".format(site_name)), mode="w")
+        ofh = logging.FileHandler(os.path.join(workingpath, f"{site_name}_dt.log"), mode="w")
         ofh.setFormatter(logging.Formatter("(%(levelname).1s) %(message)s"))
         ofh.setLevel(logging.INFO)
         o_logger.addHandler(ofh)
         run_options = json.loads(transmogrifier.context.REQUEST.get("_transmo_options_") or "{}")
-        start_msg = u"STARTING '{}' parts at {}".format(run_options["parts"], datetime.now().strftime("%Y%m%d-%H%M"))
+        start_msg = "STARTING '{}' parts at {}".format(run_options["parts"], datetime.now().strftime("%Y%m%d-%H%M"))
         if run_options["commit"]:
-            ecfh = logging.FileHandler(
-                os.path.join(workingpath, "{}_dt_input_errors_commit.log".format(site_name)), mode="a"
-            )
+            ecfh = logging.FileHandler(os.path.join(workingpath, f"{site_name}_dt_input_errors_commit.log"), mode="a")
             ecfh.setFormatter(logging.Formatter("(%(levelname).1s) %(message)s"))
             ecfh.setLevel(logging.INFO)
             e_logger.addHandler(ecfh)
-            ocfh = logging.FileHandler(os.path.join(workingpath, "{}_dt_commit.log".format(site_name)), mode="a")
+            ocfh = logging.FileHandler(os.path.join(workingpath, f"{site_name}_dt_commit.log"), mode="a")
             ocfh.setFormatter(logging.Formatter("(%(levelname).1s) %(message)s"))
             ocfh.setLevel(logging.INFO)
             o_logger.addHandler(ocfh)
@@ -131,7 +127,7 @@ class Initialization(object):
 
         # check package installation and configuration
         if inb_types:
-            if not self.portal.portal_quickinstaller.isProductInstalled("collective.behavior.internalnumber"):
+            if not get_installer(self.portal).is_product_installed("collective.behavior.internalnumber"):
                 self.portal.portal_setup.runAllImportStepsFromProfile(
                     "profile-collective.behavior.internalnumber:default", dependency_strategy="new"
                 )
@@ -144,7 +140,7 @@ class Initialization(object):
                         {"portal_type": typ, "uniqueness": True, "default_expression": None, "default_number": 1}
                     )
                     api.portal.set_registry_record(reg_key, inptc)
-                    o_logger.info("Added internalnumber config for type {}".format(typ))
+                    o_logger.info(f"Added internalnumber config for type {typ}")
                 fti = getattr(self.portal.portal_types, typ)
                 if "collective.behavior.internalnumber.behavior.IInternalNumberBehavior" not in fti.behaviors:
                     old_bav = tuple(fti.behaviors)
@@ -154,7 +150,7 @@ class Initialization(object):
                     ftiModified(
                         fti, ObjectModifiedEvent(fti, DexterityFTIModificationDescription("behaviors", old_bav))
                     )
-                    o_logger.info("Added internalnumber behavior on type {}".format(typ))
+                    o_logger.info(f"Added internalnumber behavior on type {typ}")
         if dtb_types:
             fields_conf = {"dmsincomingmail": "imail", "dmsoutgoingmail": "omail"}
             for typ in dtb_types:
@@ -167,29 +163,23 @@ class Initialization(object):
                     ftiModified(
                         fti, ObjectModifiedEvent(fti, DexterityFTIModificationDescription("behaviors", old_bav))
                     )
-                    o_logger.info("Added datatransfer behavior on type {}".format(typ))
+                    o_logger.info(f"Added datatransfer behavior on type {typ}")
                 if typ in fields_conf:
-                    reg = "imio.dms.mail.browser.settings.IImioDmsMailConfig.{}_fields".format(fields_conf[typ])
+                    reg = f"imio.dms.mail.browser.settings.IImioDmsMailConfig.{fields_conf[typ]}_fields"
                     rec = api.portal.get_registry_record(reg)
                     if not [dic for dic in rec if dic["field_name"] == "IDmsMailDataTransfer.data_transfer"]:
                         lst = list(rec)
                         lst.append(
                             {
-                                "field_name": u"IDmsMailDataTransfer.data_transfer",
+                                "field_name": "IDmsMailDataTransfer.data_transfer",
                                 "read_tal_condition": None,
                                 "write_tal_condition": None,
                             }
                         )
                         api.portal.set_registry_record(reg, lst)
-                        o_logger.info("Added data_transfer field in type {}".format(typ))
+                        o_logger.info(f"Added data_transfer field in type {typ}")
         if ARCHIVE_SITE:
-            cssr = self.portal.portal_css
-            if not cssr.getResource("imiodmsmail_archives.css").getEnabled():
-                cssr.updateStylesheet("imiodmsmail_archives.css", enabled=True)
-                cssr.cookResources()
-            cron_configlet = queryUtility(ICronConfiguration, "cron4plone_config")
-            if cron_configlet.cronjobs:
-                cron_configlet.cronjobs = []
+            api.portal.set_registry_record("plone.bundles/imio-dms-mail-archives.enabled", True)
 
         # set global variables in annotation
         self.storage = IAnnotations(transmogrifier).setdefault(ANNOTATION_KEY, {})
@@ -214,9 +204,6 @@ class Initialization(object):
         self.storage["lastsection"] = {"pkl_dump": []}
         # store storage on transmogrifier, so it can be used with standard condition
         transmogrifier.storage = self.storage
-        if is_in_part(self, "tuv"):
-            gsettings = GlobalSettings(self.portal)
-            gsettings.auto_convert = False
 
         # store fullname order
         start = api.portal.get_registry_record("omail_fullname_used_form", IImioDmsMailConfig, default="firstname")
@@ -227,19 +214,19 @@ class Initialization(object):
             self.storage["plone"]["directory"] = brains[0].getObject()
             self.storage["plone"]["directory_path"] = relative_path(self.portal, brains[0].getPath())
         else:
-            raise Exception("{}: Directory not found !".format(name))
+            raise Exception(f"{name}: Directory not found !")
         # store directory configuration
         for typ in ["types", "levels"]:
-            key = "p_dir_org_{}".format(typ)
+            key = f"p_dir_org_{typ}"
             self.storage["data"][key] = OrderedDict(
                 [
-                    (safe_unicode(t["token"]), {"name": safe_unicode(t["name"])})
+                    (safe_text(t["token"]), {"name": safe_text(t["name"])})
                     for t in getattr(self.storage["plone"]["directory"], "organization_%s" % typ)
                 ]
             )
             if not len(self.storage["data"][key]):
-                self.storage["data"][key] = OrderedDict([(u"non-defini", u"Non défini")])
-            self.storage["data"]["{}_len".format(key)] = len(self.storage["data"][key])
+                self.storage["data"][key] = OrderedDict([("non-defini", "Non défini")])
+            self.storage["data"][f"{key}_len"] = len(self.storage["data"][key])
         # create default contact
         for param, service in (("default_contact", False), ("generic_service", True)):
             params = next(
@@ -253,9 +240,9 @@ class Initialization(object):
                     self.portal.unrestrictedTraverse("/".join(params[0].split("/")[0:-1])),
                     "organization",
                     id=params[0].split("/")[-1],
-                    title=safe_unicode(params[1]),
+                    title=safe_text(params[1]),
                 )
-                o_logger.info("Created object '{}'".format(param))
+                o_logger.info(f"Created object '{param}'")
             if service:
                 selected_orgs = get_registry_organizations()
                 if obj.UID() not in selected_orgs:
@@ -284,7 +271,7 @@ class Initialization(object):
                 IVocabularyFactory, "collective.classification.vocabularies:fulltree"
             )(self.portal)
         # create default classification category
-        def_cat = transmogrifier["config"].get("default_category") or u""
+        def_cat = transmogrifier["config"].get("default_category") or ""
         if def_cat:
             code, title = next(
                 csv.reader(
@@ -297,10 +284,10 @@ class Initialization(object):
             if code not in self.storage["data"]["p_category"]:
                 node = create_category(
                     self.portal.tree,
-                    {"identifier": safe_unicode(code), "title": safe_unicode(title), "enabled": False},
+                    {"identifier": safe_text(code), "title": safe_text(title), "enabled": False},
                     event=True,
                 )
-                o_logger.info("Created default category {}".format(code))
+                o_logger.info(f"Created default category {code}")
                 self.storage["data"]["p_category"][node.identifier] = {
                     "title": node.title,
                     "uid": node.UID(),
@@ -327,7 +314,7 @@ class Initialization(object):
                 fields_dic.update({k: {"typ": letter} for k in profiles if k})
             flds_opt = transmogrifier["config"]["fields"].replace("\n", " ")
             flds_opt = next(csv.reader([flds_opt.strip()], delimiter=" ", quotechar='"', skipinitialspace=True))
-            flds_opt = [safe_unicode(cell) for cell in flds_opt]
+            flds_opt = [safe_text(cell) for cell in flds_opt]
             flds_opt = [tup for tup in pool_tuples(flds_opt, 4, "fields option")]
             for prd, e_fld, p_fld, transform in flds_opt:
                 fields_dic[prd][e_fld] = p_fld
@@ -374,13 +361,12 @@ class Initialization(object):
         pr_tool._version_policy_mapping = {}
 
     def __iter__(self):
-        for item in self.previous:
-            yield item
+        yield from self.previous
 
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class AddDataInItem(object):
+class AddDataInItem:
     """Add item keys from a stored dictionary.
 
     Parameters:
@@ -403,7 +389,7 @@ class AddDataInItem(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
-        self.related_storage = safe_unicode(options["related_storage"])
+        self.related_storage = safe_text(options["related_storage"])
         if not is_in_part(self, self.parts):
             return
         b_condition = Condition(options.get("b_condition") or "python:True", transmogrifier, name, options)
@@ -411,13 +397,13 @@ class AddDataInItem(object):
         if not b_condition(None, storage=self.storage):
             self.related_storage = None
             return
-        self.store_key = safe_unicode(options["store_key"])
-        self.store_subkey = safe_unicode(options.get("store_subkey"))
-        self.bp_key = safe_unicode(options["bp_key"])
-        self.fieldnames = safe_unicode(options.get("fieldnames") or "").split()
+        self.store_key = safe_text(options["store_key"])
+        self.store_subkey = safe_text(options.get("store_subkey"))
+        self.bp_key = safe_text(options["bp_key"])
+        self.fieldnames = safe_text(options.get("fieldnames") or "").split()
         self.add_store_keys = bool(int(options.get("add_store_keys") or "1"))
-        self.prefix = safe_unicode(options.get("prefix", u""))
-        self.marker = safe_unicode(options.get("marker", u""))
+        self.prefix = safe_text(options.get("prefix", ""))
+        self.marker = safe_text(options.get("marker", ""))
 
     def __iter__(self):
         ddic = self.storage["data"].get(self.related_storage, {})
@@ -427,16 +413,14 @@ class AddDataInItem(object):
                 store_keys = {}
                 vdic = ddic.get(item[self.store_key], {})
                 if self.add_store_keys:
-                    store_keys[u"{}{}".format(self.prefix, self.store_key)] = vdic and item[self.store_key] or u""
+                    store_keys[f"{self.prefix}{self.store_key}"] = vdic and item[self.store_key] or ""
                 if self.store_subkey:
                     vdic = vdic.get(item[self.store_subkey], {})
                     if self.add_store_keys:
-                        store_keys[u"{}{}".format(self.prefix, self.store_subkey)] = (
-                            vdic and item[self.store_subkey] or u""
-                        )
-                update_dic = {u"{}{}".format(self.prefix, key): vdic.get(key, u"") for key in self.fieldnames}
+                        store_keys[f"{self.prefix}{self.store_subkey}"] = vdic and item[self.store_subkey] or ""
+                update_dic = {f"{self.prefix}{key}": vdic.get(key, "") for key in self.fieldnames}
                 if self.marker:
-                    item["_mar_ker"] = vdic and self.marker or u""
+                    item["_mar_ker"] = vdic and self.marker or ""
                 item.update(update_dic)
                 item.update(store_keys)
             yield item
@@ -444,7 +428,7 @@ class AddDataInItem(object):
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class CommonInputChecks(object):
+class CommonInputChecks:
     """Checks input values of the corresponding external type.
 
     Parameters:
@@ -471,19 +455,19 @@ class CommonInputChecks(object):
         self.previous = previous
         self.name = name
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
-        self.bp_key = safe_unicode(options["bp_key"])
-        self.csv_key = safe_unicode(options.get("csv_key", self.bp_key))
+        self.bp_key = safe_text(options["bp_key"])
+        self.csv_key = safe_text(options.get("csv_key", self.bp_key))
         self.parts = get_related_parts(name)
         if not is_in_part(self, self.parts):
             return
         fieldnames = self.storage["csv"].get(self.csv_key, {}).get("fd", [])
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.strips = safe_unicode(options.get("strip_chars", "")).strip().split()
+        self.strips = safe_text(options.get("strip_chars", "")).strip().split()
         self.strips = [tup for tup in pool_tuples(self.strips, 3, "strip_chars option") if tup[0] in fieldnames]
         self.cleans = next(
             csv.reader([options.get("clean_value", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True)
         )
-        self.cleans = [safe_unicode(cell) for cell in self.cleans]
+        self.cleans = [safe_text(cell) for cell in self.cleans]
         self.cleans = [
             (
                 tup[0],
@@ -500,17 +484,17 @@ class CommonInputChecks(object):
                 [options.get("replace_newline", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True
             )
         )
-        self.repl_nl = [safe_unicode(cell) for cell in self.repl_nl]
+        self.repl_nl = [safe_text(cell) for cell in self.repl_nl]
         self.repl_nl = [tup for tup in pool_tuples(self.repl_nl, 2, "replace_newline option") if tup[0] in fieldnames]
         self.invalids = next(
             csv.reader([options.get("invalids", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True)
         )
-        self.invalids = [safe_unicode(cell) for cell in self.invalids]
+        self.invalids = [safe_text(cell) for cell in self.invalids]
         self.invalids = [tup for tup in pool_tuples(self.invalids, 2, "invalids option") if tup[0] in fieldnames]
         self.concats = next(
             csv.reader([options.get("concatenate", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True)
         )
-        self.concats = [safe_unicode(cell) for cell in self.concats]
+        self.concats = [safe_text(cell) for cell in self.concats]
         self.concats = [
             tup
             for tup in pool_tuples(self.concats, 4, "concat option")
@@ -519,7 +503,7 @@ class CommonInputChecks(object):
         self.splits = next(
             csv.reader([options.get("split_text", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True)
         )
-        self.splits = [safe_unicode(cell) for cell in self.splits]
+        self.splits = [safe_text(cell) for cell in self.splits]
         self.splits = [
             (
                 tup[0],
@@ -533,13 +517,13 @@ class CommonInputChecks(object):
             for tup in pool_tuples(self.splits, 7, "splits option")
             if tup[0] in fieldnames
         ]
-        self.booleans = [key for key in safe_unicode(options.get("booleans", "")).split() if key in fieldnames]
+        self.booleans = [key for key in safe_text(options.get("booleans", "")).split() if key in fieldnames]
         self.dates = next(
             csv.reader([options.get("dates", "").strip()], delimiter=" ", quotechar='"', skipinitialspace=True)
         )
-        self.dates = [safe_unicode(cell) for cell in self.dates]
+        self.dates = [safe_text(cell) for cell in self.dates]
         self.dates = pool_tuples(self.dates, 3, "dates option")
-        self.evals = [key for key in safe_unicode(options.get("evals", "")).split() if key in fieldnames]
+        self.evals = [key for key in safe_text(options.get("evals", "")).split() if key in fieldnames]
 
     def __iter__(self):  # noqa C901
         for item in self.previous:
@@ -560,17 +544,17 @@ class CommonInputChecks(object):
                     item[fld] = clean_value(item[fld], isep, strip, patterns, osep)
                 # replace newline by given value on specified fields
                 for fld, val in self.repl_nl:
-                    if u"\n" in (item[fld] or u""):
-                        item[fld] = val.join([part.strip() for part in item[fld].split(u"\n") if part.strip()])
+                    if "\n" in (item[fld] or ""):
+                        item[fld] = val.join([part.strip() for part in item[fld].split("\n") if part.strip()])
                 # replace invalid values on specified fields
                 for fld, values in self.invalids:
-                    for value in values.split(u"|"):
+                    for value in values.split("|"):
                         if item[fld] == value:
                             item[fld] = None
                             break
                 # concatenate fields
                 for fld1, fld2, dest_fld, sep in self.concats:
-                    item[dest_fld] = u"{}{}{}".format(item[fld1], sep, item[fld2])
+                    item[dest_fld] = f"{item[fld1]}{sep}{item[fld2]}"
                 # split long value
                 for fld, length, dest_fld, dest_pos, isep, osep, prefix in self.splits:
                     part1, part2 = split_text(item[fld], length)
@@ -578,7 +562,7 @@ class CommonInputChecks(object):
                         item[fld] = part1.replace(isep, " ")
                         if part2:
                             remainder = dest_fld in item and item[dest_fld] and item[dest_fld].split(osep) or []
-                            remainder.insert(dest_pos, u"{}{}".format(prefix, part2.replace(isep, osep)))
+                            remainder.insert(dest_pos, f"{prefix}{part2.replace(isep, osep)}")
                             item[dest_fld] = osep.join(remainder)
                 # to bool
                 for fld in self.booleans:
@@ -601,7 +585,7 @@ class CommonInputChecks(object):
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class DependencySorter(object):
+class DependencySorter:
     """Handles dependencies.
 
     Parameters:
@@ -618,7 +602,7 @@ class DependencySorter(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.bp_key = options["bp_key"]
-        self.store_key = safe_unicode(options["store_key"])
+        self.store_key = safe_text(options["store_key"])
         self.parent_relation = self.storage["data"].get(options["parent_relation"])
 
     def __iter__(self):
@@ -637,14 +621,14 @@ class DependencySorter(object):
                 temp_item.update({"_bpk": self.bp_key, "_eid": main_key})  # to be used in log_error
                 log_error(
                     temp_item,
-                    u"Parent '{}' not found: please correct csv".format(self.parent_relation[main_key]["_parent_id"]),
+                    "Parent '{}' not found: please correct csv".format(self.parent_relation[main_key]["_parent_id"]),
                 )
             item["_level"] = get_org_level(self.parent_relation, main_key)
 
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class FilesList(object):
+class FilesList:
     """Files list.
 
     Parameters:
@@ -662,29 +646,28 @@ class FilesList(object):
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.bp_key = safe_unicode(options["bp_key"])
+        self.bp_key = safe_text(options["bp_key"])
         self.files = self.storage["data"].setdefault(self.bp_key, {})
         exclude_patterns = options.get("exclude_patterns", "").strip()
         excludes = exclude_patterns and Expression(exclude_patterns, transmogrifier, name, options)(None) or []
         if self.condition({}, storage=self.storage):
             course_store(self, None)
-            for fp in sorted(read_recursive_dir(self.storage["filesp"], u"", exclude_patterns=excludes)):
+            for fp in sorted(read_recursive_dir(self.storage["filesp"], "", exclude_patterns=excludes)):
                 filename = os.path.basename(fp)
                 basename, ext = os.path.splitext(filename)
                 if basename not in self.files:
                     self.files[basename] = {"f": [(ext, os.path.dirname(fp))]}
                 elif (ext, os.path.dirname(fp)) not in self.files[basename]["f"]:
                     self.files[basename]["f"].append((ext, os.path.dirname(fp)))
-            o_logger.info("Stored {} files info".format(len(self.files)))
+            o_logger.info(f"Stored {len(self.files)} files info")
 
     def __iter__(self):
-        for item in self.previous:
-            yield item
+        yield from self.previous
 
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class InsertPath(object):
+class InsertPath:
     """Adds _path if not yet defined, to create new items.
 
     Parameters:
@@ -701,15 +684,15 @@ class InsertPath(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
-        self.bp_key = safe_unicode(options["bp_key"])
-        self.csv_key = safe_unicode(options.get("csv_key", self.bp_key))
+        self.bp_key = safe_text(options["bp_key"])
+        self.csv_key = safe_text(options.get("csv_key", self.bp_key))
         if not is_in_part(self, self.parts):
             return
         self.eids = self.storage["data"].setdefault(self.bp_key, {})  # also used for batching
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         fieldnames = self.storage["csv"].get(self.csv_key, {}).get("fd", [])
         self.id_keys = [
-            key for key in safe_unicode(options.get("id_keys", "")).split() if not fieldnames or key in fieldnames
+            key for key in safe_text(options.get("id_keys", "")).split() if not fieldnames or key in fieldnames
         ]
         self.roe = bool(int(options.get("raise_on_error", "1")))
 
@@ -726,7 +709,7 @@ class InsertPath(object):
                         if self.eids[item["_eid"]].get("path") and item["_path"] != self.eids[item["_eid"]]["path"]:
                             log_error(
                                 item,
-                                u"2 differents path: new '{} <> existing '{}'".format(
+                                "2 differents path: new '{} <> existing '{}'".format(
                                     item["_path"], self.eids[item["_eid"]]["path"]
                                 ),
                             )
@@ -736,11 +719,11 @@ class InsertPath(object):
                 if "title" in item and item["title"]:
                     title = item["title"]
                 else:
-                    title = u"-".join([item[key] for key in self.id_keys if item.get(key)])
+                    title = "-".join([item[key] for key in self.id_keys if item.get(key)])
                 if not title:
-                    log_error(item, u"cannot get an id from id keys {}".format(self.id_keys), level="critical")
+                    log_error(item, f"cannot get an id from id keys {self.id_keys}", level="critical")
                     if self.roe:
-                        raise Exception(u"No title ! See log...")
+                        raise Exception("No title ! See log...")
                     continue
                 if item["_eid"] in self.eids and self.eids[item["_eid"]].get("path"):  # already created
                     item["_path"] = self.eids[item["_eid"]]["path"]
@@ -761,7 +744,7 @@ class InsertPath(object):
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class LastSection(object):
+class LastSection:
     """Last section to do things at the end of each item process or global process."""
 
     def __init__(self, transmogrifier, name, options, previous):
@@ -772,20 +755,15 @@ class LastSection(object):
         self.portal = transmogrifier.context
 
     def __iter__(self):
-        for item in self.previous:
-            yield item
+        yield from self.previous
         # end of process
         course_store(self, None)
         # dump pkl
         for filename, store_key, condition in self.storage["lastsection"]["pkl_dump"]:
             if filename and condition(None, storage=self.storage, filename=filename):
-                o_logger.info(u"Dumping '{}'".format(filename))
+                o_logger.info(f"Dumping '{filename}'")
                 with open(filename, "wb") as fh:
-                    cPickle.dump(self.storage["data"][store_key], fh, -1)
-        # activate dv auto convert
-        if is_in_part(self, "tuv"):
-            gsettings = GlobalSettings(self.portal)
-            gsettings.auto_convert = True
+                    pickle.dump(self.storage["data"][store_key], fh, -1)
         # reactivate versioning
         if not ARCHIVE_SITE:
             pr_tool = api.portal.get_tool("portal_repository")
@@ -803,7 +781,7 @@ class LastSection(object):
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class PickleData(object):
+class PickleData:
     """Pickle data.
 
     Parameters:
@@ -822,33 +800,32 @@ class PickleData(object):
         if not is_in_part(self, self.parts):
             self.filename = None
             return
-        # import cPickle; fh = open('dt_csv_dir/2_e_mail_ass_user.pkl', 'rb')
-        # dic = cPickle.load(fh); fh.close()
-        self.filename = safe_unicode(options["filename"])
+        # import pickle; fh = open('dt_csv_dir/2_e_mail_ass_user.pkl', 'rb')
+        # dic = pickle.load(fh); fh.close()
+        self.filename = safe_text(options["filename"])
         if not self.filename:
             return
-        self.store_key = safe_unicode(options["store_key"])
+        self.store_key = safe_text(options["store_key"])
         self.filename = full_path(self.storage["csvp"], self.filename)
         self.storage["data"].setdefault(self.store_key, {})
         update = bool(int(options.get("update") or "0"))
         if os.path.exists(self.filename):
-            o_logger.info(u"Loading '{}'".format(self.filename))
+            o_logger.info(f"Loading '{self.filename}'")
             with open(self.filename, "rb") as fh:
                 if update:
-                    self.storage["data"][self.store_key].update(cPickle.load(fh))
+                    self.storage["data"][self.store_key].update(pickle.load(fh))
                 else:
-                    self.storage["data"][self.store_key] = cPickle.load(fh)
+                    self.storage["data"][self.store_key] = pickle.load(fh)
         self.d_condition = Condition(options.get("d_condition") or "python:False", transmogrifier, name, options)
         self.storage["lastsection"]["pkl_dump"].append((self.filename, self.store_key, self.d_condition))
 
     def __iter__(self):
-        for item in self.previous:
-            yield item
+        yield from self.previous
 
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class ReadFromData(object):
+class ReadFromData:
     """Read items from a dictionary.
 
     Parameters:
@@ -876,12 +853,12 @@ class ReadFromData(object):
             self.store_key = None
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        # self.store_key = safe_unicode(options['store_key']).split()
-        self.store_key = safe_unicode(options["store_key"])
-        self.store_subkey = safe_unicode(options.get("store_subkey"))
-        self.bp_key = safe_unicode(options["bp_key"])
-        self.related_storage = safe_unicode(options.get("related_storage") or self.bp_key)
-        self.fieldnames = safe_unicode(options.get("fieldnames") or "").split()
+        # self.store_key = safe_text(options['store_key']).split()
+        self.store_key = safe_text(options["store_key"])
+        self.store_subkey = safe_text(options.get("store_subkey"))
+        self.bp_key = safe_text(options["bp_key"])
+        self.related_storage = safe_text(options.get("related_storage") or self.bp_key)
+        self.fieldnames = safe_text(options.get("fieldnames") or "").split()
         # Using a lambda in expression is not working when a local var is used, even if given in context
         self.sort_value = Expression(options.get("sort_value") or "k", transmogrifier, name, options)
         if self.related_storage not in self.storage["data"]:
@@ -892,7 +869,7 @@ class ReadFromData(object):
             yield item
         if not is_in_part(self, self.parts) or self.store_key is None:
             return
-        o_logger.info(u"Reading data from '{}'".format(self.related_storage))
+        o_logger.info(f"Reading data from '{self.related_storage}'")
         data = self.storage["data"][self.related_storage]
 
         def sort_method(k):
@@ -916,7 +893,7 @@ class ReadFromData(object):
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class SetOwner(object):
+class SetOwner:
     """Sets ownership on created object.
 
     Parameters:
@@ -962,7 +939,7 @@ class SetOwner(object):
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class SetState(object):
+class SetState:
     """Sets state in workflow history.
 
     Parameters:
@@ -998,7 +975,7 @@ class SetState(object):
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self, item)
                 try:
-                    obj = self.portal.unrestrictedTraverse(six.ensure_str(item["_path"][1:]))
+                    obj = self.portal.unrestrictedTraverse(item["_path"][1:])
                 except (AttributeError, KeyError):
                     log_error(item, "The corresponding object '{}' cannot be found".format(item["_path"]))
                     continue
@@ -1010,7 +987,7 @@ class SetState(object):
                         ),
                     )
                 if len(obj.workflow_history[self.workflow_id]) > 1:
-                    log_error(item, "workflow_history len > 1: {}".format(obj.workflow_history))
+                    log_error(item, f"workflow_history len > 1: {obj.workflow_history}")
                 wfh = []
                 old_wfh = obj.workflow_history.get(self.workflow_id)
                 old_wfh_len = len(old_wfh)
@@ -1046,7 +1023,7 @@ class SetState(object):
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class SetIconifiedAttributes(object):
+class SetIconifiedAttributes:
     """Sets iconifiedcategory attributes (to_print, to_sign, signed, ...) on created object.
 
     Parameters:
@@ -1070,7 +1047,7 @@ class SetIconifiedAttributes(object):
             if is_in_part(self, self.parts) and self.condition(item):
                 course_store(self, item)
                 try:
-                    obj = self.portal.unrestrictedTraverse(six.ensure_str(item["_path"][1:]))
+                    obj = self.portal.unrestrictedTraverse(item["_path"][1:])
                 except (AttributeError, KeyError):
                     log_error(item, "The corresponding object '{}' cannot be found".format(item["_path"]))
                     yield item
@@ -1084,7 +1061,7 @@ class SetIconifiedAttributes(object):
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class StoreInData(object):
+class StoreInData:
     """Store items in a dictionary.
 
     Parameters:
@@ -1108,11 +1085,11 @@ class StoreInData(object):
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        # self.store_key = safe_unicode(options['store_key']).split()
-        self.store_key = safe_unicode(options["store_key"])
-        self.store_subkey = safe_unicode(options.get("store_subkey"))
-        self.bp_key = safe_unicode(options["bp_key"])
-        self.fieldnames = safe_unicode(options.get("fieldnames") or "").split()
+        # self.store_key = safe_text(options['store_key']).split()
+        self.store_key = safe_text(options["store_key"])
+        self.store_subkey = safe_text(options.get("store_subkey"))
+        self.bp_key = safe_text(options["bp_key"])
+        self.fieldnames = safe_text(options.get("fieldnames") or "").split()
         self.cku = bool(int(options.get("check_key_uniqueness") or "1"))
         self.csku = bool(int(options.get("check_subkey_uniqueness") or "1"))
         self.yld = bool(int(options.get("yield") or "0"))
@@ -1130,15 +1107,13 @@ class StoreInData(object):
                 if self.store_subkey:
                     subkey = item.get(self.store_subkey)
                     if self.csku and subkey in self.storage["data"][self.bp_key].get(key, {}):
-                        log_error(
-                            item, u"Subkey '{}' of key '{}' already in '{}' data dict".format(subkey, key, self.bp_key)
-                        )
+                        log_error(item, f"Subkey '{subkey}' of key '{key}' already in '{self.bp_key}' data dict")
                     self.storage["data"][self.bp_key].setdefault(key, {}).setdefault(subkey, {}).update(
                         filter_keys(item, self.fieldnames)
                     )
                 else:
                     if self.cku and key in self.storage["data"][self.bp_key]:
-                        log_error(item, u"Key '{}' already in '{}' data dict".format(key, self.bp_key))
+                        log_error(item, f"Key '{key}' already in '{self.bp_key}' data dict")
                     self.storage["data"][self.bp_key].setdefault(key, {}).update(filter_keys(item, self.fieldnames))
                 if not self.yld:
                     continue

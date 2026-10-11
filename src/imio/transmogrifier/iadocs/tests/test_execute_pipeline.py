@@ -1,18 +1,16 @@
-# -*- coding: utf-8 -*-
 """execute_pipeline script tests."""
+
 from AccessControl.SecurityManagement import getSecurityManager
 from argparse import Namespace
 from collective.transmogrifier.transmogrifier import configuration_registry
 from imio.transmogrifier.iadocs.testing import IMIO_TRANSMOGRIFIER_IADOCS_INTEGRATION_TESTING
-from Products.CMFPlone.utils import safe_unicode
+from plone.base.utils import safe_text
 from zope.testing.loggingsupport import InstalledHandler
 
 import imio.transmogrifier.iadocs
-import io
 import json
 import os
 import shutil
-import six
 import sys
 import tempfile
 import unittest
@@ -20,7 +18,7 @@ import unittest
 
 SCRIPT = os.path.join(os.path.dirname(imio.transmogrifier.iadocs.__file__), "execute_pipeline.py")
 PIPELINE_ID = "imio.transmogrifier.iadocs.pipeline"
-PIPELINE = u"""[config]
+PIPELINE = """[config]
 permitted_sections = abcelmz
 
 [transmogrifier]
@@ -55,8 +53,8 @@ parts =
 def load_script(path, **globs):
     """Executes a script body, as `instance run` does, and returns its namespace (kept alive with its functions)."""
     namespace = dict(globs, __name__=os.path.basename(path)[:-3], __file__=path)
-    with io.open(path, "rb") as fh:
-        six.exec_(compile(fh.read(), path, "exec"), namespace)
+    with open(path, "rb") as fh:
+        exec(compile(fh.read(), path, "exec"), namespace)
     return namespace
 
 
@@ -78,7 +76,7 @@ class TestExecutePipeline(unittest.TestCase):
 
     def setUp(self):
         self.portal = self.layer["portal"]
-        self.tmp = safe_unicode(tempfile.mkdtemp())
+        self.tmp = safe_text(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.tmp)
         self.addCleanup(restore_pipeline, configuration_registry._config_info.get(PIPELINE_ID))
         unregister_pipeline()
@@ -87,12 +85,12 @@ class TestExecutePipeline(unittest.TestCase):
         self.namespace = load_script(SCRIPT, app=self.layer["app"], obj=self.portal)
 
     def write_pipeline(self, content, register=True):
-        path = os.path.join(self.tmp, u"pipeline.cfg")
-        with io.open(path, "w", encoding="utf8") as fh:
+        path = os.path.join(self.tmp, "pipeline.cfg")
+        with open(path, "w", encoding="utf8") as fh:
             fh.write(content)
         if register:
             unregister_pipeline()
-            configuration_registry.registerConfiguration(PIPELINE_ID, u"", u"", path)
+            configuration_registry.registerConfiguration(PIPELINE_ID, "", "", path)
         return path
 
     def set_env(self, **env):
@@ -126,48 +124,48 @@ class TestExecutePipeline(unittest.TestCase):
         # without func part, the parts are kept as given
         self.assertEqual(auto_parts(Namespace(parts="bax"), ""), ("bax", ["x"]))
         # no permitted sections
-        self.write_pipeline(PIPELINE.replace(u"permitted_sections = abcelmz", u""))
+        self.write_pipeline(PIPELINE.replace("permitted_sections = abcelmz", ""))
         self.assertEqual(auto_parts(Namespace(parts="x"), "l"), ("abclx", []))
         # Plone 4 behaviour (bug?): a need_other section without parts prefix fails
         self.write_pipeline(
-            PIPELINE.replace(u"    init\n", u"    init\n    need\n") + u"\n[need]\nblueprint = "
-            u"imio.transmogrifier.iadocs.need_other\nparts = a\n"
+            PIPELINE.replace("    init\n", "    init\n    need\n") + "\n[need]\nblueprint = "
+            "imio.transmogrifier.iadocs.need_other\nparts = a\n"
         )
         self.assertRaises(TypeError, auto_parts, Namespace(parts=""), "l")
 
     def test_main(self):
         pipeline = self.write_pipeline(
-            u"[config]\npermitted_sections = blz\n\n[transmogrifier]\npipeline =\n", register=False
+            "[config]\npermitted_sections = blz\n\n[transmogrifier]\npipeline =\n", register=False
         )
         self.set_env(FUNC_PART="l", BATCH="5", COMMIT="2")
         self.run_main(pipeline, "-c0", "-p", "zb")
         self.assertEqual(
             json.loads(self.portal.REQUEST.get("_transmo_options_")),
-            {u"commit": False, u"parts": u"blz", u"batch_nb": 5, u"commit_nb": 2},
+            {"commit": False, "parts": "blz", "batch_nb": 5, "commit_nb": 2},
         )
         self.assertEqual(configuration_registry.getConfiguration(PIPELINE_ID)["configuration"], pipeline)
         self.assertEqual(getSecurityManager().getUser().getId(), "admin")
         self.assertEqual(len(self.logs.records), 1)
         self.assertEqual(self.logs.records[0].name, "dto")
         # Plone 4 behaviour: an already registered pipeline id keeps its first file
-        other = os.path.join(self.tmp, u"other.cfg")
-        io.open(other, "w").close()
+        other = os.path.join(self.tmp, "other.cfg")
+        open(other, "w").close()
         self.set_env(FUNC_PART="", BATCH="0", COMMIT="0")
         self.run_main(other, "-p", "b")
         self.assertEqual(configuration_registry.getConfiguration(PIPELINE_ID)["configuration"], pipeline)
         self.assertEqual(
             json.loads(self.portal.REQUEST.get("_transmo_options_")),
-            {u"commit": False, u"parts": u"b", u"batch_nb": 0, u"commit_nb": 0},
+            {"commit": False, "parts": "b", "batch_nb": 0, "commit_nb": 0},
         )
         # unpermitted part
         self.set_env(FUNC_PART="x")
         self.assertRaises(SystemExit, self.run_main, pipeline, "-c0")
         # unexisting pipeline file
         self.logs.clear()
-        self.assertRaises(SystemExit, self.run_main, os.path.join(self.tmp, u"unknown.cfg"), "-c0")
+        self.assertRaises(SystemExit, self.run_main, os.path.join(self.tmp, "unknown.cfg"), "-c0")
         self.assertEqual(
             [rec.getMessage() for rec in self.logs.records],
-            [u"Given pipeline file '{}' doesn't exist".format(os.path.join(self.tmp, u"unknown.cfg"))],
+            ["Given pipeline file '{}' doesn't exist".format(os.path.join(self.tmp, "unknown.cfg"))],
         )
         # bad commit value
         self.assertRaises(SystemExit, self.run_main, pipeline, "-c2")
@@ -178,6 +176,6 @@ class TestExecutePipeline(unittest.TestCase):
         self.assertRaises(SystemExit, self.namespace["main"])
         self.assertEqual(len(self.logs.records), 1)
         self.assertTrue(
-            self.logs.records[0].getMessage().startswith(u"Arguments are not formatted as needed."),
+            self.logs.records[0].getMessage().startswith("Arguments are not formatted as needed."),
             self.logs.records[0].getMessage(),
         )
