@@ -1,0 +1,5 @@
+[report]
+include =
+    src/imio/transmogrifier/iadocs/*
+omit =
+    */tests/*

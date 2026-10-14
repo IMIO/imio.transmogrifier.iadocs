@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from itertools import product
 
 import argparse
@@ -42,8 +41,8 @@ ns = parser.parse_args()
 
 res = []
 for let1, let2 in product(letters, letters[1:]):
-    gen = "{}{}{}".format(ns.prefix, let1, let2)
+    gen = f"{ns.prefix}{let1}{let2}"
     res.append(gen)
-    if gen == "{}{}".format(ns.prefix, ns.last_one):
+    if gen == f"{ns.prefix}{ns.last_one}":
         break
 print(ns.separator.join(res))

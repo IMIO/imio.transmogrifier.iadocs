@@ -1,18 +1,18 @@
-# -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup as Soup
 from collective.classification.tree.utils import create_category
 from collective.classification.tree.utils import get_parents
 from collective.contact.plonegroup.utils import get_selected_org_suffix_principal_ids
 from collective.iconifiedcategory.utils import calculate_category_id
+from collective.labels.interfaces import ILabeling
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from datetime import datetime
-from ftw.labels.interfaces import ILabeling
 from imio.dms.mail import IM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail import IM_READER_SERVICE_FUNCTIONS
 from imio.dms.mail import OM_EDITOR_SERVICE_FUNCTIONS
 from imio.dms.mail.utils import create_period_folder
 from imio.helpers.content import uuidToObject
+from imio.helpers.security import separate_fullname
 from imio.helpers.transmogrifier import clean_value
 from imio.helpers.transmogrifier import Condition
 from imio.helpers.transmogrifier import get_correct_id
@@ -41,38 +41,31 @@ from imio.transmogrifier.iadocs.utils import print_item  # noqa
 from imio.transmogrifier.iadocs.utils import short_log
 from persistent.list import PersistentList
 from plone import api
+from plone.base.utils import safe_text
 from plone.i18n.normalizer import IIDNormalizer
-from Products.CMFPlone.utils import safe_unicode
 from z3c.relationfield import RelationValue
 from zc.relation.interfaces import ICatalog
 from zope.annotation import IAnnotations
 from zope.component import getUtility
-from zope.interface import classProvides
-from zope.interface import implements
+from zope.interface import implementer
+from zope.interface import provider
 from zope.intid import IIntIds
 
-import cPickle
 import csv
 import os
+import pickle
 import re
 import transaction
 
 
-try:
-    from imio.dms.mail.utils import separate_fullname  # 3.0 version
-except ImportError:
-    from imio.helpers.security import separate_fullname  # 3.1 version
-
-
-class AServiceUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class AServiceUpdate:
     """Update plonegroup services with external id value.
 
     Parameters:
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -95,17 +88,17 @@ class AServiceUpdate(object):
                 if item["_eid"] in self.eid_to_orgs or not self.match:
                     continue
                 if item["_eid"] not in self.match:
-                    log_error(item, u"Not in matching file")
+                    log_error(item, "Not in matching file")
                     continue
                 uid = self.match[item["_eid"]]["uid"]
                 if not uid or uid not in self.all_orgs:
-                    log_error(item, u"Cannot find uid '{}' matched with service".format(uid))
+                    log_error(item, f"Cannot find uid '{uid}' matched with service")
                     continue
                 if item["_eid"] not in self.all_orgs[uid]["eids"]:
                     item["_type"] = "organization"
                     item["_path"] = self.all_orgs[uid]["p"]
                     self.all_orgs[uid]["eids"].append(item["_eid"])
-                    item["internal_number"] = u",".join(self.all_orgs[uid]["eids"])
+                    item["internal_number"] = ",".join(self.all_orgs[uid]["eids"])
                     change = True
             yield item
         # store services after plonegroup changes
@@ -114,16 +107,15 @@ class AServiceUpdate(object):
             self.storage["data"]["p_orgs_all"], self.storage["data"]["p_eid_to_orgs"] = get_plonegroup_orgs(self.portal)
 
 
-class BMailtypesByType(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class BMailtypesByType:
     """Modify mailtypes items following use.
 
     Parameters:
         * related_storage = M, related data storage
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -133,7 +125,7 @@ class BMailtypesByType(object):
         self.parts = get_related_parts(name)
         if not is_in_part(self, self.parts):
             return
-        self.related_storage = safe_unicode(options["related_storage"])
+        self.related_storage = safe_text(options["related_storage"])
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
 
     def __iter__(self):
@@ -147,15 +139,14 @@ class BMailtypesByType(object):
             yield item
 
 
-class BMailtypeUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class BMailtypeUpdate:
     """Store mailtype if necessary.
 
     Parameters:
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -175,7 +166,7 @@ class BMailtypeUpdate(object):
                 course_store(self, item)
                 #  _eid _etype _etitle _enature _esource _c_type _key _title _active
                 if not item["_c_type"] or not item["_key"]:
-                    log_error(item, u"Empty match: we pass _eid {}".format(item["_eid"]), "warning")
+                    log_error(item, "Empty match: we pass _eid {}".format(item["_eid"]), "warning")
                     continue
                 if item["_c_type"] not in p_types or item["_key"] not in p_types[item["_c_type"]]:
                     to_add = self.to_add.setdefault(item["_c_type"], {})
@@ -195,13 +186,14 @@ class BMailtypeUpdate(object):
                 keys = sorted(self.to_add[typ].keys(), key=lambda d: self.to_add[typ][d]["dtitle"].lower())
                 for key in keys:
                     values.append(self.to_add[typ][key])
-                    o_logger.info("Part b: updating '{}' mail types with new value: {}".format(typ,
-                                                                                               self.to_add[typ][key]))
+                    o_logger.info(f"Part b: updating '{typ}' mail types with new value: {self.to_add[typ][key]}")
                 api.portal.set_registry_record(MAILTYPES[typ], values)
             self.storage["data"]["p_mailtype"] = get_mailtypes(self.portal)
 
 
-class ContactAsTextUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class ContactAsTextUpdate:
     """Handles im sender or om recipient.
 
     Parameters:
@@ -220,9 +212,6 @@ class ContactAsTextUpdate(object):
         * skip_contact_user = O, skip a contact that is a user (defaut 0)
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
@@ -231,20 +220,20 @@ class ContactAsTextUpdate(object):
         self.parts = get_related_parts(name)
         if not is_in_part(self, self.parts):
             return
-        self.bp_key = safe_unicode(options["bp_key"])
+        self.bp_key = safe_text(options["bp_key"])
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.mail_id_key = safe_unicode(options["mail_id_key"])
-        self.contact_id_key = safe_unicode(options["contact_id_key"])
-        self.contact_label = safe_unicode(options["contact_label"])
-        self.related_label = safe_unicode(options.get("related_label", ""))
+        self.mail_id_key = safe_text(options["mail_id_key"])
+        self.contact_id_key = safe_text(options["contact_id_key"])
+        self.contact_label = safe_text(options["contact_label"])
+        self.related_label = safe_text(options.get("related_label", ""))
         if self.related_label:
-            self.related_label = u" {}".format(self.related_label)
-        self.contact_free_key = safe_unicode(options["contact_free_key"])
+            self.related_label = f" {self.related_label}"
+        self.contact_free_key = safe_text(options["contact_free_key"])
         self.original_item = bool(int(options["original_item"]))
         self.yield_original = bool(int(options["yield_original"]))
         self.skip_real_contact = bool(int(options["skip_real_contact"]))
         self.skip_contact_user = bool(int(options.get("skip_contact_user") or "0"))
-        self.mail_paths = self.storage["data"].get(safe_unicode(options["mail_store_key"]), {})
+        self.mail_paths = self.storage["data"].get(safe_text(options["mail_store_key"]), {})
         self.e_c = self.storage["data"][options["contact_store_key"]]
         self.batch_store = self.storage["data"].setdefault(self.bp_key, {})
 
@@ -314,22 +303,22 @@ class ContactAsTextUpdate(object):
                 d_t,
                 related_label=self.related_label,
             ):
-                additional = u""
+                additional = ""
                 # for customer 1 om recipients
                 if "_action" in item:
-                    additional = u", ".join(
+                    additional = ", ".join(
                         all_of_dict_values(
-                            item, [u"_action", u"_message", u"_response"], labels=[u"", u"message", u"réponse"]
+                            item, ["_action", "_message", "_response"], labels=["", "message", "réponse"]
                         )
                     )
                 if additional:
-                    additional = u"{}: {}".format(u"COMPLÉMENT {}".format(self.contact_label), additional)
+                    additional = "{}: {}".format(f"COMPLÉMENT {self.contact_label}", additional)
                     if additional not in d_t:
                         d_t.append(additional)
                 if self.original_item:
-                    item["description"] = u"\r\n".join(desc)
+                    item["description"] = "\r\n".join(desc)
                     if not self.storage.get("desc_only"):
-                        item["data_transfer"] = u"\r\n".join(d_t)
+                        item["data_transfer"] = "\r\n".join(d_t)
                     yield item
                 else:
                     # item2 = {'_eid': item['_eid'], '_path': path,
@@ -341,8 +330,8 @@ class ContactAsTextUpdate(object):
                         "_type": mail.portal_type,
                         "_bpk": self.bp_key,
                         "_act": "U",
-                        "description": u"\r\n".join(desc),
-                        "data_transfer": u"\r\n".join(d_t),
+                        "description": "\r\n".join(desc),
+                        "data_transfer": "\r\n".join(d_t),
                         "modification_date": mail.creation_date,
                     }
                     yield item2
@@ -350,7 +339,9 @@ class ContactAsTextUpdate(object):
                 yield item
 
 
-class ContactSet(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class ContactSet:
     """Set contact. Try to find a contact or set default contact.
 
     Parameters:
@@ -368,21 +359,18 @@ class ContactSet(object):
         * condition = O, condition expression
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
-        self.bp_key = safe_unicode(options["bp_key"])
+        self.bp_key = safe_text(options["bp_key"])
         if not is_in_part(self, self.parts):
             return
-        self.fieldname = safe_unicode(options["fieldname"])
-        self.mail_id_key = safe_unicode(options.get("mail_id_key") or "_mail_id")
-        self.contact_id_key = safe_unicode(options["contact_id_key"])
+        self.fieldname = safe_text(options["fieldname"])
+        self.mail_id_key = safe_text(options.get("mail_id_key") or "_mail_id")
+        self.contact_id_key = safe_text(options["contact_id_key"])
         self.is_list = bool(int(options.get("is_list") or "1"))
         self.original_item = bool(int(options["original_item"]))
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
@@ -395,7 +383,7 @@ class ContactSet(object):
             self.def_ctct_iid = self.intids.getId(self.storage["plone"]["def_contact"])
         self.skip_contact_user = bool(int(options.get("skip_contact_user") or "0"))
         self.yld = bool(int(options.get("yield") or "0"))
-        self.mail_paths = self.storage["data"].get(safe_unicode(options.get("mail_store_key", u"")), {})
+        self.mail_paths = self.storage["data"].get(safe_text(options.get("mail_store_key", "")), {})
         self.e_c = self.storage["data"].setdefault(options["contact_store_key"], {})
         self.batch_store = self.storage["data"].setdefault(self.bp_key, {})
 
@@ -473,7 +461,9 @@ class ContactSet(object):
                     yield item
 
 
-class DefaultContactSet(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class DefaultContactSet:
     """Set default contact.
 
     Parameters:
@@ -481,9 +471,6 @@ class DefaultContactSet(object):
         * is_list = M, int for boolean (1 if the field is a list)
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -493,7 +480,7 @@ class DefaultContactSet(object):
         self.parts = get_related_parts(name)
         if not is_in_part(self, self.parts):
             return
-        self.fieldname = safe_unicode(options["fieldname"])
+        self.fieldname = safe_text(options["fieldname"])
         self.is_list = bool(int(options.get("is_list") or "1"))
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         intids = getUtility(IIntIds)
@@ -517,43 +504,43 @@ def person_dic(
 ):
     if e_userid not in section.euid_to_pers:
         # we create or update a person
-        path = os.path.join(section.storage["plone"]["directory_path"], "personnel-folder/{}".format(pid))
-        if title == u"Existing":
+        path = os.path.join(section.storage["plone"]["directory_path"], f"personnel-folder/{pid}")
+        if title == "Existing":
             person = get_obj_from_path(section.portal, path=path)
             section.storage["data"]["p_euid_to_pers"][e_userid] = person.UID()
-            euids = person.internal_number and person.internal_number.split(u",") or []
+            euids = person.internal_number and person.internal_number.split(",") or []
             if e_userid not in euids:
                 euids.append(e_userid)
             pdic = {
                 "_type": "person",
                 "_path": path,
-                u"internal_number": u",".join(euids),
-                u"_bpk": bpk,
-                u"_eid": item["_eid"],
-                u"title": title,
+                "internal_number": ",".join(euids),
+                "_bpk": bpk,
+                "_eid": item["_eid"],
+                "title": title,
                 "_act": "U",
             }
             if firstname is not None and not person.firstname:
-                pdic[u"firstname"] = firstname
+                pdic["firstname"] = firstname
             if lastname is not None and not person.lastname:
-                pdic[u"lastname"] = lastname
+                pdic["lastname"] = lastname
             if p_userid and not person.userid:
                 pdic["userid"] = p_userid
         else:
             pdic = {
                 "_type": "person",
                 "_path": path,
-                u"internal_number": e_userid,
+                "internal_number": e_userid,
                 "use_parent_address": False,
-                u"_bpk": bpk,
-                u"_eid": item["_eid"],
-                u"_deactivate": "deactivate" in transitions,
-                u"creation_date": section.storage["creation_date"],
+                "_bpk": bpk,
+                "_eid": item["_eid"],
+                "_deactivate": "deactivate" in transitions,
+                "creation_date": section.storage["creation_date"],
                 "_act": "N",
-                u"modification_date": section.storage["creation_date"],
-                u"title": title,
+                "modification_date": section.storage["creation_date"],
+                "title": title,
             }
-            pdic.setdefault(u"_post_actions", {})[u"store_internal_person_info"] = ""
+            pdic.setdefault("_post_actions", {})["store_internal_person_info"] = ""
             # avoid None causing error in schemaupdater converter
             add_key_if_value(pdic, "userid", p_userid, strict=True)
             add_key_if_value(pdic, "firstname", firstname)
@@ -575,13 +562,13 @@ def hp_dic(section, bpk, e_userid, item, transitions=("deactivate",)):
             "_path": path,
             "use_parent_address": True,
             "position": RelationValue(section.intids.getId(org)),
-            "internal_number": u"",
-            u"_bpk": bpk,
-            u"_eid": item["_eid"],
-            u"_deactivate": "deactivate" in transitions,
-            u"creation_date": section.storage["creation_date"],
+            "internal_number": "",
+            "_bpk": bpk,
+            "_eid": item["_eid"],
+            "_deactivate": "deactivate" in transitions,
+            "creation_date": section.storage["creation_date"],
             "_act": "N",
-            u"modification_date": section.storage["creation_date"],
+            "modification_date": section.storage["creation_date"],
         }
         section.p_hps[puid]["hps"][ouid] = {"path": path, "state": "deactivated"}
         section.change = True
@@ -589,16 +576,15 @@ def hp_dic(section, bpk, e_userid, item, transitions=("deactivate",)):
     return []
 
 
-class DOMSenderCreation(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class DOMSenderCreation:
     """Create sender held_position if necessary.
 
     Parameters:
         * condition = O, condition expression
         * sender_user_dic = M, sender user dictionary
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -630,88 +616,79 @@ class DOMSenderCreation(object):
                     if _euidm["_p_userid"]:  # we have a match (plone user)
                         if _euidm["_p_userid"] in self.puid_to_pers:  # we already have a person for this user
                             pid = uuidToObject(self.puid_to_pers[_euidm["_p_userid"]]).id
-                            for y in person_dic(
+                            yield from person_dic(
                                 self,
-                                u"person_sender",
+                                "person_sender",
                                 e_userid,
                                 item,
                                 _euidm["_p_userid"],
                                 pid,
-                                u"Existing",
+                                "Existing",
                                 transitions=(),
-                            ):
-                                yield y  # noqa
-                            for y in hp_dic(self, u"hp_sender", e_userid, item):
-                                yield y  # noqa
+                            )
+                            yield from hp_dic(self, "hp_sender", e_userid, item)
                         else:
                             pid = _euidm["_p_userid"]
                             fn, ln = separate_fullname(
                                 None, fn_first=self.storage["plone"]["firstname_first"], fullname=_euidm["_fullname"]
                             )
-                            for y in person_dic(
+                            yield from person_dic(
                                 self,
-                                u"person_sender",
+                                "person_sender",
                                 e_userid,
                                 item,
                                 _euidm["_p_userid"],
                                 pid,
-                                u"Matched",
+                                "Matched",
                                 firstname=fn,
                                 lastname=ln,
-                            ):
-                                yield y  # noqa
-                            for y in hp_dic(self, u"hp_sender", e_userid, item):
-                                yield y  # noqa
+                            )
+                            yield from hp_dic(self, "hp_sender", e_userid, item)
                     else:
                         pid = idnormalizer.normalize(
                             full_name(
                                 _euidm["_prenom"], _euidm["_nom"], fn_first=self.storage["plone"]["firstname_first"]
                             )
                         )
-                        for y in person_dic(
+                        yield from person_dic(
                             self,
-                            u"person_sender",
+                            "person_sender",
                             e_userid,
                             item,
                             None,
                             pid,
-                            u"Unmatched",
+                            "Unmatched",
                             firstname=_euidm["_prenom"],
                             lastname=_euidm["_nom"],
-                        ):
-                            yield y  # noqa
-                        for y in hp_dic(self, u"hp_sender", e_userid, item):
-                            yield y  # noqa
+                        )
+                        yield from hp_dic(self, "hp_sender", e_userid, item)
                 else:  # we don't have a _sender_id or _sender_id is not a user id
-                    for y in person_dic(
+                    yield from person_dic(
                         self,
-                        u"person_sender",
-                        u"None",
+                        "person_sender",
+                        "None",
                         item,
                         None,
                         "reprise-donnees",
-                        u"None",
-                        firstname=u"",
-                        lastname=u"Reprise données",
-                    ):
-                        yield y  # noqa
-                    for y in hp_dic(self, u"hp_sender", u"None", item):
-                        yield y  # noqa
+                        "None",
+                        firstname="",
+                        lastname="Reprise données",
+                    )
+                    yield from hp_dic(self, "hp_sender", "None", item)
                 continue
             yield item
         if self.change:
             o_logger.info("Part d: some internal persons or/and held positions have been added.")
 
 
-class DPersonnelCreation(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class DPersonnelCreation:
     """Create or link person.
 
     Parameters:
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -737,34 +714,34 @@ class DPersonnelCreation(object):
                 if _euidm["_p_userid"]:  # we have a match (plone user)
                     if _euidm["_p_userid"] in self.puid_to_pers:  # we already have a person for this user
                         pid = uuidToObject(self.puid_to_pers[_euidm["_p_userid"]]).id
-                        for y in person_dic(
-                            self, u"personnel", e_userid, item, _euidm["_p_userid"], pid, u"Existing", transitions=()
-                        ):
-                            yield y  # noqa
+                        yield from person_dic(
+                            self, "personnel", e_userid, item, _euidm["_p_userid"], pid, "Existing", transitions=()
+                        )
                     else:
                         pid = _euidm["_p_userid"]
                         fn, ln = separate_fullname(
                             None, fn_first=self.storage["plone"]["firstname_first"], fullname=_euidm["_fullname"]
                         )
-                        for y in person_dic(
+                        yield from person_dic(
                             self,
-                            u"personnel",
+                            "personnel",
                             e_userid,
                             item,
                             _euidm["_p_userid"],
                             pid,
-                            u"Matched",
+                            "Matched",
                             firstname=fn,
                             lastname=ln,
-                        ):
-                            yield y  # noqa
+                        )
                 continue
             yield item
         if self.change:
             o_logger.info("Part d: some internal persons or/and held positions have been added.")
 
 
-class ECategoryUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class ECategoryUpdate:
     """Update category or create a new one.
 
     Parameters:
@@ -776,9 +753,6 @@ class ECategoryUpdate(object):
         * category_code_eid = 0, dict containing category code and eid value (usefull if _eid is e_category main key)
         * prefix = O, prefix of category code to be ignored as parent
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -807,7 +781,7 @@ class ECategoryUpdate(object):
                     if item["_pcode"] not in self.p_category:
                         log_error(
                             item,
-                            u"The _pcode '{}' is not in the loaded categories. " u"We pass it".format(item["_pcode"]),
+                            "The _pcode '{}' is not in the loaded categories. " "We pass it".format(item["_pcode"]),
                         )
                         continue
                     node = self.p_category[item["_pcode"]]["obj"]
@@ -862,7 +836,7 @@ class ECategoryUpdate(object):
                         if code in self.p_category:
                             log_error(
                                 item,
-                                u"Same code '{}' with title '{}' previously created with title '{}'".format(
+                                "Same code '{}' with title '{}' previously created with title '{}'".format(
                                     code,
                                     self.replace_slash and item["_etitle"].replace("/", "-") or item["_etitle"],
                                     self.p_category[code]["title"],
@@ -877,7 +851,7 @@ class ECategoryUpdate(object):
                     else:
                         code = _p_key = item["_ecode"]
                         if self.category_code_eid:
-                            _p_key = item[u"_eid"]
+                            _p_key = item["_eid"]
                         if _p_key in self.parent_relation:  # we have a parent
                             parent_id = parent_code = self.parent_relation[_p_key]["_parent_id"]
                             if self.category_code_eid:
@@ -885,7 +859,7 @@ class ECategoryUpdate(object):
                                     self.storage["data"]["e_category"].get(parent_id, {}).get("_ecode", parent_id)
                                 )
                             if parent_code not in self.p_category:
-                                log_error(item, u"The parent '{}' is not in the created categories.".format(parent_id))
+                                log_error(item, f"The parent '{parent_id}' is not in the created categories.")
                             else:
                                 parent = self.p_category[parent_code]["obj"]
                     if code:
@@ -913,15 +887,14 @@ class ECategoryUpdate(object):
             yield item
 
 
-class F1Level3Handler(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class F1Level3Handler:
     """Handles level 3 folder.
 
     Parameters:
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -937,18 +910,20 @@ class F1Level3Handler(object):
                 yield item
                 continue
             course_store(self, item)
-            log_error(item, u"Modifying level3 folder")
+            log_error(item, "Modifying level3 folder")
             # replace level3 by level2 parent
             orig_parent_id = item["_parent_id"]
             item["_parent_id"] = self.storage["data"]["e_f_parent_relation"][orig_parent_id]["_parent_id"]
             # combines titles
-            item["title"] = u"{} | {}".format(self.storage["data"]["e_folder"][orig_parent_id]["title"], item["title"])
+            item["title"] = "{} | {}".format(self.storage["data"]["e_folder"][orig_parent_id]["title"], item["title"])
             # set type
             item["_type"] = "ClassificationSubfolder"
             yield item
 
 
-class F2FolderSubfolderSplit(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class F2FolderSubfolderSplit:
     """Yield part of current item as new item.
 
     Parameters:
@@ -957,9 +932,6 @@ class F2FolderSubfolderSplit(object):
         * prefix = M, prefix to replace
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
@@ -967,8 +939,8 @@ class F2FolderSubfolderSplit(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.bp_key = safe_unicode(options["bp_key"])
-        self.prefix = safe_unicode(options["prefix"])
+        self.bp_key = safe_text(options["bp_key"])
+        self.prefix = safe_text(options["prefix"])
 
     def __iter__(self):
         for item in self.previous:
@@ -984,7 +956,9 @@ class F2FolderSubfolderSplit(object):
             yield item2
 
 
-class F3TextCategoriesToId(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class F3TextCategoriesToId:
     """Handles text categories.
 
     Parameters:
@@ -996,9 +970,6 @@ class F3TextCategoriesToId(object):
         * part_pattern = O, pattern to check accepted part (default none)
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
@@ -1006,11 +977,11 @@ class F3TextCategoriesToId(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.bp_key = safe_unicode(options["bp_key"])
+        self.bp_key = safe_text(options["bp_key"])
         self.cat_fld_name = options.get("categories_field_name") or "_classification_categories_text"
-        self.fld_name = safe_unicode(options["txt_field_name"])
-        self.sep = safe_unicode(options.get("separator") or "")
-        self.pattern = options.get("part_pattern") or u""
+        self.fld_name = safe_text(options["txt_field_name"])
+        self.sep = safe_text(options.get("separator") or "")
+        self.pattern = options.get("part_pattern") or ""
         self.categories = self.storage["data"][self.bp_key]
 
     def __iter__(self):
@@ -1040,11 +1011,11 @@ class F3TextCategoriesToId(object):
                     error = True
                     break
             if error:
-                log_error(item, u"Category part '{}' not found ('{}')".format(part, txt))
+                log_error(item, f"Category part '{part}' not found ('{txt}')")
                 item["classification_categories"] = [self.storage["plone"]["def_category"]]
                 desc = self.fld_name in item and item[self.fld_name].split("\r\n") or []
-                desc.append(u"CLASSEMENT: {}".format(item[self.cat_fld_name]))
-                item[self.fld_name] = u"\r\n".join(desc)
+                desc.append(f"CLASSEMENT: {item[self.cat_fld_name]}")
+                item[self.fld_name] = "\r\n".join(desc)
             yield item
 
 
@@ -1057,30 +1028,30 @@ def get_contact_name(dic, dic2):
         org = all_of_dict_values(
             dic2,
             ["_organization", "_division", "_service", "_level3", "_level4", "_level5"],
-            [u"", u"Division", u"Service", u"", u"", u""],
+            ["", "Division", "Service", "", "", ""],
             ": ",
         )
         org.extend(all_of_dict_values(dic2, ["lastname", "firstname"]))
-        p_name = u", ".join(org)
+        p_name = ", ".join(org)
     else:
-        p_name = u" ".join(all_of_dict_values(dic2, ["lastname", "firstname"]))
+        p_name = " ".join(all_of_dict_values(dic2, ["lastname", "firstname"]))
     if not p_name and dic2.get("_name2"):
         p_name = dic2["_name2"]
     if p_name:
         p_sender.append(p_name)
-    name = u""
+    name = ""
     # main contact
     if "_division" in dic:
         org = all_of_dict_values(
             dic,
             ["_organization", "_division", "_service", "_level3", "_level4", "_level5"],
-            [u"", u"Division", u"Service", u"", u"", u""],
+            ["", "Division", "Service", "", "", ""],
             ": ",
         )
         org.extend(all_of_dict_values(dic, ["lastname", "firstname"]))
-        name = u", ".join(org)
+        name = ", ".join(org)
     else:
-        name = u" ".join(all_of_dict_values(dic, ["lastname", "firstname"]))
+        name = " ".join(all_of_dict_values(dic, ["lastname", "firstname"]))
     if not name and dic.get("_name2"):
         name = dic["_name2"]
     if name and (not p_name or name != p_name):
@@ -1095,11 +1066,11 @@ def get_contact_name(dic, dic2):
     if dic.get("_function"):
         sender.append(dic["_function"])
     if dic2.get("enterprise_number"):
-        p_sender.append(u"NE:{}".format(dic2["enterprise_number"]))
+        p_sender.append("NE:{}".format(dic2["enterprise_number"]))
     if dic.get("enterprise_number") and (
         not dic2.get("enterprise_number") or dic.get("enterprise_number") != dic2.get("enterprise_number")
     ):
-        sender.append(u"NE:{}".format(dic["enterprise_number"]))
+        sender.append("NE:{}".format(dic["enterprise_number"]))
     # TODO add ctyp
     return sender, p_sender
 
@@ -1123,7 +1094,7 @@ def get_contact_phone(dic1, dic2):
     return phones
 
 
-def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, related_label=u" PARENT"):
+def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, related_label=" PARENT"):
     """Get contact infos
 
     :param section: section object
@@ -1141,7 +1112,7 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
     change = False
     sender = []
     p_sender = []
-    m_sender = free_fld and clean_value(item[free_fld], patterns=[(r'^["\']+$', u"")]) or u""
+    m_sender = free_fld and clean_value(item[free_fld], patterns=[(r'^["\']+$', "")]) or ""
     if c_id_fld and item.get(c_id_fld):
         infos = section.storage["data"]["e_contact"][item[c_id_fld]]
         parent_infos = {}
@@ -1150,39 +1121,39 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
         sender, p_sender = get_contact_name(infos, parent_infos)
         if p_sender:
             change = True
-            line = u"{}{}: {}.".format(label, related_label, u", ".join(p_sender))
+            line = "{}{}: {}.".format(label, related_label, ", ".join(p_sender))
             dest1.append(line)
             if dest2 is not dest1:
                 dest2.append(line)
         if sender:
             change = True
-            line = u"{}: {}.".format(label, u", ".join(sender))
+            line = "{}: {}.".format(label, ", ".join(sender))
             dest1.append(line)
             if dest2 is not dest1:
                 dest2.append(line)
         # company name, when different from the contact name (customer 1)
         if infos.get("_company") and infos["_company"] != infos.get("lastname"):
             change = True
-            dest2.append(u"ORGANISATION: {}.".format(infos["_company"]))
+            dest2.append("ORGANISATION: {}.".format(infos["_company"]))
         # address
-        p_address = all_of_dict_values(parent_infos, ["_street", "_street_nb" , "_street_nb_box", "_pc", "_city"])
-        address = all_of_dict_values(infos, ["_street", "_street_nb" , "_street_nb_box", "_pc", "_city"])
+        p_address = all_of_dict_values(parent_infos, ["_street", "_street_nb", "_street_nb_box", "_pc", "_city"])
+        address = all_of_dict_values(infos, ["_street", "_street_nb", "_street_nb_box", "_pc", "_city"])
         if address:
             change = True
-            dest2.append(u"ADRESSE {}: {}.".format(label, u" ".join(address)))
+            dest2.append("ADRESSE {}: {}.".format(label, " ".join(address)))
         elif p_address:  # we add just one address
             change = True
-            dest2.append(u"ADRESSE {}{}: {}.".format(label, related_label, u" ".join(p_address)))
+            dest2.append("ADRESSE {}{}: {}.".format(label, related_label, " ".join(p_address)))
         else:
             pass  # include _addr_id ? no!
         # phones
         phones = get_contact_phone(infos, parent_infos)
         if phones:
             change = True
-            dest2.append(u"TÉL {}: {}.".format(label, u", ".join(phones)))
+            dest2.append("TÉL {}: {}.".format(label, ", ".join(phones)))
         # additional customer 2
         if infos.get("_other"):
-            additional = u"{}: {}".format(u"COMPLÉMENT {}".format(label), infos["_other"])
+            additional = "{}: {}".format(f"COMPLÉMENT {label}", infos["_other"])
             if additional not in dest2:
                 dest2.append(additional)
 
@@ -1190,24 +1161,23 @@ def get_contact_info(section, item, label, c_id_fld, free_fld, dest1, dest2, rel
         lines = m_sender.split("\n")
         change = True
         if dest2 is dest1:
-            dest1.append(u"{} LIBRE: {}".format(label, u", ".join(lines)))
+            dest1.append("{} LIBRE: {}".format(label, ", ".join(lines)))
         else:
-            dest1.append(u"{} LIBRE: {}".format(label, lines[0]))
+            dest1.append(f"{label} LIBRE: {lines[0]}")
             if len(lines) > 1:
-                dest2.append(u"{} LIBRE: {}".format(label, u", ".join(lines)))
+                dest2.append("{} LIBRE: {}".format(label, ", ".join(lines)))
     return change
 
 
-class HContactTypeUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class HContactTypeUpdate:
     """Store contact type if necessary.
 
     Parameters:
         * condition = O, condition expression
         * clean_unused = O, clean unmatched plone values (default 0)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1227,7 +1197,7 @@ class HContactTypeUpdate(object):
             if is_in_part(self, self.parts) and self.condition(item, storage=self.storage):
                 course_store(self, item)
                 if not item["_pid"]:
-                    log_error(item, u"Empty match: we pass _eid {}".format(item["_eid"]))
+                    log_error(item, "Empty match: we pass _eid {}".format(item["_eid"]))
                     continue
                 elif item["_pid"] not in p_types:
                     p_types[item["_pid"]] = {"name": item["_ptitle"], "_used": True}
@@ -1239,24 +1209,23 @@ class HContactTypeUpdate(object):
 
         if len(p_types) != self.storage["data"]["p_dir_org_types_len"]:  # modified
             new_value = []
-            for token in p_types.keys():
+            for token in list(p_types.keys()):
                 if self.clean_unused and not p_types[token].get("_used", False) and token != "non-defini":
                     del p_types[token]
                 else:
-                    new_value.append({u"token": token, u"name": p_types[token]["name"]})
-            o_logger.info("Part h: updating directory organization types with new value: {}".format(new_value))
+                    new_value.append({"token": token, "name": p_types[token]["name"]})
+            o_logger.info(f"Part h: updating directory organization types with new value: {new_value}")
             self.storage["plone"]["directory"].organization_types = new_value
 
 
-class I1ContactUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class I1ContactUpdate:
     """Add contact fields.
 
     Parameters:
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1285,7 +1254,8 @@ class I1ContactUpdate(object):
                             item["number"] = a_dic["_number"]
                         if a_dic["_box"]:
                             item["number"] = (
-                                item.get("number") and u"{} bte {}".format(item["number"], a_dic["_box"])
+                                item.get("number")
+                                and "{} bte {}".format(item["number"], a_dic["_box"])
                                 or a_dic["_box"]
                             )
                         if a_dic["_street"]:
@@ -1299,7 +1269,7 @@ class I1ContactUpdate(object):
                             item["zip_code"] = a_dic["_imp_pc"]
                         if a_dic["_imp_city"]:
                             item["city"] = a_dic["_imp_city"]
-                    if a_dic["_imp_country"] and a_dic["_imp_country"].lower() != u"belgique":
+                    if a_dic["_imp_country"] and a_dic["_imp_country"].lower() != "belgique":
                         item["country"] = a_dic["_imp_country"]
                     if a_dic["_phone"]:
                         item["phone"] = a_dic["_phone"]
@@ -1320,12 +1290,12 @@ class I1ContactUpdate(object):
                     if item.get("_street_nb"):
                         item["number"] = item["_street_nb"]
                     if item.get("_street_nb_box"):
-                        item["number"] = u"{} {}".format(item.get("number", ""), item["_street_nb_box"])
+                        item["number"] = "{} {}".format(item.get("number", ""), item["_street_nb_box"])
                     if item.get("_pc"):
                         item["zip_code"] = item["_pc"]
                     if item.get("_city"):
                         item["city"] = item["_city"]
-                    if item.get("_country") and item["_country"].lower() != u"belgique":
+                    if item.get("_country") and item["_country"].lower() != "belgique":
                         item["country"] = item["_country"]
                 # parent_address
                 if item.get("_parent_id") and not (item.get("city") and item.get("zip_code") or item.get("street")):
@@ -1354,7 +1324,9 @@ class I1ContactUpdate(object):
             yield item
 
 
-class I2ContactUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class I2ContactUpdate:
     """Handles contact _type, adds contact fields
 
     Parameters:
@@ -1362,9 +1334,6 @@ class I2ContactUpdate(object):
         * paths_key = M, key containing paths
         * plonegroup_org_id = M, plonegroup organization id
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1381,7 +1350,7 @@ class I2ContactUpdate(object):
         self.e_u_m = self.storage["data"].get("e_user_match", {})
         self.e_s_m = self.storage["data"].get("e_service_match", {})
         self.e_s_m[self.plonegroup_org_id] = {
-            "uid": get_obj_from_path(self.portal, path=u"/contacts/plonegroup-organization").UID()
+            "uid": get_obj_from_path(self.portal, path="/contacts/plonegroup-organization").UID()
         }
         self.puid_to_pers = self.storage["data"]["p_userid_to_pers"]
         self.p_hps = self.storage["data"]["p_hps"]
@@ -1402,49 +1371,49 @@ class I2ContactUpdate(object):
                 if item["_eid"] in self.e_s_m:
                     org = uuidToObject(self.e_s_m[item["_eid"]]["uid"])
                     self.eids[item["_eid"]] = {"path": relative_path(self.portal, "/".join(org.getPhysicalPath()))}
-                    e_logger.info(u"Passed internal organization: {}".format(item["_eid"]))
+                    e_logger.info("Passed internal organization: {}".format(item["_eid"]))
                     continue
                 item["_id"] = item["_eid"]
                 item["_type"] = "organization"
-                item["_parenth"] = u"/contacts"
+                item["_parenth"] = "/contacts"
                 item["internal_number"] = item["_eid"]
                 item["zip_code"] = item.pop("_pc")
                 item["city"] = item.pop("_city")
                 item["street"] = item.pop("_street")
                 if item["_division"]:
-                    item["title"] = u" - ".join(all_of_dict_values(item, ["_organization", "_division", "_service"]))
+                    item["title"] = " - ".join(all_of_dict_values(item, ["_organization", "_division", "_service"]))
                 else:
                     item["title"] = item.pop("_organization")  # _division, _service ?
                 item["email"] = item.pop("_email1")
                 item["phone"] = item.pop("_phone1")
                 item["fax"] = item.pop("_phone2")
                 yield item
-            elif u"_organization" in item:  # not a real organization, just address
-                # e_logger.warn('Empty organization for "{}"'.format(item["_eid"]))
+            elif "_organization" in item:  # not a real organization, just address
+                # e_logger.warning('Empty organization for "{}"'.format(item["_eid"]))
                 continue
             else:
                 if item.get("_parent_id"):
                     if self.contacts[item["_parent_id"]].get("_type") == "organization":
                         pdic = {
-                            "_bpk": u"e_contact",
-                            "_eid": u"{}a".format(item["_eid"]),
+                            "_bpk": "e_contact",
+                            "_eid": "{}a".format(item["_eid"]),
                             "_type": "person",
                             "lastname": item["lastname"],
                             "firstname": item["firstname"],
                         }
                         if item["_parent_id"] in self.e_s_m:
-                            user_key = u"{}_{}".format(pdic["lastname"], pdic["firstname"])
+                            user_key = "{}_{}".format(pdic["lastname"], pdic["firstname"])
                             if user_key in self.e_u_m and self.e_u_m[user_key]["_p_userid"] in self.puid_to_pers:
                                 pers = uuidToObject(self.puid_to_pers[self.e_u_m[user_key]["_p_userid"]])
                                 pdic["_path"] = relative_path(self.portal, "/".join(pers.getPhysicalPath()))
-                                pdic["_parenth"] = u"/contacts/personnel-folder"
+                                pdic["_parenth"] = "/contacts/personnel-folder"
                                 pdic["_pers"] = pers.UID()
-                                e_logger.info(u"Passed internal person: {}".format(item["_eid"]))
+                                e_logger.info("Passed internal person: {}".format(item["_eid"]))
                             else:
-                                pdic["_parenth"] = u"/contacts/personnel-folder"
+                                pdic["_parenth"] = "/contacts/personnel-folder"
                                 yield pdic
                         if "_parenth" not in pdic:
-                            pdic["_parenth"] = u"/contacts"
+                            pdic["_parenth"] = "/contacts"
                             yield pdic
                         org = get_obj_from_path(self.portal, path=self.eids[item["_parent_id"]]["path"])
                         if (
@@ -1456,16 +1425,16 @@ class I2ContactUpdate(object):
                                 "path": self.p_hps[pdic["_pers"]]["hps"][org.UID()]["path"],
                                 "_is_user": True,
                             }
-                            e_logger.info(u"Passed internal hp: {}".format(item["_eid"]))
+                            e_logger.info("Passed internal hp: {}".format(item["_eid"]))
                             continue
                         item["_type"] = "held_position"
                         item["_parenth"] = pdic["_path"]
                         item["use_parent_address"] = True
-                        item["_is_user"] = pdic["_parenth"] == u"/contacts/personnel-folder"
+                        item["_is_user"] = pdic["_parenth"] == "/contacts/personnel-folder"
                         item["position"] = RelationValue(self.intids.getId(org))
                     else:  # a person
                         item["_type"] = "person"
-                        item["_parenth"] = u"/contacts"
+                        item["_parenth"] = "/contacts"
                         item["_is_user"] = False
                         # address from parent
                         item["zip_code"] = self.contacts[item["_parent_id"]].get("_pc")
@@ -1473,7 +1442,7 @@ class I2ContactUpdate(object):
                         item["street"] = self.contacts[item["_parent_id"]].get("_street")
                 else:
                     item["_type"] = "person"
-                    item["_parenth"] = u"/contacts"
+                    item["_parenth"] = "/contacts"
                     item["_is_user"] = False
 
                 item["cell_phone"] = item.pop("_cell1")
@@ -1485,16 +1454,15 @@ class I2ContactUpdate(object):
                 yield item
 
 
-class J2ContactUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class J2ContactUpdate:
     """Completes contact information
 
     Parameters:
         * condition = O, condition expression
         * paths_key = M, key containing paths
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1522,13 +1490,13 @@ class J2ContactUpdate(object):
             #              enterprise_number _o_enabled country
             base_item = {"_bpk": item["_bpk"]}
             add_key_if_value(base_item, "street", item["street"])
-            add_key_if_value(base_item, "number", u" ".join(all_of_dict_values(item, ["number", "_box"])))
+            add_key_if_value(base_item, "number", " ".join(all_of_dict_values(item, ["number", "_box"])))
             add_key_if_value(base_item, "city", item["city"])
             add_key_if_value(base_item, "zip_code", item["zip_code"])
             add_key_if_value(
                 base_item,
                 "country",
-                item["country"] and item["country"].lower() != u"belgique" and item["country"] or u"",
+                item["country"] and item["country"].lower() != "belgique" and item["country"] or "",
             )
             item2 = base_item.copy()
             if item["_o_title"]:  # real org
@@ -1545,12 +1513,12 @@ class J2ContactUpdate(object):
                 add_key_if_value(item2, "fax", item["_o_fax"])
                 add_key_if_value(item2, "email", item["_o_email"])
                 if item["_o_eid"] not in self.eids:
-                    log_error(item, u"Organization not found: {}".format(item["_o_eid"]))
+                    log_error(item, "Organization not found: {}".format(item["_o_eid"]))
                     item2.update(
                         {
                             "use_parent_address": True,
                             "_id": item["_eid"],
-                            "_parenth": u"/contacts",
+                            "_parenth": "/contacts",
                             "creation_date": self.storage["creation_date"],
                             "modification_date": self.storage["creation_date"],
                         }
@@ -1573,7 +1541,7 @@ class J2ContactUpdate(object):
                 add_key_if_value(item2, "email", item["email"])
                 add_key_if_value(item2, "cell_phone", item["cell_phone"])
                 if item["_eid"] not in self.eids:
-                    log_error(item, u"HP not found: {}".format(item["_eid"]))
+                    log_error(item, "HP not found: {}".format(item["_eid"]))
                     # person
                     item3 = item2.copy()
                     item3.update(
@@ -1582,7 +1550,7 @@ class J2ContactUpdate(object):
                             "lastname": item["lastname"],
                             "creation_date": self.storage["creation_date"],
                             "modification_date": self.storage["creation_date"],
-                            "_parenth": u"/contacts",
+                            "_parenth": "/contacts",
                         }
                     )
                     # yield item3
@@ -1603,12 +1571,12 @@ class J2ContactUpdate(object):
                 add_key_if_value(item2, "email", item["email"])
                 add_key_if_value(item2, "cell_phone", item["cell_phone"])
                 if item["_eid"] not in self.eids:
-                    log_error(item, u"Person not found: {}".format(item["_eid"]))
+                    log_error(item, "Person not found: {}".format(item["_eid"]))
                     item2.update(
                         {
                             "use_parent_address": True,
                             "_id": item["_eid"],
-                            "_parenth": u"/contacts",
+                            "_parenth": "/contacts",
                             "creation_date": self.storage["creation_date"],
                             "modification_date": self.storage["creation_date"],
                         }
@@ -1619,7 +1587,9 @@ class J2ContactUpdate(object):
                 yield item2
 
 
-class L1RecipientGroupsSet(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class L1RecipientGroupsSet:
     """Handles recipient_groups.
 
     Parameters:
@@ -1628,16 +1598,13 @@ class L1RecipientGroupsSet(object):
         * global_recipient_tg_exceptions = O, list of eid (service) for which the global recipient is not set
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.grs_title = safe_unicode(options.get("global_recipient_service", ""))
+        self.grs_title = safe_text(options.get("global_recipient_service", ""))
         self.grs_uid = None
         found = [
             uid
@@ -1645,10 +1612,10 @@ class L1RecipientGroupsSet(object):
             if self.storage["data"]["p_orgs_all"][uid]["ft"] == self.grs_title
         ]
         if not found:
-            log_error({}, u"Cannot get the plonegroup org named '{}'".format(self.grs_title))
+            log_error({}, f"Cannot get the plonegroup org named '{self.grs_title}'")
             return
         self.grs_uid = found[0]
-        self.gr_tg_exc = safe_unicode(options.get("global_recipient_tg_exceptions", "")).strip().split()
+        self.gr_tg_exc = safe_text(options.get("global_recipient_tg_exceptions", "")).strip().split()
         self.gr_tg_exc = [tup[0] for tup in pool_tuples(self.gr_tg_exc, 2, "global_recipient_tg_exceptions option")]
 
     def __iter__(self):
@@ -1666,11 +1633,10 @@ class L1RecipientGroupsSet(object):
             yield item
 
 
-class L1SenderAsTextSet(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class L1SenderAsTextSet:
     """Handles contact. Set sender as text (from sender_id if not already used and from sender text value)."""
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1695,14 +1661,16 @@ class L1SenderAsTextSet(object):
                 d_t = desc
             # if id_key value and not in contact: pass id_key to get infos from contact
             get_contact = (item[self.eid_key] and item[self.eid_key] not in self.eids) and self.eid_key or ""
-            if get_contact_info(self, item, u"EXPÉDITEUR", get_contact, "_sender", desc, d_t):
-                item["description"] = u"\r\n".join(desc)
+            if get_contact_info(self, item, "EXPÉDITEUR", get_contact, "_sender", desc, d_t):
+                item["description"] = "\r\n".join(desc)
                 if not self.storage.get("desc_only"):
-                    item["data_transfer"] = u"\r\n".join(d_t)
+                    item["data_transfer"] = "\r\n".join(d_t)
             yield item
 
 
-class M1AssignedUserHandling(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class M1AssignedUserHandling:
     """Handles assigned user. If user is in treating_group, set assigned_user.
 
     Parameters:
@@ -1713,9 +1681,6 @@ class M1AssignedUserHandling(object):
         * functions = O, functions group (IM or OM. Default IM)
         * contact_id_key = O, contact field name (default: _contact_id)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -1728,7 +1693,7 @@ class M1AssignedUserHandling(object):
         self.contact_id_key = options.get("contact_id_key") or "_contact_id"
         if not is_in_part(self, self.parts):
             return
-        store_key = safe_unicode(options["store_key"])
+        store_key = safe_text(options["store_key"])
         self.im_paths = self.storage["data"][store_key]
         csk = options.get("contact_sender_key", "e_contacts_sender") or "e_contacts_sender"
         self.contacts = self.storage["data"][csk]  # user only
@@ -1788,20 +1753,18 @@ class M1AssignedUserHandling(object):
                 # store info in data_transfer (or in description if there is no data_transfer field)
                 fld = self.storage.get("desc_only") and "description" or "data_transfer"
                 d_t = getattr(imail, fld) and getattr(imail, fld).split("\r\n") or []
-                r_name = u" ".join(all_of_dict_values(self.user_match[e_userid], ["_nom", "_prenom"]))
-                r_messages = u", ".join(
-                    all_of_dict_values(
-                        item, [u"_action", u"_message", u"_response"], labels=[u"", u"message", u"réponse"]
-                    )
+                r_name = " ".join(all_of_dict_values(self.user_match[e_userid], ["_nom", "_prenom"]))
+                r_messages = ", ".join(
+                    all_of_dict_values(item, ["_action", "_message", "_response"], labels=["", "message", "réponse"])
                 )
-                r_infos = u"DESTINATAIRE{}: {}{}".format(
-                    item["_principal"] and u" PRINCIPAL" or u"",
+                r_infos = "DESTINATAIRE{}: {}{}".format(
+                    item["_principal"] and " PRINCIPAL" or "",
                     r_name,
-                    r_messages and u", {}".format(r_messages) or u"",
+                    r_messages and f", {r_messages}" or "",
                 )
                 if r_infos not in d_t:
                     d_t.append(r_infos)
-                    item2[fld] = u"\r\n".join(d_t)
+                    item2[fld] = "\r\n".join(d_t)
             # plone user is in the treating_group
             if p_userid and t_g and t_g in self.p_u_s_editor[p_userid]:
                 if item.get("_principal") or not a_u:
@@ -1817,7 +1780,9 @@ class M1AssignedUserHandling(object):
                 yield item2
 
 
-class MavalHandling(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class MavalHandling:
     """Handles fields from maval file.
 
     Parameters:
@@ -1828,9 +1793,6 @@ class MavalHandling(object):
         * condition = O, condition expression
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):  # noqa :C901
         self.previous = previous
         self.name = name
@@ -1838,15 +1800,15 @@ class MavalHandling(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.bp_key = safe_unicode(options["bp_key"])
+        self.bp_key = safe_text(options["bp_key"])
         if not is_in_part(self, self.parts):
             return
-        store_key = safe_unicode(options["store_key"])
+        store_key = safe_text(options["store_key"])
         self.im_paths = self.storage["data"][store_key]
         self.batch_store = self.storage["data"].setdefault(self.bp_key, {})
         self.flds_opt = transmogrifier["config"]["fields"].replace("\n", " ")
         self.flds_opt = next(csv.reader([self.flds_opt.strip()], delimiter=" ", quotechar='"', skipinitialspace=True))
-        self.flds_opt = [cell.decode("utf8") for cell in self.flds_opt]
+        self.flds_opt = [safe_text(cell) for cell in self.flds_opt]
         self.flds_opt = [tup for tup in pool_tuples(self.flds_opt, 4, "fields option")]
 
         dependency_graph = {}
@@ -1884,7 +1846,7 @@ class MavalHandling(object):
                 new_transform = "after:" + ",".join(chain)
             self.fields[prd][e_fld] = (p_fld, new_transform)
 
-        self.profile_keys = safe_unicode(options["profile_keys"]).split(" ")
+        self.profile_keys = safe_text(options["profile_keys"]).split(" ")
         self.e_all_items = self.storage["data"].get(self.profile_keys[0], {})
         self.e_palib = self.storage["data"].get("e_palib", {})
         self.e_papri = self.storage["data"].get("e_papri", {})
@@ -1914,7 +1876,7 @@ class MavalHandling(object):
                 yield item
                 continue
             course_store(self, item)
-            self.batch_store[u"{}|{}".format(item["_eid"], item["_fld"])] = 0
+            self.batch_store["{}|{}".format(item["_eid"], item["_fld"])] = 0
             prof = self.e_all_items[item["_eid"]][self.profile_keys[1]]
             # pass a missing field or must define all ??
             if prof not in self.fields or item["_fld"] not in self.fields[prof]:
@@ -1955,7 +1917,7 @@ class MavalHandling(object):
                         item2[p_fld] = value
                         t_g = value
                     # check if assigned_user has already been treated (transform is the corresponding field)
-                    if transform and u"{}|{}".format(item["_eid"], transform) in self.batch_store:
+                    if transform and "{}|{}".format(item["_eid"], transform) in self.batch_store:
                         au_value = self.text_field(
                             item, item2, obj, "data_transfer", "", action="remove", lib_key=transform
                         )
@@ -1963,7 +1925,7 @@ class MavalHandling(object):
                             item2, t_g, self.user_match.get(au_value, {}).get("_p_userid")
                         ):
                             value2 = self.user_match.get(au_value, {}).get("_nom")
-                            if value2 and value2 == u"DELETED":
+                            if value2 and value2 == "DELETED":
                                 value2 = None
                             self.text_field(
                                 item,
@@ -1982,11 +1944,11 @@ class MavalHandling(object):
                     # transform contains the e_fld name of the tg
                     t_g = obj.treating_groups
                     p_userid = self.user_match.get(item["_val"], {}).get("_p_userid")
-                    if (transform and u"{}|{}".format(item["_eid"], transform) in self.batch_store) or not transform:
+                    if (transform and "{}|{}".format(item["_eid"], transform) in self.batch_store) or not transform:
                         # check if au is in tg
                         if not self.assigned_user(item2, t_g, p_userid):
                             value = self.user_match.get(item["_val"], {}).get("_nom")
-                            if value and value != u"DELETED":
+                            if value and value != "DELETED":
                                 self.text_field(item, item2, obj, "data_transfer", "", value=value)
                     else:
                         # we store temporarily the user value
@@ -2005,7 +1967,8 @@ class MavalHandling(object):
                         log_error(
                             item,
                             "None value for field '{}', p_fld '{}', transform '{}'".format(
-                                item["_fld"], p_fld, transform),
+                                item["_fld"], p_fld, transform
+                            ),
                         )
                         continue
             yield item2
@@ -2013,34 +1976,32 @@ class MavalHandling(object):
     def text_field(self, item, item2, obj, p_fld, transform, action="add", lib_key=None, value=None, text_fld=None):
         ret = None
         if text_fld:
-            c_lines = text_fld.split(u"\r\n")
+            c_lines = text_fld.split("\r\n")
         else:
-            text_fld = getattr(obj, p_fld) or u""
-            c_lines = text_fld and text_fld.split(u"\r\n") or []
+            text_fld = getattr(obj, p_fld) or ""
+            c_lines = text_fld and text_fld.split("\r\n") or []
         if not lib_key:
-            lib_key = item[u"_fld"]
+            lib_key = item["_fld"]
         if action == "add":
-            lib = self.e_palib[u"PROFILINF0"].get(lib_key, {}).get(u"_val", item[u"_fld"])
+            lib = self.e_palib["PROFILINF0"].get(lib_key, {}).get("_val", item["_fld"])
             position = 99
-            if transform == u"after:":
+            if transform == "after:":
                 position = 0
-            elif transform.startswith(u"after:"):
+            elif transform.startswith("after:"):
                 for prev_fld in transform[6:].split(","):
-                    lib2 = self.e_palib[u"PROFILINF0"].get(prev_fld, {}).get(u"_val", "__unfound__")
-                    yet = [i for i, line in enumerate(c_lines) if line.startswith(u"{}: ".format(lib2))]
+                    lib2 = self.e_palib["PROFILINF0"].get(prev_fld, {}).get("_val", "__unfound__")
+                    yet = [i for i, line in enumerate(c_lines) if line.startswith(f"{lib2}: ")]
                     if yet:
                         position = yet[0] + 1
                         break
-            c_lines.insert(
-                position, u"{}: {}".format(lib, value and value or self.transform_value(item, transform))
-            )
+            c_lines.insert(position, f"{lib}: {value and value or self.transform_value(item, transform)}")
         elif action == "remove":
-            lib = self.e_palib[u"PROFILINF0"].get(lib_key, {}).get(u"_val", "__unfound__")
-            to_remove = [line for line in c_lines if line.startswith(u"{}: ".format(lib))]
+            lib = self.e_palib["PROFILINF0"].get(lib_key, {}).get("_val", "__unfound__")
+            to_remove = [line for line in c_lines if line.startswith(f"{lib}: ")]
             if to_remove:
                 c_lines.remove(to_remove[0])
                 ret = to_remove[0][len(lib) + 2 :]  # noqa e203
-        item2[p_fld] = u"\r\n".join(c_lines)
+        item2[p_fld] = "\r\n".join(c_lines)
         return ret
 
     def assigned_user(self, item, t_g, p_userid):
@@ -2050,7 +2011,7 @@ class MavalHandling(object):
         return False
 
     def transform_value(self, item, transform):
-        value = item[u"_val"]
+        value = item["_val"]
         if not transform:
             return value
         parts = transform.split(":")
@@ -2065,22 +2026,21 @@ class MavalHandling(object):
         elif parts[0] == "format":
             return parts[1].format(value)
         elif parts[0] == "e_papri":
-            prefix = self.e_papri[parts[1]]["_prienc"] == u"CBO" and self.e_papri[parts[1]]["_prizon"] or u""
+            prefix = self.e_papri[parts[1]]["_prienc"] == "CBO" and self.e_papri[parts[1]]["_prizon"] or ""
             if prefix:
-                return self.e_palib["PARAMUTIL"]["{}{}".format(prefix, value)]["_val"]
+                return self.e_palib["PARAMUTIL"][f"{prefix}{value}"]["_val"]
         return value
 
 
-class POMSenderSet(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class POMSenderSet:
     """Set sender held_position.
 
     Parameters:
         * condition = O, condition expression
         * contact_sender_key = O, contacts sender storage key (default: e_contact)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2109,38 +2069,37 @@ class POMSenderSet(object):
                 if self.e_c_s[item["_sender_id"]]["_user_id"]:  # we have a user id
                     e_userid = self.e_c_s[item["_sender_id"]]["_user_id"]
                 else:  # _sender_id is not a user id
-                    e_userid = u"None"
+                    e_userid = "None"
                     # add info in data_transfer
                     desc = "description" in item and item.get("description").split("\r\n") or []
                     d_t = "data_transfer" in item and item.get("data_transfer").split("\r\n") or []
-                    if get_contact_info(self, item, u"EXPÉDITEUR", "_sender_id", "_sender", desc, d_t):
-                        item["description"] = u"\r\n".join(desc)
-                        item["data_transfer"] = u"\r\n".join(d_t)
+                    if get_contact_info(self, item, "EXPÉDITEUR", "_sender_id", "_sender", desc, d_t):
+                        item["description"] = "\r\n".join(desc)
+                        item["data_transfer"] = "\r\n".join(d_t)
             else:  # we do not have a _sender_id
-                e_userid = u"None"  # person reprise-donnees
+                e_userid = "None"  # person reprise-donnees
             pers_userid = self.euid_to_pers[e_userid]
             ouid = self.eid_to_orgs[item["_service_id"]]["uid"]
             hp_dic = self.p_hps[pers_userid]["hps"][ouid]
             item["sender"] = hp_dic["puid"]
             o_logger.debug(
-                u"OM sender info '%s'. Sender '%s', Description '%r', Data '%r'",
+                "OM sender info '%s'. Sender '%s', Description '%r', Data '%r'",
                 item["_eid"],
                 item["sender"],
-                item.get("description", u""),
-                item.get("data_transfer", u""),
+                item.get("description", ""),
+                item.get("data_transfer", ""),
             )
             yield item
 
 
-class ParentPathInsert(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class ParentPathInsert:
     """Add parent path key following type.
 
     Parameters:
         * bp_key = O, blueprint key (here used to get parent path from pickle)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2148,7 +2107,7 @@ class ParentPathInsert(object):
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
-        self.bp_key = safe_unicode(options.get("bp_key", None))
+        self.bp_key = safe_text(options.get("bp_key", None))
         self.im_folder = self.portal["incoming-mail"]
         self.om_folder = self.portal["outgoing-mail"]
 
@@ -2164,34 +2123,33 @@ class ParentPathInsert(object):
             course_store(self, item)
             if ptyp in ("dmsincomingmail", "dmsincoming_email"):
                 container = create_period_folder(self.im_folder, item["creation_date"])
-                item["_parenth"] = u"/incoming-mail/{}".format(container.id)
+                item["_parenth"] = f"/incoming-mail/{container.id}"
             elif ptyp == "dmsoutgoingmail":
                 container = create_period_folder(self.om_folder, item["creation_date"])
-                item["_parenth"] = u"/outgoing-mail/{}".format(container.id)
+                item["_parenth"] = f"/outgoing-mail/{container.id}"
             elif ptyp == "ClassificationFolder":
-                item["_parenth"] = u"/folders"
+                item["_parenth"] = "/folders"
             elif ptyp == "ClassificationSubfolder":
                 if item["_parent_id"] not in self.storage["data"][self.bp_key]:
-                    log_error(item, u"Parent id not found '{}'".format(item["_parent_id"]))
+                    log_error(item, "Parent id not found '{}'".format(item["_parent_id"]))
                 else:
                     item["_parenth"] = self.storage["data"][self.bp_key][item["_parent_id"]]["path"]
             elif ptyp == "person":
-                item["_parenth"] = u"/contacts"
+                item["_parenth"] = "/contacts"
             elif ptyp == "organization":
-                item["_parenth"] = u"/contacts"
+                item["_parenth"] = "/contacts"
                 if item.get("_parent_id"):
                     if item["_parent_id"] not in self.storage["data"][self.bp_key]:
-                        log_error(item, u"Parent id not found '{}'".format(item["_parent_id"]))
+                        log_error(item, "Parent id not found '{}'".format(item["_parent_id"]))
                     else:
                         item["_parenth"] = self.storage["data"][self.bp_key][item["_parent_id"]]["path"]
             yield item
 
 
-class PostActions(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class PostActions:
     """Do post actions after creation"""
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2203,9 +2161,9 @@ class PostActions(object):
         for item in self.previous:
             for pa in item.get("_post_actions", {}):
                 course_store(self, item)
-                if pa == u"store_internal_person_info":  # only when we first create the person
+                if pa == "store_internal_person_info":  # only when we first create the person
                     uid = get_obj_from_path(self.portal, item).UID()
-                    self.storage["data"]["p_euid_to_pers"][item[u"internal_number"]] = uid
+                    self.storage["data"]["p_euid_to_pers"][item["internal_number"]] = uid
                     if uid not in self.storage["data"]["p_hps"]:
                         self.storage["data"]["p_hps"][uid] = {"path": item["_path"], "hps": {}, "state": "deactivated"}
             if (
@@ -2215,26 +2173,25 @@ class PostActions(object):
             ):
                 transaction.commit()
                 o_logger.info(
-                    u"Commit in '{}' at {}".format(item["_bpk"], self.storage["count"]["commit_count"][""]["c"])
+                    "Commit in '{}' at {}".format(item["_bpk"], self.storage["count"]["commit_count"][""]["c"])
                 )
                 for filename, store_key, condition in self.storage["lastsection"]["pkl_dump"]:
                     if filename and condition(None, storage=self.storage, filename=filename):
-                        o_logger.info(u"Dumping '{}'".format(filename))
+                        o_logger.info(f"Dumping '{filename}'")
                         with open(filename, "wb") as fh:
-                            cPickle.dump(self.storage["data"][store_key], fh, -1)
+                            pickle.dump(self.storage["data"][store_key], fh, -1)
             yield item
 
 
-class Q1RecipientsAsTextUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class Q1RecipientsAsTextUpdate:
     """Handles om recipients. Yet used ??
 
     Parameters:
         * condition = O, condition expression
         * store_key = M, storage main key to find mail path
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2245,7 +2202,7 @@ class Q1RecipientsAsTextUpdate(object):
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        store_key = safe_unicode(options["store_key"])
+        store_key = safe_text(options["store_key"])
         self.om_paths = self.storage["data"][store_key]
         self.e_c = self.storage["data"]["e_contact"]
         # do we use contact id field ?
@@ -2281,32 +2238,29 @@ class Q1RecipientsAsTextUpdate(object):
             d_t = getattr(omail, "data_transfer", None) and omail.data_transfer.split("\r\n") or []
             if self.storage.get("desc_only"):  # no data_transfer field: everything goes to description
                 d_t = desc
-            if get_contact_info(self, item, u"DESTINATAIRE", self.contact_id_key, "_comment", desc, d_t):
-                item2["description"] = u"\r\n".join(desc)
-                r_messages = u", ".join(
-                    all_of_dict_values(
-                        item, [u"_action", u"_message", u"_response"], labels=[u"", u"message", u"réponse"]
-                    )
+            if get_contact_info(self, item, "DESTINATAIRE", self.contact_id_key, "_comment", desc, d_t):
+                item2["description"] = "\r\n".join(desc)
+                r_messages = ", ".join(
+                    all_of_dict_values(item, ["_action", "_message", "_response"], labels=["", "message", "réponse"])
                 )
                 if r_messages:
-                    r_messages = u"{}: {}".format(u"COMPLÉMENT DESTINATAIRE", u", {}".format(r_messages))
+                    r_messages = "{}: {}".format("COMPLÉMENT DESTINATAIRE", f", {r_messages}")
                     if r_messages not in d_t:
                         d_t.append(r_messages)
                 if not self.storage.get("desc_only"):
-                    item2["data_transfer"] = u"\r\n".join(d_t)
+                    item2["data_transfer"] = "\r\n".join(d_t)
                 yield item2
 
 
-class R1RecipientGroupsUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class R1RecipientGroupsUpdate:
     """Handles recipient_groups assignments.
 
     Parameters:
         * condition = O, condition expression
         * store_key = M, storage main key to find mail path
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2317,7 +2271,7 @@ class R1RecipientGroupsUpdate(object):
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        store_key = safe_unicode(options["store_key"])
+        store_key = safe_text(options["store_key"])
         self.paths = self.storage["data"].get(store_key)
 
     def __iter__(self):
@@ -2342,7 +2296,7 @@ class R1RecipientGroupsUpdate(object):
                 "_eid": item["_eid"],
                 "_mail_id": item["_mail_id"],
                 "_service_id": item["_service_id"],
-                "_bpk": u"recipient_groups",
+                "_bpk": "recipient_groups",
                 "_path": mail_path,
                 "_type": mail.portal_type,
                 "_act": "U",
@@ -2352,7 +2306,7 @@ class R1RecipientGroupsUpdate(object):
             if s_uid in mail.treating_groups or []:
                 # store for batch
                 self.storage["data"]["recipient_groups"].setdefault(item["_mail_id"], {})[item["_service_id"]] = {
-                    u"_eid": item["_eid"]
+                    "_eid": item["_eid"]
                 }
                 continue
             # useful when correcting
@@ -2370,16 +2324,15 @@ class R1RecipientGroupsUpdate(object):
                 yield item2
 
 
-class ReadLabelForRecipientGroup(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class ReadLabelForRecipientGroup:
     """Handles recipient_group read label.
 
     Parameters:
         * condition = O, condition expression
         * store_key = M, storage main key to find mail path
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2399,7 +2352,7 @@ class ReadLabelForRecipientGroup(object):
             course_store(self, item)
             mail = get_obj_from_path(self.portal, item=item)
             if mail is None:
-                log_error(item, u"Cannot find mail with path '{}'".format(item["_path"]))
+                log_error(item, "Cannot find mail with path '{}'".format(item["_path"]))
                 continue
             userids = get_selected_org_suffix_principal_ids(item["_suid"], IM_READER_SERVICE_FUNCTIONS)
             labeling = ILabeling(mail)
@@ -2410,7 +2363,9 @@ class ReadLabelForRecipientGroup(object):
             yield item
 
 
-class RsyncFileWrite(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class RsyncFileWrite:
     """Writes rsync file containing used files.
 
     Parameters:
@@ -2419,9 +2374,6 @@ class RsyncFileWrite(object):
         * bp_key = data key to get files info
         * unused_filename = O, filename to write with files not used by items
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2433,15 +2385,15 @@ class RsyncFileWrite(object):
         if not is_in_part(self, self.parts):
             return
         doit = Condition(options.get("b_condition") or "python:True", transmogrifier, name, options)
-        self.filename = safe_unicode(options["filename"])
+        self.filename = safe_text(options["filename"])
         if not os.path.isabs(self.filename):
             self.filename = os.path.join(self.storage["csvp"], self.filename)
         self.doit = doit(None, filename=self.filename, storage=self.storage)
         if not self.doit:
             return
-        self.bp_key = safe_unicode(options["bp_key"])
+        self.bp_key = safe_text(options["bp_key"])
         self.files = self.storage["data"].get(self.bp_key)
-        self.unused_filename = safe_unicode(options.get("unused_filename") or u"")
+        self.unused_filename = safe_text(options.get("unused_filename") or "")
         if self.unused_filename and not os.path.isabs(self.unused_filename):
             self.unused_filename = os.path.join(self.storage["csvp"], self.unused_filename)
         self.used = set()
@@ -2453,15 +2405,15 @@ class RsyncFileWrite(object):
                 continue
             if self.fh is None and self.files:  # only doing one time
                 try:
-                    self.fh = open(self.filename, mode="w")
-                except IOError as m:
-                    raise Exception("Cannot create file '{}': {}".format(self.filename, m))
-                o_logger.info(u"Writing '{}'".format(self.filename))
+                    self.fh = open(self.filename, mode="w", encoding="utf8")
+                except OSError as m:
+                    raise Exception(f"Cannot create file '{self.filename}': {m}")
+                o_logger.info(f"Writing '{self.filename}'")
             course_store(self, item)
             self.used.add(item["_eid"])
             if item.get("_fs_path"):  # path given in csv
                 self.used.add(os.path.splitext(os.path.basename(item["_fs_path"]))[0])
-                self.fh.write(u"{}\n".format(item["_fs_path"]).encode("utf8"))
+                self.fh.write("{}\n".format(item["_fs_path"]))
                 continue
             if item["_eid"] not in self.files:
                 # log_error(item, u"not found,{},{},{},{}".format(
@@ -2473,15 +2425,20 @@ class RsyncFileWrite(object):
             self.fh.close()
             self.fh = None
         if is_in_part(self, self.parts) and self.doit and self.unused_filename and self.files:
-            o_logger.info(u"Writing '{}'".format(self.unused_filename))
-            with open(self.unused_filename, mode="w") as fh:
-                lines = [u"{}/{}{}\n".format(path, basename, ext) for basename in set(self.files) - self.used
-                         for ext, path in self.files[basename]["f"]]
+            o_logger.info(f"Writing '{self.unused_filename}'")
+            with open(self.unused_filename, mode="w", encoding="utf8") as fh:
+                lines = [
+                    f"{path}/{basename}{ext}\n"
+                    for basename in set(self.files) - self.used
+                    for ext, path in self.files[basename]["f"]
+                ]
                 for line in sorted(lines):
-                    fh.write(line.encode("utf8"))
+                    fh.write(line)
 
 
-class S1ClassificationFoldersUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class S1ClassificationFoldersUpdate:
     """Handles classification folders assignments.
 
     Parameters:
@@ -2489,9 +2446,6 @@ class S1ClassificationFoldersUpdate(object):
         * store_key = M, storage main key to find mail path
         * fill_empty_mail_category = O, fill empty mail category with folder one (1 or 0, default: 1)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2503,7 +2457,7 @@ class S1ClassificationFoldersUpdate(object):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.f_e_m_c = bool(int(options.get("fill_empty_mail_category") or "1"))
-        store_key = safe_unicode(options["store_key"])
+        store_key = safe_text(options["store_key"])
         self.paths = self.storage["data"][store_key]
 
     def __iter__(self):
@@ -2514,13 +2468,13 @@ class S1ClassificationFoldersUpdate(object):
             course_store(self, item)
             mail_path = self.paths[item["_eid"]]["path"]
             mail = get_obj_from_path(self.portal, path=mail_path)
-            if item[u"_folder_id"] not in self.storage["data"]["e_folder"]:
-                log_error(item, u"Cannot find folder_id '{}' in existing folders".format(item[u"_folder_id"]))
+            if item["_folder_id"] not in self.storage["data"]["e_folder"]:
+                log_error(item, "Cannot find folder_id '{}' in existing folders".format(item["_folder_id"]))
                 continue
             item2 = {
                 "_eid": item["_eid"],
                 "_folder_id": item["_folder_id"],
-                "_bpk": u"classification_folders",
+                "_bpk": "classification_folders",
                 "_path": mail_path,
                 "_type": mail.portal_type,
                 "_act": "U",
@@ -2530,7 +2484,7 @@ class S1ClassificationFoldersUpdate(object):
             folder_id = item["_folder_id"]
             # Fill empty mail category with folder one
             if self.f_e_m_c and not mail.classification_categories:
-                folder_category_id = self.storage["data"]["e_folder"][item[u"_folder_id"]]["_category_id"]
+                folder_category_id = self.storage["data"]["e_folder"][item["_folder_id"]]["_category_id"]
                 cat_uid = self.storage["data"]["e_category_full_match"].get(folder_category_id, {}).get("_puid")
                 if cat_uid:
                     item2["classification_categories"] = [cat_uid]
@@ -2544,18 +2498,20 @@ class S1ClassificationFoldersUpdate(object):
                     item2["classification_folders"] = cf
                     change = True
             else:
-                log_error(item, u"Cannot find folder_id in plone '{}' => put in in description".format(folder_id))
-                desc = mail.description and mail.description.split(u"\r\n") or []
-                folder_tit = u"DOSSIER: {}".format(self.storage["data"]["e_folder"][folder_id]["_title"])
+                log_error(item, f"Cannot find folder_id in plone '{folder_id}' => put in in description")
+                desc = mail.description and mail.description.split("\r\n") or []
+                folder_tit = "DOSSIER: {}".format(self.storage["data"]["e_folder"][folder_id]["_title"])
                 if folder_tit not in desc:
                     desc.append(folder_tit)
-                    item2["description"] = u"\r\n".join(desc)
+                    item2["description"] = "\r\n".join(desc)
                     change = True
             if change:
                 yield item2
 
 
-class S3ClassificationFoldersUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class S3ClassificationFoldersUpdate:
     """Handles classification folders assignments.
 
     Parameters:
@@ -2564,9 +2520,6 @@ class S3ClassificationFoldersUpdate(object):
         * mail_id_key = O, mail id key (default _eid)
         * replace_default_category = O, replace mail default category by folder one (default 0)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2577,8 +2530,8 @@ class S3ClassificationFoldersUpdate(object):
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        store_key = safe_unicode(options["store_key"])
-        self.mail_id_key = safe_unicode(options.get("mail_id_key", u"_eid"))
+        store_key = safe_text(options["store_key"])
+        self.mail_id_key = safe_text(options.get("mail_id_key", "_eid"))
         self.rdc = bool(int(options.get("replace_default_category") or "0"))
         self.paths = self.storage["data"][store_key]
         self.def_cat = self.storage["plone"].get("def_category")
@@ -2595,7 +2548,7 @@ class S3ClassificationFoldersUpdate(object):
             item2 = {
                 "_eid": item.get("_eid", self.mail_id_key),
                 "_folder_id": item["_folder_id"],
-                "_bpk": u"classification_folders",
+                "_bpk": "classification_folders",
                 "_path": mail_path,
                 "_type": mail.portal_type,
                 "_act": "U",
@@ -2619,21 +2572,23 @@ class S3ClassificationFoldersUpdate(object):
                     item2["classification_folders"] = cf
                     change = True
             else:
-                log_error(item, u"Cannot find folder_id in plone '{}' => put in in description".format(folder_id))
+                log_error(item, f"Cannot find folder_id in plone '{folder_id}' => put in in description")
                 if folder_id in self.storage["data"]["e_folder"]:
-                    desc = mail.description and mail.description.split(u"\r\n") or []
-                    folder_tit = u"DOSSIER: {}".format(self.storage["data"]["e_folder"][folder_id]["_title"])
+                    desc = mail.description and mail.description.split("\r\n") or []
+                    folder_tit = "DOSSIER: {}".format(self.storage["data"]["e_folder"][folder_id]["_title"])
                     if folder_tit not in desc:
                         desc.append(folder_tit)
-                        item2["description"] = u"\r\n".join(desc)
+                        item2["description"] = "\r\n".join(desc)
                         change = True
                 else:
-                    log_error(item, u"Cannot find folder_id in external folders '{}' => we pass it".format(folder_id))
+                    log_error(item, f"Cannot find folder_id in external folders '{folder_id}' => we pass it")
             if change:
                 yield item2
 
 
-class T1DmsfileCreation(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class T1DmsfileCreation:
     """Create file.
 
     Parameters:
@@ -2646,9 +2601,6 @@ class T1DmsfileCreation(object):
 
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
@@ -2658,16 +2610,16 @@ class T1DmsfileCreation(object):
         if not is_in_part(self, self.parts):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.bp_key = safe_unicode(options["bp_key"])
-        store_key = safe_unicode(options["store_key"])
-        disk_files_key = safe_unicode(options["disk_files_key"])
+        self.bp_key = safe_text(options["bp_key"])
+        store_key = safe_text(options["store_key"])
+        disk_files_key = safe_text(options["disk_files_key"])
         self.paths = self.storage["data"][store_key]
         self.disk_files = self.storage["data"][disk_files_key]
-        self.title_key = safe_unicode(options.get("title_key", u"_desc"))
+        self.title_key = safe_text(options.get("title_key", "_desc"))
         self.files = {}
         self.ext = {}
         self.categories = {}
-        for line in safe_unicode(options["categories"]).strip().splitlines():
+        for line in safe_text(options["categories"]).strip().splitlines():
             typ, path = line.split()
             self.categories[typ] = calculate_category_id(self.portal.unrestrictedTraverse(safe_encode(path).strip("/")))
 
@@ -2680,32 +2632,32 @@ class T1DmsfileCreation(object):
             order = item.get("_order") is not None and int(item["_order"]) or None
             # self.ext.setdefault(item['_ext'].lower(), {'c': 0})['c'] += 1
             if item["_mail_id"] not in self.files:
-                if self.bp_key == u"e_dmsfile_i":
+                if self.bp_key == "e_dmsfile_i":
                     typ = "dmsmainfile"
-                elif self.bp_key == u"e_dmsfile_o":
+                elif self.bp_key == "e_dmsfile_o":
                     typ = "dmsommainfile"
                 else:
                     typ = "dmsappendixfile"
                 self.files[item["_mail_id"]] = {"lo": order, "ids": [item["_eid"]]}
                 # if item['_desc'] != u'Fichier scanné':
-                #     e_logger.warn(u"eid:{}, mid:{}: not fichier scanné".format(item['_eid'], item['_mail_id']))
+                #     e_logger.warning(u"eid:{}, mid:{}: not fichier scanné".format(item['_eid'], item['_mail_id']))
             else:
                 typ = "dmsappendixfile"
                 # if order is None and self.files[item['_mail_id']]['lo'] is None:
                 #     pass
-                #     e_logger.warn(u"eid:{}, mid:{}: order is None and previous too".format(item['_eid'],
+                #     e_logger.warning(u"eid:{}, mid:{}: order is None and previous too".format(item['_eid'],
                 #                                                                            item['_mail_id']))
                 # elif order is None:
-                #     e_logger.warn(u"eid:{}, mid:{}: order is None while previous not".format(item['_eid'],
+                #     e_logger.warning(u"eid:{}, mid:{}: order is None while previous not".format(item['_eid'],
                 #                                                                              item['_mail_id']))
                 # elif self.files[item['_mail_id']]['lo'] is None:
-                #     e_logger.warn(u"eid:{}, mid:{}: order not None while previous is None".format(item['_eid'],
+                #     e_logger.warning(u"eid:{}, mid:{}: order not None while previous is None".format(item['_eid'],
                 #                                                                                   item['_mail_id']))
                 # elif order != self.files[item['_mail_id']]['lo']+1:
-                #     e_logger.warn(u"eid:{}, mid:{}: order discontinuity {} <> {}".format(
+                #     e_logger.warning(u"eid:{}, mid:{}: order discontinuity {} <> {}".format(
                 #         item['_eid'], item['_mail_id'], order, self.files[item['_mail_id']]['lo']))
                 # elif order != len(self.files[item['_mail_id']]['ids'])+1:
-                #     e_logger.warn(u"eid:{}, mid:{}: order discordance {} <> {}".format(
+                #     e_logger.warning(u"eid:{}, mid:{}: order discordance {} <> {}".format(
                 #         item['_eid'], item['_mail_id'], order, len(self.files[item['_mail_id']]['ids'])))
                 self.files[item["_mail_id"]]["lo"] = order
                 self.files[item["_mail_id"]]["ids"].append(item["_eid"])
@@ -2726,12 +2678,12 @@ class T1DmsfileCreation(object):
             # get file content
             new_ext, filename, file_content = get_file_content(self, item)
             if new_ext is None:
-                log_error(item, u"Empty file path for mail {}".format(item["_mail_id"]))
+                log_error(item, "Empty file path for mail {}".format(item["_mail_id"]))
                 self.storage["data"]["e_dmsfile_unfound"][item["_eid"]] = {"err": "no path"}
                 continue
             elif file_content is None:
-                log_error(item, u"Cannot open filename '{}'".format(new_ext))
-                self.storage["data"]["e_dmsfile_unfound"][item["_eid"]] = {"err": "{} not found".format(new_ext)}
+                log_error(item, f"Cannot open filename '{new_ext}'")
+                self.storage["data"]["e_dmsfile_unfound"][item["_eid"]] = {"err": f"{new_ext} not found"}
                 continue
             else:
                 # o_logger.info(u"{}||{}||{} => {}".format(item['_fs_path'], item['_filename'], item['_ext'], filename))
@@ -2742,7 +2694,9 @@ class T1DmsfileCreation(object):
         # o_logger.info(self.ext)
 
 
-class X1ReplyToUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class X1ReplyToUpdate:
     """Handles mail links (reply_to field).
 
     Parameters:
@@ -2751,9 +2705,6 @@ class X1ReplyToUpdate(object):
         * batch_store = O, store_key where to store batch info
         * batch_key = O, item batch key to use
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2766,10 +2717,10 @@ class X1ReplyToUpdate(object):
         self.intids = getUtility(IIntIds)
         self.catalog = getUtility(ICatalog)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        store_key = safe_unicode(options["store_key"])
+        store_key = safe_text(options["store_key"])
         self.paths = self.storage["data"][store_key]
         self.batch_store = self.storage["data"].setdefault(options.get("batch_store") or "reply_to", {})
-        self.batch_key = safe_unicode(options.get("batch_key") or u"")
+        self.batch_key = safe_text(options.get("batch_key") or "")
 
     def __iter__(self):
         for item in self.previous:
@@ -2822,16 +2773,15 @@ class X1ReplyToUpdate(object):
             yield item2
 
 
-class WorkflowHistoryUpdate(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class WorkflowHistoryUpdate:
     """Update workflow history.
 
     Parameters:
         * owner = M, owner id
         * condition = O, condition expression
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -2859,7 +2809,9 @@ class WorkflowHistoryUpdate(object):
             yield item
 
 
-class XmlContactStore(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class XmlContactStore:
     """Handles xml contact column and stores infos in bp_key.
 
     Parameters:
@@ -2877,9 +2829,6 @@ class XmlContactStore(object):
         * yield_original = O, flag to know if original item must be yielded (0 or 1: default 1)
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
@@ -2887,25 +2836,25 @@ class XmlContactStore(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.bp_key = safe_unicode(options["bp_key"])
+        self.bp_key = safe_text(options["bp_key"])
         if not is_in_part(self, self.parts):
             return
-        self.source_key = safe_unicode(options["source_key"])
-        self.xml_contact_keys = safe_unicode(options["xml_contact_keys"]).strip().split(u"|")
+        self.source_key = safe_text(options["source_key"])
+        self.xml_contact_keys = safe_text(options["xml_contact_keys"]).strip().split("|")
         # separate first levels
-        self.xml_ct_cols = safe_unicode(options["xml_contact_cols"]).strip().split(u"|")
+        self.xml_ct_cols = safe_text(options["xml_contact_cols"]).strip().split("|")
         res = {}
         for c_str in self.xml_ct_cols:
             values = c_str.strip().split()
-            if u":" not in values[0]:
+            if ":" not in values[0]:
                 raise (
-                    u"The 'xml_contact_cols' option of '{}' section is not well formatted: ':' missing in fist "
-                    u"parameter '{}'".format(name, self.xml_ct_cols)
+                    "The 'xml_contact_cols' option of '{}' section is not well formatted: ':' missing in fist "
+                    "parameter '{}'".format(name, self.xml_ct_cols)
                 )
             res[values[0]] = [tup for tup in pool_tuples(values[1:], 2, "xml_contact_cols option")]
         self.xml_ct_cols = res
         self.empty_store = bool(int(options.get("empty_store") or "0"))
-        self.contact_id_key = safe_unicode(options.get("contact_id_key") or "")
+        self.contact_id_key = safe_text(options.get("contact_id_key") or "")
         self.cku = bool(int(options.get("check_key_uniqueness") or "1"))
         if self.bp_key not in self.storage["data"]:
             self.storage["data"][self.bp_key] = {}
@@ -2927,7 +2876,7 @@ class XmlContactStore(object):
                     current_tag = contact_tag
                     links = {}
                     for key in self.xml_ct_cols:
-                        level1, skey, link = key.split(u":")
+                        level1, skey, link = key.split(":")
                         if level1:
                             current_tag = contact_tag.find(level1)
                         dic = {}
@@ -2938,7 +2887,7 @@ class XmlContactStore(object):
                                 dic[c_key] = found.text.strip()
                                 has_val = True
                             else:
-                                dic[c_key] = u""
+                                dic[c_key] = ""
                         if has_val:  # we consider only if value in
                             skey_val = current_tag.find(skey).text
                             # we save link if defined
@@ -2947,10 +2896,10 @@ class XmlContactStore(object):
                             else:  # we store link on main contact
                                 dic.update(links)
                             if self.cku and skey_val in self.storage["data"][self.bp_key]:
-                                if skey_val == u"0":  # customer 2 ???
-                                    skey_val = u"1"
+                                if skey_val == "0":  # customer 2 ???
+                                    skey_val = "1"
                                 else:
-                                    log_error(item, u"Key '{}' already in '{}' data dict".format(skey_val, self.bp_key))
+                                    log_error(item, f"Key '{skey_val}' already in '{self.bp_key}' data dict")
                             # we store id key on item
                             if self.contact_id_key:
                                 item[self.contact_id_key] = skey_val

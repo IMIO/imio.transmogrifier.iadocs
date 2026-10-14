@@ -1,6 +1,18 @@
 Changelog
 =========
 
+3.0.0 (unreleased)
+------------------
+
+- Migrated to Plone 6.2 and Python 3, dropped Plone 4, based on the work started by @bsuttor on `plone6`.
+  [bsuttor, chris-adam]
+- Replaced ftw.labels by collective.labels, dropped the documentviewer and cron4plone settings changes (gone from imio.dms.mail 4).
+  [chris-adam]
+- Pipelines: `datesupdater` runs again after `reindexobject`, which sets the modification date to now since Plone 5.1 (to report in the customer pipelines).
+  [chris-adam]
+- Added tests and `collective.behavior.internalnumber`, `collective.transmogrifier`, `plone.base` to install_requires.
+  [chris-adam]
+
 2.0 (unreleased)
 ------------------
 

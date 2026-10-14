@@ -362,6 +362,8 @@ pipeline =
     l__state_set
     p__state_set
     reindexobject
+# again: since Plone 5.1, reindexobject (catalog reindexObject) sets the modification date to now
+    datesupdater
 #     workflowupdater
 #     workflow_history_update
     commit_count
