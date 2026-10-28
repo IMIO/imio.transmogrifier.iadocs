@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Init and utils."""
+
 from imio.pyutils.utils import setup_logger
 from zope.i18nmessageid import MessageFactory
 

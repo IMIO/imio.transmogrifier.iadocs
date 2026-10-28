@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.utils import Matcher
@@ -15,26 +14,25 @@ from imio.transmogrifier.iadocs.utils import is_in_part
 from imio.transmogrifier.iadocs.utils import print_item  # noqa
 from imio.transmogrifier.iadocs.utils import short_log
 from imio.transmogrifier.iadocs.utils import time_display
-from Products.CMFPlone.utils import safe_unicode
+from plone.base.utils import safe_text
 from zope.annotation.interfaces import IAnnotations
-from zope.interface import classProvides
-from zope.interface import implements
+from zope.interface import implementer
+from zope.interface import provider
 
 import copy
 import csv
-import ipdb
+import pdb
 import re
 
 
-class Breakpoint(object):
-    """Stops with ipdb if condition is matched.
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class Breakpoint:
+    """Stops with pdb if condition is matched.
 
     Parameters:
         * condition = M, matching condition.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         condition = options.get("condition") or "python:False"
@@ -48,21 +46,19 @@ class Breakpoint(object):
     def __iter__(self):
         for item in self.previous:
             if self.condition(item, storage=self.storage):
-                # ipdb.set_trace(sys._getframe().f_back)  # Break!
-                ipdb.set_trace()  # Break!
+                pdb.set_trace()  # Break!
             yield item
 
 
-class Count(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class Count:
     """Count items.
 
     Parameters:
         * group_key = O, item key to group counting.
         * condition = O, matching condition.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -73,7 +69,7 @@ class Count(object):
         if "count" not in self.storage:
             self.storage["count"] = {}
         self.storage["count"][name] = {}
-        self.group_key = safe_unicode(options.get("group_key", u""))
+        self.group_key = safe_text(options.get("group_key", ""))
 
     def __iter__(self):
         counter = self.storage["count"][self.name]
@@ -84,7 +80,7 @@ class Count(object):
                     if self.group_key in item:
                         counter.setdefault(item[self.group_key], {"c": 0})["c"] += 1
                     else:
-                        counter.setdefault("{}_missing".format(self.group_key), {"c": 0})["c"] += 1
+                        counter.setdefault(f"{self.group_key}_missing", {"c": 0})["c"] += 1
                 else:
                     counter.setdefault("", {"c": 0})["c"] += 1
             yield item
@@ -92,7 +88,9 @@ class Count(object):
             o_logger.info("{} '{}' = {}".format(self.name, group, counter[group]["c"]))
 
 
-class EnhancedCondition(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class EnhancedCondition:
     """Yield item if condition2 is matched, only applied if condition1 is matched.
     Pass storage and item in condition.
 
@@ -102,9 +100,6 @@ class EnhancedCondition(object):
         * get_obj = O, flag to get object from path (default 0)
         * error = O, error message to display
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.condition1 = Condition(options["condition1"], transmogrifier, name, options)
@@ -132,13 +127,15 @@ class EnhancedCondition(object):
                     if self.condition2(item, storage=self.storage, obj=obj):
                         yield item
                 except Exception as msg:
-                    e_logger.error(u"{}: {} ({})".format(self.name, self.error(item), msg))
+                    e_logger.error(f"{self.name}: {self.error(item)} ({msg})")
                     continue
             else:
                 yield item
 
 
-class EnhancedInserter(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class EnhancedInserter:
     """Set or append value in key, if condition is matched.
 
     Parameters:
@@ -152,16 +149,13 @@ class EnhancedInserter(object):
         * error_value = O, value to set when error occurs
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.key = Expression(options["key"], transmogrifier, name, options)
-        self.value = Expression(safe_unicode(options["value"]), transmogrifier, name, options)
+        self.value = Expression(safe_text(options["value"]), transmogrifier, name, options)
         self.condition = Condition(options.get("condition", "python:True"), transmogrifier, name, options)
         self.condition2 = options.get("condition2")
         if self.condition2:
@@ -173,7 +167,7 @@ class EnhancedInserter(object):
             options,
         )
         self.get_obj = bool(int(options.get("get_obj") or "0"))
-        self.error_value = safe_unicode(options.get("error_value") or u"")
+        self.error_value = safe_text(options.get("error_value") or "")
         if self.error_value:
             self.error_value = Expression(self.error_value, transmogrifier, name, options)
         if options.get("separator"):
@@ -190,7 +184,7 @@ class EnhancedInserter(object):
                 if self.get_obj:
                     obj = get_obj_from_path(self.portal, item)
                     if obj is None:
-                        e_logger.error(u"{}: {} ({})".format(self.name, self.error(item), u"object not found for item"))
+                        e_logger.error("{}: {} ({})".format(self.name, self.error(item), "object not found for item"))
                         yield item
                         continue
                 # if condition2 is defined and not matched, we yield the item
@@ -200,12 +194,12 @@ class EnhancedInserter(object):
                 try:
                     value = self.value(item, key=key, storage=self.storage, obj=obj)
                 except Exception as msg:
-                    e_logger.error(u"{}: {} ({})".format(self.name, self.error(item), msg))
+                    e_logger.error(f"{self.name}: {self.error(item)} ({msg})")
                     if self.error_value:
                         try:
                             value = self.error_value(item, key=key, storage=self.storage, obj=obj)
                         except Exception as msg:
-                            e_logger.error(u"{}: {} ({})".format(self.name, self.error(item), msg))
+                            e_logger.error(f"{self.name}: {self.error(item)} ({msg})")
                             yield item
                             continue
                     else:
@@ -213,13 +207,15 @@ class EnhancedInserter(object):
                         continue
                 if self.separator and item.get(key):  # with self.separator, we append
                     if value:
-                        item[key] += u"{}{}".format(self.separator, value)
+                        item[key] += f"{self.separator}{value}"
                 else:
                     item[key] = value
             yield item
 
 
-class EnhancedManipulator(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class EnhancedManipulator:
     """Manipulate item if condition is matched: copy, move or discard keys.
 
     Parameters:
@@ -228,9 +224,6 @@ class EnhancedManipulator(object):
         * delete = O, keys to delete or move.
         * condition = O, matching condition.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         keys = options.get("keys") or ""
@@ -248,7 +241,7 @@ class EnhancedManipulator(object):
         for item in self.previous:
             if self.condition(item, storage=self.storage):
                 course_store(self, item)
-                for key in item.keys():
+                for key in list(item.keys()):
                     match = self.keys(key)[1]
                     if match:
                         dest = self.dest(item, key=key, match=match)
@@ -258,16 +251,15 @@ class EnhancedManipulator(object):
             yield item
 
 
-class FilterItem(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class FilterItem:
     """Filter item to keep only some fields. Useful when correcting...
 
     Parameters:
         * kept_keys = M, keys to keep
         * condition = O, condition to filter (default True)
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -276,7 +268,7 @@ class FilterItem(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get("condition", "python:True"), transmogrifier, name, options)
-        self.kept_keys = safe_unicode(options.get("kept_keys", "")).strip().split()
+        self.kept_keys = safe_text(options.get("kept_keys", "")).strip().split()
 
     def __iter__(self):
         for item in self.previous:
@@ -287,7 +279,9 @@ class FilterItem(object):
             yield item
 
 
-class ItemFieldSplit(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class ItemFieldSplit:
     """Splits an item field and yield multiple items.
 
     Parameters:
@@ -300,23 +294,20 @@ class ItemFieldSplit(object):
         * index_key = O, item key where to store part index (0-based)
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
         self.transmogrifier = transmogrifier
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
-        self.bpk = safe_unicode(options["bp_key"])
+        self.bpk = safe_text(options["bp_key"])
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
-        self.field = safe_unicode(options["field"])
+        self.field = safe_text(options["field"])
         self.sep = next(csv.reader([options["separator"]], delimiter=" ", quotechar='"', skipinitialspace=True))
-        self.sep = self.sep[0].decode("utf8")
-        self.pattern = options.get("part_pattern") or u""
+        self.sep = safe_text(self.sep[0])
+        self.pattern = options.get("part_pattern") or ""
         self.yield_original = bool(int(options.get("yield_original") or "0"))
-        self.index_key = safe_unicode(options.get("index_key") or u"")
+        self.index_key = safe_text(options.get("index_key") or "")
 
     def __iter__(self):
         for item in self.previous:
@@ -350,15 +341,14 @@ class ItemFieldSplit(object):
                 yield item2
 
 
-class NeedOther(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class NeedOther:
     """Stops if needed other part or section is not there.
 
     Parameters:
         * parts = O, needed parts (one letter list).
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -369,19 +359,18 @@ class NeedOther(object):
         if not is_in_part(self, this_part):
             return
         course_store(self, None)
-        needed_parts = safe_unicode(options.get("parts") or u"")
+        needed_parts = safe_text(options.get("parts") or "")
         for needed_part in needed_parts:
             if not is_in_part(self, needed_part):
-                raise Exception(
-                    "STOPPED because '{}' part needs '{}': missing '{}'".format(this_part, needed_parts, needed_part)
-                )
+                raise Exception(f"STOPPED because '{this_part}' part needs '{needed_parts}': missing '{needed_part}'")
 
     def __iter__(self):
-        for item in self.previous:
-            yield item
+        yield from self.previous
 
 
-class PrintItem(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class PrintItem:
     """Print item without big fields.
 
     Parameters:
@@ -390,9 +379,6 @@ class PrintItem(object):
         * separator = O, separator char between print (default empty)
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
@@ -400,8 +386,8 @@ class PrintItem(object):
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
         self.condition = Condition(options.get("condition", "python:True"), transmogrifier, name, options)
-        self.separator = safe_unicode(options.get("separator", ""))
-        self.removed_keys = safe_unicode(options.get("removed_keys", "file")).strip().split()
+        self.separator = safe_text(options.get("separator", ""))
+        self.removed_keys = safe_text(options.get("removed_keys", "file")).strip().split()
 
     def __iter__(self):
         for item in self.previous:
@@ -410,7 +396,9 @@ class PrintItem(object):
             yield item
 
 
-class ReplaceVariables(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class ReplaceVariables:
     """Replace variable in stored dict or item.
 
     Parameters:
@@ -425,16 +413,13 @@ class ReplaceVariables(object):
         * yield = M, flag to know if a yield must be done (0 or 1)
     """
 
-    classProvides(ISectionBlueprint)
-    implements(ISection)
-
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.name = name
         self.portal = transmogrifier.context
         self.storage = IAnnotations(transmogrifier).get(ANNOTATION_KEY)
         self.parts = get_related_parts(name)
-        self.bp_key = safe_unicode(options["bp_key"])
+        self.bp_key = safe_text(options["bp_key"])
         if not is_in_part(self, self.parts):
             return
         doit = Condition(options.get("b_condition") or "python:True", transmogrifier, name, options)
@@ -444,10 +429,10 @@ class ReplaceVariables(object):
             return
         self.condition = Condition(options.get("condition") or "python:True", transmogrifier, name, options)
         self.values = self.storage["data"].get(self.bp_key)
-        self.store_key = safe_unicode(options.get("store_key") or u"_rv_")
-        self.dic_value_key = safe_unicode(options["dic_value_key"])
-        self.item_key = safe_unicode(options.get("item_value_key") or u"_value")
-        self.delimiter = safe_unicode(options["delimiter"])
+        self.store_key = safe_text(options.get("store_key") or "_rv_")
+        self.dic_value_key = safe_text(options["dic_value_key"])
+        self.item_key = safe_text(options.get("item_value_key") or "_value")
+        self.delimiter = safe_text(options["delimiter"])
         self.modify_dict = bool(int(options["modify_dict"]))
         self.yld = bool(int(options["yield"]))
 
@@ -468,15 +453,15 @@ class ReplaceVariables(object):
                 for var in matches:
                     if var in self.values:
                         value = value.replace(
-                            u"{0}{1}{0}".format(self.delimiter, var), self.values[var][self.dic_value_key]
+                            "{0}{1}{0}".format(self.delimiter, var), self.values[var][self.dic_value_key]
                         )
                     else:
                         e_logger.error(
-                            u'{}: variable "{}" not found in dic from orig value "{}"'.format(
+                            '{}: variable "{}" not found in dic from orig value "{}"'.format(
                                 self.name, var, item[self.item_key]
                             )
                         )
-                        value = value.replace(u"{0}{1}{0}".format(self.delimiter, var), u"!{}!".format(var))
+                        value = value.replace("{0}{1}{0}".format(self.delimiter, var), f"!{var}!")
             if item[self.item_key] != value:
                 if self.modify_dict:
                     self.values[item[self.store_key]][self.dic_value_key] = value
@@ -486,11 +471,10 @@ class ReplaceVariables(object):
                 yield item
 
 
-class ShortLog(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class ShortLog:
     """Logs shortly item."""
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
@@ -507,15 +491,14 @@ class ShortLog(object):
             yield item
 
 
-class Stop(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class Stop:
     """Stops if condition is matched.
 
     Parameters:
         * condition = M, matching condition.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.condition = Condition(options["condition"], transmogrifier, name, options)
@@ -530,15 +513,14 @@ class Stop(object):
             yield item
 
 
-class TimeDisplay(object):
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class TimeDisplay:
     """Displays time if condition is matched.
 
     Parameters:
         * condition = O, matching condition.
     """
-
-    classProvides(ISectionBlueprint)
-    implements(ISection)
 
     def __init__(self, transmogrifier, name, options, previous):
         self.condition = Condition(options.get("condition", "python:False"), transmogrifier, name, options)
