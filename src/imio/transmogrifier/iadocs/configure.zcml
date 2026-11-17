@@ -4,8 +4,6 @@
     xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
     i18n_domain="imio.transmogrifier.iadocs">
 
-  <!-- Set up z3c.autoinlcude to scan dependencies and plugins of this package -->
-  <includePlugins package="." />
   <include package="transmogrify.dexterity" />
   <include package=".blueprints" />
 

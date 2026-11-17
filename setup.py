@@ -16,41 +16,51 @@ long_description = "\n\n".join(
 
 setup(
     name="imio.transmogrifier.iadocs",
-    version="1.0a1",
+    version="3.0.0.dev0",
     description="Transmogrifier data import to ia.docs",
     long_description=long_description,
     # Get more from https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         "Environment :: Web Environment",
         "Framework :: Plone",
-        "Framework :: Plone :: 4.3",
+        "Framework :: Plone :: 6.2",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Operating System :: OS Independent",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
     ],
     keywords="Python Plone",
     author="Stephan Geulette",
     author_email="s.geulette@imio.be",
-    url="https://pypi.python.org/pypi/imio.transmogrifier.iadocs",
+    url="https://github.com/IMIO/imio.transmogrifier.iadocs",
     license="GPL version 2",
     packages=find_packages("src", exclude=["ez_setup"]),
-    namespace_packages=["imio", "imio.transmogrifier"],
     package_dir={"": "src"},
     include_package_data=True,
     zip_safe=False,
+    python_requires=">=3.10",
     install_requires=[
         # -*- Extra requirements: -*-
+        # installed by the Initialization section (internal_number_behavior_types)
+        "collective.behavior.internalnumber",
+        "collective.transmogrifier",
         "imio.dms.mail",
         "imio.pyutils",
         "plone.api>=1.8.4",
+        "plone.base",
         "Products.GenericSetup>=1.8.2",
         "transmogrify.dexterity",
-        "plone.app.dexterity<=2.1.1",
     ],
     extras_require={
         "test": [
             "plone.app.testing",
+            # imio.dms.mail fixture (testing.zcml loads collective.MockMailHost)
+            "imio.dms.mail[test]",
+            "collective.MockMailHost",
             # Plone KGS does not use this version, because it would break
             # Remove if your package shall be part of coredev.
             # plone_coredev tests as of 2016-04-01.

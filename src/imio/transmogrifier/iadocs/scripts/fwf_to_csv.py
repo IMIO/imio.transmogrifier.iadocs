@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Script to convert sqlcmd output files to double-quoted csv"""
+
 from collections import OrderedDict
 from datetime import datetime
 from imio.pyutils.system import read_dir
@@ -25,9 +25,9 @@ def main(input_dir, output_dir, counter_col, input_filter, input_sep, only_new, 
     start = datetime.now()
     logger.info("Start: {}".format(start.strftime("%Y%m%d-%H%M")))
     if input_crlf == "crlf":
-        crlf = u"\r\n"
+        crlf = "\r\n"
     else:
-        crlf = u"\n"
+        crlf = "\n"
     files = read_dir(input_dir, with_path=False, only_folders=False, only_files=True)
     for filename in files:
         if not filename.endswith(sqlcmd_ext) or (input_filter and not re.match(input_filter, filename)):
@@ -36,22 +36,24 @@ def main(input_dir, output_dir, counter_col, input_filter, input_sep, only_new, 
         output_name = os.path.join(output_dir, filename.replace(sqlcmd_ext, ".csv"))
         if only_new and os.path.exists(output_name):
             continue
-        logger.info("Reading '{}'".format(input_name))
+        logger.info(f"Reading '{input_name}'")
         if iconv:
-            new_name = input_name.replace(".fwf", ".fwf.{}".format(iconv))
+            new_name = input_name.replace(".fwf", f".fwf.{iconv}")
             if not os.path.exists(new_name):
-                logger.info("Renaming '{}' to '{}'".format(input_name, new_name))
+                logger.info(f"Renaming '{input_name}' to '{new_name}'")
                 os.rename(input_name, new_name)
-                cmd = 'iconv -f {} -t utf8 "{}" -o "{}"'.format(iconv, new_name, input_name)
+                cmd = f'iconv -f {iconv} -t utf8 "{new_name}" -o "{input_name}"'
                 (out, err, code) = runCommand(cmd)
                 if code != 0:
-                    stop(u"Error while converting file '{}' with iconv: {}".format(input_name, err), logger)
-        with codecs.open(input_name, "r", encoding="utf8") as ifh, open(output_name, "wb") as ofh:
+                    stop(f"Error while converting file '{input_name}' with iconv: {err}", logger)
+        with codecs.open(input_name, "r", encoding="utf8") as ifh, open(
+            output_name, "w", encoding="utf8", newline=""
+        ) as ofh:
             csvh = csv.writer(ofh, quoting=csv.QUOTE_NONNUMERIC, lineterminator="\n")
             rec_nb, last_rec_pos = get_records_info(ifh, crlf)
             cols = get_cols(ifh, input_sep, crlf)
             if counter_col:
-                csvh.writerow([u"Line"] + list(cols.keys()))
+                csvh.writerow(["Line"] + list(cols.keys()))
             else:
                 csvh.writerow(list(cols.keys()))
             counters = {"read": 0, "max": rec_nb}
@@ -64,7 +66,7 @@ def main(input_dir, output_dir, counter_col, input_filter, input_sep, only_new, 
                 writed += 1
                 ctn, values = get_values(cols, ifh, counters, input_sep)
             if writed != rec_nb:
-                logger.error("We don't have the correct records number: writed {}, must have {}".format(writed, rec_nb))
+                logger.error(f"We don't have the correct records number: writed {writed}, must have {rec_nb}")
     logger.info("Script duration: %s" % (datetime.now() - start))
 
 
@@ -86,20 +88,20 @@ def get_values(cols, fh, count_dic, input_sep):
         value = fh.read(clen)
         if not value:
             break  # end of file
-        elif value.startswith(u" ") and not value.endswith(u" "):  # number column
-            value = value.lstrip(u" ")
+        elif value.startswith(" ") and not value.endswith(" "):  # number column
+            value = value.lstrip(" ")
             try:
                 value = int(value)
             except Exception:
                 pass
         else:
-            value = value.strip(u" ").replace(u"\r\n", u"\n")
+            value = value.strip(" ").replace("\r\n", "\n")
         values.append(safe_encode(value))
         next_char = fh.read(1)
         if next_char:
-            if next_char == u"\r":
+            if next_char == "\r":
                 next_char = fh.read(1)
-            if next_char not in (input_sep, u"\n"):
+            if next_char not in (input_sep, "\n"):
                 break
     else:
         count_dic["read"] += 1
@@ -122,8 +124,8 @@ def get_cols(fh, input_sep, crlf):
     cont, values = get_values(cols, fh, {"read": 0, "max": 1}, input_sep)
     for i, col in enumerate(cols):
         clen = cols[col]
-        if values[i] != u"-" * clen:
-            stop(u"Wrong length in second line for col '{}'".format(col), logger)
+        if values[i] != "-" * clen:
+            stop(f"Wrong length in second line for col '{col}'", logger)
     return cols
 
 
@@ -134,16 +136,16 @@ def get_records_info(fh, crlf):
     for offset in range(-15, -50, -1):
         fh.seek(offset, 2)
         buf = fh.read()
-        if re.match(u" (rows? affected|lignes? affectées?)", buf):
+        if re.match(" (rows? affected|lignes? affectées?)", buf):
             break
     else:
-        stop(u"End of file not as expected '{}'".format(buf), logger)
+        stop(f"End of file not as expected '{buf}'", logger)
     offset -= 3
-    while not re.match(r"{}\(\d+ (rows?|lignes?) ".format(crlf), buf) and abs(offset) <= file_len:
+    while not re.match(rf"{crlf}\(\d+ (rows?|lignes?) ", buf) and abs(offset) <= file_len:
         fh.seek(offset, 2)
         buf = fh.read()
         offset -= 1
-    match = re.match(r"{}\((\d+) (rows?|lignes?) ".format(crlf), buf)
+    match = re.match(rf"{crlf}\((\d+) (rows?|lignes?) ", buf)
     fh.seek(0)  # start of file
     return int(match.group(1)), file_len + offset  # offset is neg
 
@@ -177,7 +179,7 @@ if __name__ == "__main__":
         ns.output_dir,
         ns.count_col,
         ns.input_filter,
-        ns.input_sep.decode(),
+        ns.input_sep,
         ns.only_new,
         ns.iconv,
         ns.input_crlf,

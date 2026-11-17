@@ -32,3 +32,8 @@ src/*
 !src/imio
 var/
 .vscode/
+.plone*
+.python-version
+CACHEDIR.TAG
+*.egg-info
+pipeline.cfg
